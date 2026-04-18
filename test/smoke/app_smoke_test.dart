@@ -68,8 +68,10 @@ void main() {
     });
 
     testWidgets('review screen shows today review section', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: ReviewScreen(),
+      await tester.pumpWidget(const ProviderScope(
+        child: MaterialApp(
+          home: ReviewScreen(),
+        ),
       ));
       await tester.pumpAndSettle();
 

@@ -45,6 +45,7 @@ class AnalysisResultScreen extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               await ref.read(questionRepositoryProvider).saveDraft(record);
+              invalidateQuestionList(ref);
               ref.read(currentQuestionProvider.notifier).state = null;
               if (context.mounted) {
                 context.go('/notebook');

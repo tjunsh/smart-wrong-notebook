@@ -4,6 +4,7 @@ import 'package:smart_wrong_notebook/src/data/remote/ai/ai_analysis_service.dart
 import 'package:smart_wrong_notebook/src/data/repositories/question_repository.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.dart';
 import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
+import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 
 // --- Repository providers ---
@@ -30,44 +31,29 @@ final Provider<ImageStorageService> imageStorageServiceProvider = Provider<Image
 
 final StateProvider<QuestionRecord?> currentQuestionProvider = StateProvider<QuestionRecord?>((ref) => null);
 
-// --- Capture draft ---
+// --- Internal version counter for cache invalidation ---
 
-FutureProvider<void> captureDraftProvider = FutureProvider<void>((ref) async {
-  // No-op at app startup; used imperatively via capture flow
-});
+final StateProvider<int> _listVersionProvider = StateProvider<int>((ref) => 0);
+
+/// Call after any mutation (save, delete, review) to refresh list/review providers.
+void invalidateQuestionList(WidgetRef ref) {
+  ref.read(_listVersionProvider.notifier).state++;
+}
 
 // --- All questions list ---
 
 final FutureProvider<List<QuestionRecord>> questionListProvider = FutureProvider<List<QuestionRecord>>((ref) async {
+  ref.watch(_listVersionProvider);
   return ref.read(questionRepositoryProvider).listAll();
 });
 
-// --- Question count ---
+// --- Questions due for review ---
 
-final Provider<int> questionCountProvider = Provider<int>((ref) {
-  return ref.watch(questionListProvider).maybeWhen(
-    data: (list) => list.length,
-    orElse: () => 0,
-  );
-});
-
-// --- Current question with AI analysis ---
-
-final FutureProvider<QuestionRecord?> analyzeAndSaveProvider = FutureProvider<QuestionRecord?>((ref) async {
-  final current = ref.read(currentQuestionProvider);
-  if (current == null) return null;
-
-  final service = ref.read(aiAnalysisServiceProvider);
-  final analysis = await service.analyzeQuestion(
-    correctedText: current.correctedText,
-    subjectName: current.subject.name,
-  );
-
-  final updated = current.copyWith(
-    contentStatus: ContentStatus.ready,
-    analysisResult: analysis,
-  );
-
-  await ref.read(questionRepositoryProvider).saveDraft(updated);
-  return updated;
+final FutureProvider<List<QuestionRecord>> dueReviewProvider = FutureProvider<List<QuestionRecord>>((ref) async {
+  ref.watch(_listVersionProvider);
+  final all = await ref.read(questionRepositoryProvider).listAll();
+  return all.where((QuestionRecord q) =>
+    q.contentStatus == ContentStatus.ready &&
+    q.masteryLevel != MasteryLevel.mastered
+  ).toList();
 });
