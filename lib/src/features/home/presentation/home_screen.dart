@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,7 +12,15 @@ class HomeScreen extends StatelessWidget {
         Text('开始拍错题', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: null,
+          onPressed: () {
+            showModalBottomSheet<void>(
+              context: context,
+              builder: (_) => CaptureEntrySheet(
+                onCameraTap: () {},
+                onGalleryTap: () {},
+              ),
+            );
+          },
           icon: const Icon(Icons.camera_alt_outlined),
           label: const Text('拍照录题'),
         ),
