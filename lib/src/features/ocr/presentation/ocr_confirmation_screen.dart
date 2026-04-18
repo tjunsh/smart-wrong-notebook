@@ -1,10 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smart_wrong_notebook/src/app/providers.dart';
+import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 
-class OcrConfirmationScreen extends StatelessWidget {
-  const OcrConfirmationScreen({super.key, required this.initialText});
+class OcrConfirmationScreen extends ConsumerStatefulWidget {
+  const OcrConfirmationScreen({super.key});
 
-  final String initialText;
+  @override
+  ConsumerState<OcrConfirmationScreen> createState() => _OcrConfirmationScreenState();
+}
+
+class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
+  late TextEditingController _textController;
+  Subject _selectedSubject = Subject.math;
+
+  @override
+  void initState() {
+    super.initState();
+    final current = ref.read(currentQuestionProvider);
+    _textController = TextEditingController(text: current?.correctedText ?? '');
+    _selectedSubject = current?.subject ?? Subject.math;
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,20 +38,19 @@ class OcrConfirmationScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            DropdownButtonFormField<String>(
-              initialValue: '数学',
-              items: const <DropdownMenuItem<String>>[
-                DropdownMenuItem(value: '语文', child: Text('语文')),
-                DropdownMenuItem(value: '数学', child: Text('数学')),
-                DropdownMenuItem(value: '英语', child: Text('英语')),
-              ],
-              onChanged: (_) {},
+            DropdownButtonFormField<Subject>(
+              value: _selectedSubject,
+              items: Subject.values.map((s) => DropdownMenuItem(
+                value: s,
+                child: Text(s.label),
+              )).toList(),
+              onChanged: (v) => setState(() => _selectedSubject = v ?? Subject.math),
               decoration: const InputDecoration(labelText: '学科'),
             ),
             const SizedBox(height: 16),
             Expanded(
               child: TextFormField(
-                initialValue: initialText,
+                controller: _textController,
                 maxLines: null,
                 expands: true,
                 decoration: const InputDecoration(
@@ -40,7 +62,16 @@ class OcrConfirmationScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => context.go('/analysis/loading'),
+              onPressed: () {
+                final current = ref.read(currentQuestionProvider);
+                if (current != null) {
+                  ref.read(currentQuestionProvider.notifier).state = current.copyWith(
+                    correctedText: _textController.text,
+                    subject: _selectedSubject,
+                  );
+                }
+                context.go('/analysis/loading');
+              },
               child: const Text('开始 AI 解析'),
             ),
           ],

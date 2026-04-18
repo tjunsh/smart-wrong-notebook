@@ -63,6 +63,7 @@ class QuestionRecord {
 
   QuestionRecord copyWith({
     String? correctedText,
+    Subject? subject,
     ContentStatus? contentStatus,
     AnalysisResult? analysisResult,
     MasteryLevel? masteryLevel,
@@ -74,7 +75,7 @@ class QuestionRecord {
     return QuestionRecord(
       id: id,
       imagePath: imagePath,
-      subject: subject,
+      subject: subject ?? this.subject,
       recognizedText: recognizedText,
       correctedText: correctedText ?? this.correctedText,
       tags: tags ?? this.tags,

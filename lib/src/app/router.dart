@@ -57,7 +57,7 @@ GoRouter buildRouter() {
         ],
       ),
       GoRoute(path: '/capture/correction', builder: (_, __) => const QuestionCorrectionScreen()),
-      GoRoute(path: '/capture/ocr-confirmation', builder: (_, __) => const OcrConfirmationScreen(initialText: '')),
+      GoRoute(path: '/capture/ocr-confirmation', builder: (_, __) => const OcrConfirmationScreen()),
       GoRoute(path: '/analysis/loading', builder: (_, __) => const AnalysisLoadingScreen()),
       GoRoute(
         path: '/analysis/result',

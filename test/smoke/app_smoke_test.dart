@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_wrong_notebook/src/app/app.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
@@ -28,8 +29,10 @@ void main() {
     });
 
     testWidgets('user can tap camera button and see capture sheet', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: HomeScreen(),
+      await tester.pumpWidget(const ProviderScope(
+        child: MaterialApp(
+          home: HomeScreen(),
+        ),
       ));
       await tester.pumpAndSettle();
 
@@ -53,8 +56,10 @@ void main() {
     });
 
     testWidgets('notebook screen shows filter icons', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: NotebookScreen(),
+      await tester.pumpWidget(const ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: NotebookScreen()),
+        ),
       ));
       await tester.pumpAndSettle();
 

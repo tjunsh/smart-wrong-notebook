@@ -1,23 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:smart_wrong_notebook/src/app/providers.dart';
+import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
 
-class AnalysisLoadingScreen extends StatefulWidget {
+class AnalysisLoadingScreen extends ConsumerStatefulWidget {
   const AnalysisLoadingScreen({super.key});
 
   @override
-  State<AnalysisLoadingScreen> createState() => _AnalysisLoadingScreenState();
+  ConsumerState<AnalysisLoadingScreen> createState() => _AnalysisLoadingScreenState();
 }
 
-class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> {
+class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
   @override
   void initState() {
     super.initState();
-    _simulateAnalysis();
+    _runAnalysis();
   }
 
-  Future<void> _simulateAnalysis() async {
-    await Future<void>.delayed(const Duration(seconds: 2));
+  Future<void> _runAnalysis() async {
+    final current = ref.read(currentQuestionProvider);
+    if (current == null) {
+      if (mounted) context.go('/');
+      return;
+    }
+
+    final service = ref.read(aiAnalysisServiceProvider);
+    final analysis = await service.analyzeQuestion(
+      correctedText: current.correctedText,
+      subjectName: current.subject.name,
+    );
+
+    final updated = current.copyWith(
+      contentStatus: ContentStatus.ready,
+      analysisResult: analysis,
+    );
+    ref.read(currentQuestionProvider.notifier).state = updated;
+
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/analysis/result');
+      context.go('/analysis/result');
     }
   }
 
