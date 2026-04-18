@@ -60,4 +60,27 @@ class QuestionRecord {
   final ContentStatus contentStatus;
   final MasteryLevel masteryLevel;
   final AnalysisResult? analysisResult;
+
+  QuestionRecord copyWith({
+    String? correctedText,
+    ContentStatus? contentStatus,
+    AnalysisResult? analysisResult,
+  }) {
+    return QuestionRecord(
+      id: id,
+      imagePath: imagePath,
+      subject: subject,
+      recognizedText: recognizedText,
+      correctedText: correctedText ?? this.correctedText,
+      tags: tags,
+      createdAt: createdAt,
+      updatedAt: DateTime.now(),
+      lastReviewedAt: lastReviewedAt,
+      reviewCount: reviewCount,
+      isFavorite: isFavorite,
+      contentStatus: contentStatus ?? this.contentStatus,
+      masteryLevel: masteryLevel,
+      analysisResult: analysisResult ?? this.analysisResult,
+    );
+  }
 }
