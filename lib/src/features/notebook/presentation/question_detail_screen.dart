@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
+import 'package:smart_wrong_notebook/src/features/review/presentation/review_controller.dart';
 
 class QuestionDetailScreen extends ConsumerWidget {
   const QuestionDetailScreen({super.key, required this.record});
@@ -56,17 +57,31 @@ class QuestionDetailScreen extends ConsumerWidget {
             Text('错因：${current.analysisResult!.mistakeReason}'),
           ],
           const SizedBox(height: 24),
-          FilledButton(
-            onPressed: () {
-              ref.read(currentQuestionProvider.notifier).state = current;
-              context.go('/analysis/result');
-            },
-            child: const Text('查看 AI 解析'),
-          ),
+          if (current.analysisResult != null)
+            FilledButton.tonal(
+              onPressed: () {
+                ref.read(currentQuestionProvider.notifier).state = current;
+                context.go('/analysis/result');
+              },
+              child: const Text('查看 AI 解析'),
+            ),
           const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => _markReviewed(context, ref, current),
-            child: const Text('标记为已复习'),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _markResult(context, ref, current, false),
+                  child: const Text('仍需复习'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => _markResult(context, ref, current, true),
+                  child: const Text('已掌握'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -97,21 +112,17 @@ class QuestionDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _markReviewed(BuildContext context, WidgetRef ref, QuestionRecord question) async {
-    final nextLevel = question.masteryLevel == MasteryLevel.newQuestion
-        ? MasteryLevel.reviewing
-        : MasteryLevel.mastered;
-    final updated = question.copyWith(
-      masteryLevel: nextLevel,
-      reviewCount: question.reviewCount + 1,
-    );
-    await ref.read(questionRepositoryProvider).update(updated);
+  void _markResult(BuildContext context, WidgetRef ref, QuestionRecord question, bool mastered) async {
+    final controller = ReviewController(repository: ref.read(questionRepositoryProvider));
+    final updated = mastered
+        ? await controller.markMastered(question.id)
+        : await controller.markReviewing(question.id);
     invalidateQuestionList(ref);
     ref.read(currentQuestionProvider.notifier).state = updated;
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('已标记为${nextLevel == MasteryLevel.mastered ? '已掌握' : '复习中'}')),
+      SnackBar(content: Text(mastered ? '已标记为已掌握' : '已标记为复习中')),
     );
   }
 }
