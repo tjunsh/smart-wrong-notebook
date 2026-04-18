@@ -8,6 +8,7 @@ import 'package:smart_wrong_notebook/src/data/services/capture_service.dart';
 import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
+import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 
 // --- Repository providers ---
 
@@ -62,4 +63,30 @@ final FutureProvider<List<QuestionRecord>> dueReviewProvider = FutureProvider<Li
     q.contentStatus == ContentStatus.ready &&
     q.masteryLevel != MasteryLevel.mastered
   ).toList();
+});
+
+// --- Notebook filter state ---
+
+final StateProvider<Subject?> selectedSubjectFilterProvider = StateProvider<Subject?>((ref) => null);
+
+final StateProvider<MasteryLevel?> selectedMasteryFilterProvider = StateProvider<MasteryLevel?>((ref) => null);
+
+final StateProvider<String> searchQueryProvider = StateProvider<String>((ref) => '');
+
+// --- Filtered notebook list ---
+
+final FutureProvider<List<QuestionRecord>> filteredQuestionListProvider = FutureProvider<List<QuestionRecord>>((ref) async {
+  ref.watch(_listVersionProvider);
+  final all = await ref.read(questionRepositoryProvider).listAll();
+
+  final subject = ref.watch(selectedSubjectFilterProvider);
+  final mastery = ref.watch(selectedMasteryFilterProvider);
+  final query = ref.watch(searchQueryProvider).toLowerCase();
+
+  return all.where((QuestionRecord q) {
+    if (subject != null && q.subject != subject) return false;
+    if (mastery != null && q.masteryLevel != mastery) return false;
+    if (query.isNotEmpty && !q.correctedText.toLowerCase().contains(query)) return false;
+    return true;
+  }).toList();
 });
