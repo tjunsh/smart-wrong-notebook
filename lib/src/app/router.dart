@@ -46,7 +46,7 @@ GoRouter buildRouter() {
                 path: '/settings',
                 builder: (_, __) => const SettingsScreen(),
                 routes: <RouteBase>[
-                  GoRoute(path: 'provider', builder: (_, __) => const ProviderConfigScreen(config: null)),
+                  GoRoute(path: 'provider', builder: (_, __) => const ProviderConfigScreen()),
                   GoRoute(path: 'subjects', builder: (_, __) => const SubjectManagementScreen()),
                   GoRoute(path: 'prompts', builder: (_, __) => const PromptSettingsScreen()),
                   GoRoute(path: 'data', builder: (_, __) => const DataManagementScreen()),

@@ -1,1 +1,16 @@
+# Worktrees
 .worktrees/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.iml
+.metadata
+pubspec.lock
+
+# IDE
+.idea/
+*.swp
+.DS_Store
