@@ -21,7 +21,7 @@ final Provider<SettingsRepository> settingsRepositoryProvider = Provider<Setting
 // --- Service providers ---
 
 final Provider<AiAnalysisService> aiAnalysisServiceProvider = Provider<AiAnalysisService>((ref) {
-  return AiAnalysisService.fake();
+  return AiAnalysisService(settingsRepository: ref.read(settingsRepositoryProvider));
 });
 
 final Provider<ImageStorageService> imageStorageServiceProvider = Provider<ImageStorageService>((ref) {
