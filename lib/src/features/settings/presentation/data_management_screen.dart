@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
+import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 
 class DataManagementScreen extends ConsumerWidget {
   const DataManagementScreen({super.key});
@@ -27,13 +32,9 @@ class DataManagementScreen extends ConsumerWidget {
               child: ListTile(
                 leading: const Icon(Icons.download_outlined),
                 title: const Text('导出当前题库'),
-                subtitle: const Text('导出所有错题为 JSON 文件'),
+                subtitle: const Text('导出所有错题为 JSON 文件，可分享'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('导出功能开发中')),
-                  );
-                },
+                onTap: questions.isEmpty ? null : () => _exportQuestions(context, questions),
               ),
             ),
             const SizedBox(height: 8),
@@ -54,6 +55,69 @@ class DataManagementScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _exportQuestions(BuildContext context, List<QuestionRecord> questions) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final exportDir = Directory('${dir.path}/exports');
+      if (!exportDir.existsSync()) {
+        await exportDir.create(recursive: true);
+      }
+
+      final now = DateTime.now();
+      final ms = now.millisecond;
+      final filename = 'wrong_notebook_$ms.json';
+      final file = File('${exportDir.path}/$filename');
+
+      final list = questions.map(_questionToJson).toList();
+      file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(list));
+
+      if (!context.mounted) return;
+      await Share.shareXFiles([XFile(file.path)], text: '导出 ${questions.length} 道错题');
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('导出失败: $e')),
+        );
+      }
+    }
+  }
+
+  Map<String, dynamic> _questionToJson(QuestionRecord q) {
+    final exercises = q.analysisResult?.generatedExercises.map((e) => {
+      'id': e.id,
+      'difficulty': e.difficulty,
+      'question': e.question,
+      'answer': e.answer,
+      'explanation': e.explanation,
+      'isCorrect': e.isCorrect,
+    }).toList();
+
+    return {
+      'id': q.id,
+      'subject': q.subject.name,
+      'recognizedText': q.recognizedText,
+      'correctedText': q.correctedText,
+      'tags': q.tags,
+      'contentStatus': q.contentStatus.name,
+      'masteryLevel': q.masteryLevel.name,
+      'isFavorite': q.isFavorite,
+      'reviewCount': q.reviewCount,
+      'createdAt': q.createdAt.toIso8601String(),
+      'updatedAt': q.updatedAt.toIso8601String(),
+      'lastReviewedAt': q.lastReviewedAt?.toIso8601String(),
+      'analysisResult': q.analysisResult != null
+          ? {
+              'finalAnswer': q.analysisResult!.finalAnswer,
+              'steps': q.analysisResult!.steps,
+              'knowledgePoints': q.analysisResult!.knowledgePoints,
+              'mistakeReason': q.analysisResult!.mistakeReason,
+              'studyAdvice': q.analysisResult!.studyAdvice,
+              'generatedExercises': exercises,
+            }
+          : null,
+    };
+  }
+
   void _confirmClearAll(BuildContext context, WidgetRef ref, int count) {
     if (count == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -71,14 +135,35 @@ class DataManagementScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('清空功能开发中')),
-              );
+              _clearAllData(ref, context);
             },
             child: const Text('清空', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _clearAllData(WidgetRef ref, BuildContext context) async {
+    final repo = ref.read(questionRepositoryProvider);
+    final all = await repo.listAll();
+    for (final q in all) {
+      await repo.delete(q.id);
+    }
+    invalidateQuestionList(ref);
+    ref.read(currentQuestionProvider.notifier).state = null;
+
+    try {
+      for (final q in all) {
+        final file = File(q.imagePath);
+        if (await file.exists()) await file.delete();
+      }
+    } catch (_) {}
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已清空 ${all.length} 道错题')),
+      );
+    }
   }
 }
