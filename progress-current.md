@@ -5,19 +5,18 @@ type: project
 ---
 
 Done:
-- QuestionCorrectionScreen: InteractiveViewer pinch-to-zoom, manual input fallback
-- QuestionDetailScreen: card-based layout, edit button, mastery chips, stats
-- HomeScreen: review banner, icon avatars in recent list
-- ReviewScreen: summary card, progress stats, empty state celebration
-- ReviewHistoryScreen: relative dates (今天/昨天), empty state, mastery chips
-- android/build.gradle.kts: enable core library desugaring + multiDex
-- APK builds: arm (98MB), arm64 (✓), x64 (✓), universal (188MB)
+- Add GitHub Actions CI workflow: analyze + test on every push/PR to main
+- Add GitHub Actions Release workflow: APK + AAB builds on version tags (v*)
+- Remove dead code: mlkit_ocr_service.dart (unused, OcrService uses google_mlkit directly)
+- Set flutter.minSdkVersion=21 in gradle.properties (ML Kit requirement)
+- Add version 1.0.0+1 to pubspec.yaml
+- All 35 tests pass, APK builds clean
 
 Blockers:
-- None
+- None (waiting for device to test full flow)
 
 Next First Step:
-- Install APK on device and verify full user flow
+- Install APK on device: `adb install build/app/outputs/flutter-apk/app-debug.apk`
 
 Tomorrow first action:
-- `adb install build/app/outputs/flutter-apk/app-debug.apk` then test onboarding → capture → OCR → AI → save → review
+- Connect Android device and test: onboarding → capture → OCR → AI → save → review
