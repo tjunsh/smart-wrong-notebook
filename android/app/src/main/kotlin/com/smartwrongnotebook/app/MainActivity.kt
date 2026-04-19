@@ -1,4 +1,4 @@
-package com.example.smart_wrong_notebook
+package com.smartwrongnotebook.app
 
 import io.flutter.embedding.android.FlutterActivity
 

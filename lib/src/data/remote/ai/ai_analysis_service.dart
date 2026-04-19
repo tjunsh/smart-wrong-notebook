@@ -9,17 +9,9 @@ class AiAnalysisService {
   AiAnalysisService({required this.settingsRepository});
 
   final SettingsRepository settingsRepository;
-  AiProviderConfig? _cachedConfig;
 
   factory AiAnalysisService.fake() =>
       AiAnalysisService(settingsRepository: InMemorySettingsRepository());
-
-  Future<AiAnalysisService> _withConfig() async {
-    _cachedConfig ??= await settingsRepository.getAiProviderConfig();
-    return this;
-  }
-
-  Dio? _dio;
 
   Dio _createClient(AiProviderConfig config) {
     return Dio(BaseOptions(

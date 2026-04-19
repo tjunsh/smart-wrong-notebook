@@ -3,7 +3,6 @@ import 'package:smart_wrong_notebook/src/data/repositories/question_repository.d
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/domain/models/review_log.dart';
-import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 import 'package:smart_wrong_notebook/src/domain/repositories/review_log_repository.dart';
 
 class ReviewController {
