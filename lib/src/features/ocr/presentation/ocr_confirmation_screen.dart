@@ -58,17 +58,31 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  DropdownButtonFormField<Subject>(
-                    value: _selectedSubject,
-                    decoration: const InputDecoration(
-                      labelText: '学科',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: Subject.values.map((s) => DropdownMenuItem(
-                      value: s,
-                      child: Text(s.label),
-                    )).toList(),
-                    onChanged: (v) => setState(() => _selectedSubject = v ?? Subject.math),
+                  FormField<Subject>(
+                    initialValue: _selectedSubject,
+                    builder: (FormFieldState<Subject> state) {
+                      return InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: '学科',
+                          border: OutlineInputBorder(),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<Subject>(
+                            value: state.value,
+                            isDense: true,
+                            isExpanded: true,
+                            items: Subject.values.map((s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(s.label),
+                            )).toList(),
+                            onChanged: (v) {
+                              state.didChange(v ?? Subject.math);
+                              setState(() => _selectedSubject = state.value!);
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   Expanded(

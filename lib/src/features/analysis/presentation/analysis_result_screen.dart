@@ -100,7 +100,7 @@ class AnalysisResultScreen extends ConsumerWidget {
                           height: 22,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(11),
                           ),
                           child: Text(
@@ -135,7 +135,7 @@ class AnalysisResultScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: _difficultyColor(e.difficulty).withOpacity(0.1),
+                              color: _difficultyColor(e.difficulty).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(

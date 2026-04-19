@@ -95,7 +95,7 @@ class QuestionDetailScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Chip(
                         label: Text(_masteryLabel(current.masteryLevel)),
-                        backgroundColor: _masteryColor(current.masteryLevel).withOpacity(0.1),
+                        backgroundColor: _masteryColor(current.masteryLevel).withValues(alpha: 0.1),
                         labelStyle: TextStyle(color: _masteryColor(current.masteryLevel), fontSize: 12),
                         visualDensity: VisualDensity.compact,
                       ),

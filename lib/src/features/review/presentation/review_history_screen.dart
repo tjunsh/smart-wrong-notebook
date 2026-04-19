@@ -36,7 +36,7 @@ class ReviewHistoryScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: (isMastered ? Colors.green : Colors.orange).withOpacity(0.1),
+          backgroundColor: (isMastered ? Colors.green : Colors.orange).withValues(alpha: 0.1),
           child: Icon(
             isMastered ? Icons.check_circle : Icons.refresh,
             color: isMastered ? Colors.green : Colors.orange,
@@ -54,7 +54,7 @@ class ReviewHistoryScreen extends ConsumerWidget {
         ),
         trailing: Chip(
           label: Text(_masteryLabel(entry.log.masteryAfter)),
-          backgroundColor: (isMastered ? Colors.green : Colors.orange).withOpacity(0.1),
+          backgroundColor: (isMastered ? Colors.green : Colors.orange).withValues(alpha: 0.1),
           labelStyle: TextStyle(
             fontSize: 11,
             color: isMastered ? Colors.green : Colors.orange,

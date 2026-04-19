@@ -5,7 +5,7 @@ import 'package:smart_wrong_notebook/src/domain/models/ai_provider_config.dart';
 void main() {
   test('controller saves and retrieves provider config', () {
     final controller = ProviderConfigController();
-    final config = AiProviderConfig(
+    const config = AiProviderConfig(
       id: 'openai',
       displayName: 'OpenAI',
       baseUrl: 'https://api.openai.com/v1',

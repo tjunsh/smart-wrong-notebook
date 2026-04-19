@@ -82,7 +82,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _difficultyColor(exercise.difficulty).withOpacity(0.1),
+                          color: _difficultyColor(exercise.difficulty).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -127,7 +127,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                     crossFadeState: answered ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                     firstChild: const SizedBox.shrink(),
                     secondChild: Card(
-                      color: (isCorrect ? Colors.green : Colors.red).withOpacity(0.05),
+                      color: (isCorrect ? Colors.green : Colors.red).withValues(alpha: 0.05),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(

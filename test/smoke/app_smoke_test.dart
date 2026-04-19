@@ -112,8 +112,8 @@ void main() {
     testWidgets('capture entry sheet has camera and gallery options', (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
-        child: MaterialApp(
-          home: const Scaffold(body: CaptureEntrySheet()),
+        child: const MaterialApp(
+          home: Scaffold(body: CaptureEntrySheet()),
         ),
       ));
       await tester.pumpAndSettle();

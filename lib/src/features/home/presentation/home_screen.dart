@@ -120,7 +120,7 @@ class HomeScreen extends ConsumerWidget {
         return Card(
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: _masteryColor(q.masteryLevel).withOpacity(0.1),
+              backgroundColor: _masteryColor(q.masteryLevel).withValues(alpha: 0.1),
               child: Icon(Icons.quiz_outlined, size: 18, color: _masteryColor(q.masteryLevel)),
             ),
             title: Text(q.correctedText, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -198,7 +198,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(

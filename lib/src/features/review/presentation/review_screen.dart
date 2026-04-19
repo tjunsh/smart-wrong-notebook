@@ -104,7 +104,7 @@ class ReviewScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _masteryColor(question.masteryLevel).withOpacity(0.1),
+          backgroundColor: _masteryColor(question.masteryLevel).withValues(alpha: 0.1),
           child: Icon(Icons.quiz_outlined, color: _masteryColor(question.masteryLevel), size: 18),
         ),
         title: Text(
