@@ -83,20 +83,19 @@ void main() {
 
       expect(find.text('深色模式'), findsOneWidget);
       expect(find.text('复习提醒'), findsOneWidget);
-      expect(find.text('AI 服务商配置'), findsOneWidget);
-      expect(find.text('科目管理'), findsOneWidget);
-      expect(find.text('数据管理'), findsOneWidget);
+      expect(find.text('AI 服务'), findsOneWidget);
+      expect(find.text('内容'), findsOneWidget);
     });
 
-    testWidgets('notebook screen shows filter icons', (tester) async {
+    testWidgets('notebook screen shows search and add icons', (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
         child: const MaterialApp(home: Scaffold(body: NotebookScreen())),
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.filter_list), findsOneWidget);
       expect(find.byIcon(Icons.search), findsOneWidget);
+      expect(find.byIcon(Icons.add_photo_alternate_outlined), findsOneWidget);
     });
 
     testWidgets('review screen shows today review section', (tester) async {
@@ -135,7 +134,7 @@ void main() {
 
       await tester.tap(find.text('错题本'));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.filter_list), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsOneWidget);
 
       await tester.tap(find.text('复习'));
       await tester.pumpAndSettle();

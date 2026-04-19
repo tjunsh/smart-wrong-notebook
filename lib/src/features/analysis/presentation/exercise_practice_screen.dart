@@ -37,7 +37,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
     final exercises = _exercises!;
     if (exercises.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('练习')),
+        appBar: AppBar(title: const Text('举一反三')),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -63,111 +63,127 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
     final answeredCount = exercises.where((e) => e.isCorrect != null).length;
 
     return Scaffold(
-      appBar: AppBar(title: Text('举一反三 ${_index + 1}/${exercises.length}')),
+      appBar: AppBar(
+        title: Text('举一反三 ${_index + 1}/${exercises.length}'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => context.go('/notebook'),
+        ),
+      ),
       body: Column(
         children: <Widget>[
-          // Progress bar
+          // Progress
           LinearProgressIndicator(
-            value: (answeredCount) / exercises.length,
+            value: answeredCount / exercises.length,
             backgroundColor: Colors.grey.shade200,
+            minHeight: 3,
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Row(
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: <Widget>[
+                // Meta row
+                Row(
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _difficultyColor(exercise.difficulty).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: _difficultyColor(exercise.difficulty).withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        exercise.difficulty,
+                        style: TextStyle(fontSize: 12, color: _difficultyColor(exercise.difficulty), fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text('$answeredCount/${exercises.length} 已答', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Question card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _difficultyColor(exercise.difficulty).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          exercise.difficulty,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _difficultyColor(exercise.difficulty),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '$answeredCount/${exercises.length} 已答',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                      ),
+                      Text('第 ${_index + 1} 题', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      const SizedBox(height: 8),
+                      Text(exercise.question, style: Theme.of(context).textTheme.titleMedium),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            '第 ${_index + 1} 题',
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            exercise.question,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ],
-                      ),
+                ),
+                const SizedBox(height: 16),
+                // Answer reveal
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 250),
+                  crossFadeState: answered ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isCorrect ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isCorrect ? const Color(0xFFBBF7D0) : const Color(0xFFFED7AA)),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 200),
-                    crossFadeState: answered ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                    firstChild: const SizedBox.shrink(),
-                    secondChild: Card(
-                      color: (isCorrect ? Colors.green : Colors.red).withValues(alpha: 0.05),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
                           children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Icon(
-                                  isCorrect ? Icons.check_circle : Icons.cancel,
-                                  color: isCorrect ? Colors.green : Colors.red,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isCorrect ? '回答正确' : '回答错误',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: isCorrect ? Colors.green : Colors.red,
-                                  ),
-                                ),
-                              ],
+                            Icon(
+                              isCorrect ? Icons.check_circle : Icons.cancel,
+                              color: isCorrect ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
+                              size: 20,
                             ),
-                            const SizedBox(height: 12),
-                            Text('答案：${exercise.answer}',
-                              style: TextStyle(fontSize: 15, color: Colors.grey.shade800)),
-                            if (exercise.explanation.isNotEmpty) ...<Widget>[
-                              const SizedBox(height: 8),
-                              Text(
-                                exercise.explanation,
-                                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                            const SizedBox(width: 8),
+                            Text(
+                              isCorrect ? '回答正确' : '回答错误',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isCorrect ? const Color(0xFF166534) : const Color(0xFF9A3412),
                               ),
-                            ],
+                            ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Text('答案：${exercise.answer}', style: TextStyle(fontSize: 15, color: Colors.grey.shade800)),
+                        if (exercise.explanation.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 8),
+                          Text(exercise.explanation, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                        ],
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  if (!answered)
-                    Row(
+                ),
+              ],
+            ),
+          ),
+          // Bottom action
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: answered
+                  ? FilledButton.icon(
+                      onPressed: () {
+                        if (isLast) {
+                          _finish(current, exercises);
+                        } else {
+                          setState(() => _index++);
+                        }
+                      },
+                      icon: Icon(isLast ? Icons.done : Icons.arrow_forward),
+                      label: Text(isLast ? '完成练习' : '下一题'),
+                      style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+                    )
+                  : Row(
                       children: <Widget>[
                         Expanded(
                           child: OutlinedButton.icon(
@@ -175,6 +191,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red,
                               side: const BorderSide(color: Colors.red),
+                              minimumSize: const Size(0, 48),
                             ),
                             icon: const Icon(Icons.close),
                             label: const Text('做错了'),
@@ -185,28 +202,15 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                           child: FilledButton.icon(
                             onPressed: () => _markResult(exercises, _index, true),
                             style: FilledButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: const Color(0xFF16A34A),
+                              minimumSize: const Size(0, 48),
                             ),
                             icon: const Icon(Icons.check),
                             label: const Text('做对了'),
                           ),
                         ),
                       ],
-                    )
-                  else
-                    FilledButton.icon(
-                      onPressed: () {
-                        if (isLast) {
-                          _finish(current, exercises);
-                        } else {
-                          setState(() => _index++);
-                        }
-                      },
-                      icon: Icon(isLast ? Icons.done : Icons.arrow_forward),
-                      label: Text(isLast ? '完成练习' : '下一题'),
                     ),
-                ],
-              ),
             ),
           ),
         ],
@@ -219,7 +223,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
       case '简单': return Colors.green;
       case '中等': return Colors.orange;
       case '困难': return Colors.red;
-      case '提高': return Colors.purple;
+      case '提高': return const Color(0xFF7C3AED);
       case '同级': return Colors.blue;
       default: return Colors.grey;
     }

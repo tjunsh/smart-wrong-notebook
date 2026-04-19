@@ -69,65 +69,33 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: _errorMessage != null
-            ? Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!, textAlign: TextAlign.center),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: () {
-                        setState(() {
-                          _errorMessage = null;
-                          _step = 0;
-                        });
-                        _runAnalysis();
-                        _animateSteps();
-                      },
-                      child: const Text('重试'),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: () => context.go('/'),
-                      child: const Text('返回首页'),
-                    ),
-                  ],
-                ),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const _RotatingBrainIcon(),
-                  const SizedBox(height: 24),
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 24),
-                  Text(_steps[_step], style: const TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  Text(
-                    'AI 正在分析中，请稍候...',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                  ),
-                ],
-              ),
-      ),
+      body: _errorMessage != null
+          ? _ErrorView(message: _errorMessage!, onRetry: _retry)
+          : _LoadingView(step: _step, steps: _steps),
     );
+  }
+
+  void _retry() {
+    setState(() {
+      _errorMessage = null;
+      _step = 0;
+    });
+    _runAnalysis();
+    _animateSteps();
   }
 }
 
-class _RotatingBrainIcon extends StatefulWidget {
-  const _RotatingBrainIcon();
+class _LoadingView extends StatefulWidget {
+  const _LoadingView({required this.step, required this.steps});
+
+  final int step;
+  final List<String> steps;
 
   @override
-  State<_RotatingBrainIcon> createState() => _RotatingBrainIconState();
+  State<_LoadingView> createState() => _LoadingViewState();
 }
 
-class _RotatingBrainIconState extends State<_RotatingBrainIcon>
-    with SingleTickerProviderStateMixin {
+class _LoadingViewState extends State<_LoadingView> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -147,11 +115,86 @@ class _RotatingBrainIconState extends State<_RotatingBrainIcon>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (_, __) => Transform.rotate(
-        angle: _controller.value * 2 * 3.14159,
-        child: const Icon(Icons.psychology_outlined, size: 64, color: Colors.indigo),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 88, height: 88,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF2FF),
+                borderRadius: BorderRadius.circular(44),
+              ),
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (_, __) => Transform.rotate(
+                  angle: _controller.value * 2 * 3.14159,
+                  child: const Icon(Icons.psychology_outlined, size: 44, color: Color(0xFF6366F1)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+            const CircularProgressIndicator(
+              strokeWidth: 3,
+              color: Color(0xFF6366F1),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              widget.steps[widget.step],
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'AI 正在分析中，请稍候...',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 64, height: 64,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: const Icon(Icons.error_outline, color: Color(0xFFEA580C), size: 32),
+            ),
+            const SizedBox(height: 20),
+            Text(message, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
+            const SizedBox(height: 28),
+            FilledButton(
+              onPressed: onRetry,
+              style: FilledButton.styleFrom(minimumSize: const Size(140, 44)),
+              child: const Text('重试'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => context.go('/'),
+              style: OutlinedButton.styleFrom(minimumSize: const Size(140, 44)),
+              child: const Text('返回首页'),
+            ),
+          ],
+        ),
       ),
     );
   }

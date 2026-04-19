@@ -43,9 +43,14 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
             GestureDetector(
               onTap: () => _showFullImage(context, current.imagePath),
               child: Container(
-                height: 120,
+                height: 140,
                 width: double.infinity,
-                color: Colors.grey.shade100,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
                 child: Image.file(
                   File(current.imagePath),
                   fit: BoxFit.contain,
@@ -53,72 +58,81 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
               ),
             ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  FormField<Subject>(
-                    initialValue: _selectedSubject,
-                    builder: (FormFieldState<Subject> state) {
-                      return InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: '学科',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<Subject>(
-                            value: state.value,
-                            isDense: true,
-                            isExpanded: true,
-                            items: Subject.values.map((s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(s.label),
-                            )).toList(),
-                            onChanged: (v) {
-                              state.didChange(v ?? Subject.math);
-                              setState(() => _selectedSubject = state.value!);
-                            },
-                          ),
-                        ),
-                      );
-                    },
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: <Widget>[
+                Text('学科', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _textController,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      decoration: InputDecoration(
-                        labelText: '识别文本',
-                        alignLabelWithHint: true,
-                        border: const OutlineInputBorder(),
-                        suffixIcon: _textController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
-                                onPressed: () {
-                                  _textController.clear();
-                                  setState(() {});
-                                },
-                              )
-                            : null,
-                      ),
-                      onChanged: (_) => setState(() {}),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<Subject>(
+                      value: _selectedSubject,
+                      isDense: true,
+                      isExpanded: true,
+                      items: Subject.values.map((s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s.label),
+                      )).toList(),
+                      onChanged: (v) {
+                        if (v != null) setState(() => _selectedSubject = v);
+                      },
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text('识别文本', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                    if (_textController.text.isNotEmpty)
+                      TextButton.icon(
+                        onPressed: () {
+                          _textController.clear();
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.clear, size: 16),
+                        label: const Text('清除'),
+                        style: TextButton.styleFrom(foregroundColor: Colors.grey.shade600, visualDensity: VisualDensity.compact),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: TextFormField(
+                    controller: _textController,
+                    maxLines: 8,
+                    textAlignVertical: TextAlignVertical.top,
+                    decoration: InputDecoration(
+                      hintText: '请输入或修正识别的题目文本',
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      contentPadding: const EdgeInsets.all(14),
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
           child: FilledButton(
             onPressed: _textController.text.trim().isEmpty ? null : _submit,
+            style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
             child: const Text('开始 AI 解析'),
           ),
         ),

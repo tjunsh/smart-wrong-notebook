@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,19 +20,17 @@ class QuestionDetailScreen extends ConsumerWidget {
       );
     }
 
+    final result = current.analysisResult;
+    final masteryColor = _masteryColor(current.masteryLevel);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(current.subject.label),
+        title: const Text('错题详情'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/notebook'),
+        ),
         actions: <Widget>[
-          IconButton(
-            icon: Icon(current.isFavorite ? Icons.star : Icons.star_border),
-            onPressed: () async {
-              final updated = current.copyWith(isFavorite: !current.isFavorite);
-              await ref.read(questionRepositoryProvider).update(updated);
-              ref.read(currentQuestionProvider.notifier).state = updated;
-              invalidateQuestionList(ref);
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => _editQuestion(context, ref, current),
@@ -58,180 +55,173 @@ class QuestionDetailScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         children: <Widget>[
-          if (File(current.imagePath).existsSync()) ...<Widget>[
-            GestureDetector(
-              onTap: () => _showFullScreenImage(context, current.imagePath),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(current.imagePath),
-                  width: double.infinity,
-                  fit: BoxFit.contain,
-                ),
-              ),
+          // Question preview
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-            const SizedBox(height: 12),
-            Text(
-              '点击图片查看原图',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-          ],
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Chip(
-                        label: Text(current.subject.label),
-                        visualDensity: VisualDensity.compact,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      const SizedBox(width: 8),
-                      Chip(
-                        label: Text(_masteryLabel(current.masteryLevel)),
-                        backgroundColor: _masteryColor(current.masteryLevel).withValues(alpha: 0.1),
-                        labelStyle: TextStyle(color: _masteryColor(current.masteryLevel), fontSize: 12),
-                        visualDensity: VisualDensity.compact,
+                      child: Text(current.subject.label, style: const TextStyle(fontSize: 12, color: Color(0xFF4F46E5))),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: masteryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(current.correctedText, style: const TextStyle(fontSize: 15)),
-                  if (current.tags.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: current.tags.map((t) => Chip(
-                        label: Text(t, style: const TextStyle(fontSize: 11)),
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                      )).toList(),
+                      child: Text(_masteryLabel(current.masteryLevel), style: TextStyle(fontSize: 12, color: masteryColor, fontWeight: FontWeight.w500)),
                     ),
                   ],
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                Text(current.correctedText, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
+          if (result == null) ...<Widget>[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('统计', style: Theme.of(context).textTheme.labelMedium),
+                  Icon(Icons.auto_awesome_outlined, size: 40, color: Colors.grey.shade300),
+                  const SizedBox(height: 12),
+                  const Text('暂无 AI 解析结果', style: TextStyle(fontSize: 15)),
                   const SizedBox(height: 8),
-                  Row(
-                    children: <Widget>[
-                      _statItem(context, '复习次数', '${current.reviewCount}'),
-                      const SizedBox(width: 24),
-                      _statItem(context, '创建时间', _formatDate(current.createdAt)),
-                      const SizedBox(width: 24),
-                      _statItem(context, '掌握状态', _masteryLabel(current.masteryLevel)),
-                    ],
+                  FilledButton.icon(
+                    onPressed: () {
+                      ref.read(currentQuestionProvider.notifier).state = current;
+                      context.go('/capture/correction');
+                    },
+                    icon: const Icon(Icons.camera_alt_outlined),
+                    label: const Text('去添加'),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          if (current.analysisResult != null) ...<Widget>[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
+          ],
+          if (result != null) ...<Widget>[
+            const SizedBox(height: 16),
+            // Answer
+            _InfoCard(
+              icon: Icons.check_circle,
+              iconColor: const Color(0xFF16A34A),
+              bg: const Color(0xFFF0FDF4),
+              border: const Color(0xFFBBF7D0),
+              title: '正确答案',
+              titleColor: const Color(0xFF166534),
+              value: result.finalAnswer,
+              valueColor: const Color(0xFF15803D),
+            ),
+            const SizedBox(height: 10),
+            // Mistake reason
+            _InfoCard(
+              icon: Icons.error_outline,
+              iconColor: const Color(0xFFEA580C),
+              bg: const Color(0xFFFFF7ED),
+              border: const Color(0xFFFED7AA),
+              title: '错因分析',
+              titleColor: const Color(0xFF9A3412),
+              value: result.mistakeReason,
+              valueColor: const Color(0xFFC2410C),
+            ),
+            const SizedBox(height: 10),
+            // Study advice
+            _InfoCard(
+              icon: Icons.lightbulb_outline,
+              iconColor: const Color(0xFFD97706),
+              bg: const Color(0xFFFFFBEB),
+              border: const Color(0xFFFDE68A),
+              title: '学习建议',
+              titleColor: const Color(0xFF92400E),
+              value: result.studyAdvice,
+              valueColor: const Color(0xFFB45309),
+            ),
+            // Knowledge points
+            if (result.knowledgePoints.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 16),
+              Text('知识点', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: result.knowledgePoints.map((p) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
+                  ),
+                  child: Text(p, style: const TextStyle(fontSize: 12, color: Color(0xFF4F46E5))),
+                )).toList(),
+              ),
+            ],
+            // Steps
+            if (result.steps.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 16),
+              Text('解题步骤', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 10),
+              ...result.steps.asMap().entries.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Text('答案', style: Theme.of(context).textTheme.labelMedium),
-                        const Spacer(),
-                        Text(current.analysisResult!.finalAnswer,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                      ],
+                    Container(
+                      width: 24, height: 24,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(child: Text('${e.key + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5)))),
                     ),
-                    const SizedBox(height: 12),
-                    Text('错因', style: Theme.of(context).textTheme.labelMedium),
-                    const SizedBox(height: 4),
-                    Text(current.analysisResult!.mistakeReason),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(e.value, style: const TextStyle(fontSize: 14))),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
+              )),
+            ],
+            const SizedBox(height: 24),
             Row(
               children: <Widget>[
                 Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: () {
-                      ref.read(currentQuestionProvider.notifier).state = current;
-                      context.go('/analysis/result');
-                    },
-                    child: const Text('查看 AI 解析'),
+                  child: OutlinedButton(
+                    onPressed: () => _markResult(context, ref, current, false),
+                    child: const Text('仍需复习'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
-                    onPressed: () {
-                      ref.read(currentQuestionProvider.notifier).state = current;
-                      context.go('/exercise/practice');
-                    },
-                    child: const Text('开始练习'),
+                    onPressed: () => _markResult(context, ref, current, true),
+                    child: const Text('已掌握'),
                   ),
                 ),
               ],
             ),
-          ] else
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: <Widget>[
-                    const Icon(Icons.info_outline, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Text('暂无 AI 解析结果', style: TextStyle(color: Colors.grey.shade600)),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _markResult(context, ref, current, false),
-                  child: const Text('仍需复习'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => _markResult(context, ref, current, true),
-                  child: const Text('已掌握'),
-                ),
-              ),
-            ],
-          ),
+          ],
         ],
       ),
-    );
-  }
-
-  Widget _statItem(BuildContext context, String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-      ],
     );
   }
 
@@ -249,26 +239,6 @@ class QuestionDetailScreen extends ConsumerWidget {
       case MasteryLevel.reviewing: return Colors.orange;
       case MasteryLevel.mastered: return Colors.green;
     }
-  }
-
-  String _formatDate(DateTime dt) {
-    return '${dt.month}/${dt.day}';
-  }
-
-  void _showFullScreenImage(BuildContext context, String imagePath) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white),
-          body: Center(
-            child: InteractiveViewer(
-              child: Image.file(File(imagePath)),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   void _editQuestion(BuildContext context, WidgetRef ref, QuestionRecord question) {
@@ -328,10 +298,48 @@ class QuestionDetailScreen extends ConsumerWidget {
         : await controller.markReviewing(question.id);
     invalidateQuestionList(ref);
     ref.read(currentQuestionProvider.notifier).state = updated;
-
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mastered ? '已标记为已掌握' : '已标记为复习中')),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.icon, required this.iconColor, required this.bg, required this.border, required this.title, required this.titleColor, required this.value, required this.valueColor});
+
+  final IconData icon;
+  final Color iconColor;
+  final Color bg;
+  final Color border;
+  final String title;
+  final Color titleColor;
+  final String value;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(icon, size: 18, color: iconColor),
+              const SizedBox(width: 8),
+              Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: titleColor)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(fontSize: 14, color: valueColor)),
+        ],
+      ),
     );
   }
 }

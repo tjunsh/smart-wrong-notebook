@@ -15,9 +15,12 @@ class HomeScreen extends ConsumerWidget {
     final dueAsync = ref.watch(dueReviewProvider);
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       children: <Widget>[
-        Text('开始拍错题', style: Theme.of(context).textTheme.headlineMedium),
+        Text(
+          '开始拍错题',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: () => showModalBottomSheet<void>(
@@ -26,23 +29,18 @@ class HomeScreen extends ConsumerWidget {
           ),
           icon: const Icon(Icons.camera_alt_outlined),
           label: const Text('拍照录题'),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(double.infinity, 52),
-          ),
+          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52)),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         dueAsync.when(
           data: (due) => due.isNotEmpty
-              ? _ReviewBanner(
-                  count: due.length,
-                  onTap: () => context.go('/review'),
-                )
+              ? _ReviewBanner(count: due.length, onTap: () => context.go('/review'))
               : const SizedBox.shrink(),
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
-        const SizedBox(height: 16),
-        Text('学习统计', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 20),
+        Text('学习统计', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         questionsAsync.when(
           data: (questions) => _buildStatsGrid(context, questions, dueAsync),
@@ -53,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text('最近新增', style: Theme.of(context).textTheme.titleLarge),
+            Text('最近新增', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
             TextButton(
               onPressed: () => context.go('/notebook'),
               child: const Text('查看全部'),
@@ -81,19 +79,19 @@ class HomeScreen extends ConsumerWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Expanded(child: _StatCard(label: '题库总量', value: '$total', color: Colors.blue)),
+            Expanded(child: _StatCard(label: '题库总量', value: '$total', bg: const Color(0xFFEFF6FF), border: const Color(0xFFBFDBFE), text: const Color(0xFF2563EB))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: '待复习', value: '$due', color: Colors.orange)),
+            Expanded(child: _StatCard(label: '待复习', value: '$due', bg: const Color(0xFFFFF7ED), border: const Color(0xFFFED7AA), text: const Color(0xFFEA580C))),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: <Widget>[
-            Expanded(child: _StatCard(label: '已掌握', value: '$mastered', color: Colors.green)),
+            Expanded(child: _StatCard(label: '已掌握', value: '$mastered', bg: const Color(0xFFF0FDF4), border: const Color(0xFFBBF7D0), text: const Color(0xFF16A34A))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: '复习中', value: '$reviewing', color: Colors.amber)),
+            Expanded(child: _StatCard(label: '复习中', value: '$reviewing', bg: const Color(0xFFFEF3C7), border: const Color(0xFFFDE68A), text: const Color(0xFFD97706))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: '新增', value: '$newQ', color: Colors.grey)),
+            Expanded(child: _StatCard(label: '新增', value: '$newQ', bg: const Color(0xFFF9FAFB), border: const Color(0xFFE5E7EB), text: const Color(0xFF6B7280))),
           ],
         ),
       ],
@@ -102,34 +100,48 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildRecentList(BuildContext context, WidgetRef ref, List<QuestionRecord> questions) {
     if (questions.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: <Widget>[
-              Icon(Icons.quiz_outlined, size: 48, color: Colors.grey.shade300),
-              const SizedBox(height: 8),
-              const Text('暂无错题，拍照开始添加', style: TextStyle(color: Colors.grey)),
-            ],
-          ),
+      return Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          children: <Widget>[
+            Icon(Icons.quiz_outlined, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            const Text('暂无错题，拍照开始添加', style: TextStyle(color: Colors.grey)),
+          ],
         ),
       );
     }
     return Column(
       children: questions.take(5).map((q) {
-        return Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _masteryColor(q.masteryLevel).withValues(alpha: 0.1),
-              child: Icon(Icons.quiz_outlined, size: 18, color: _masteryColor(q.masteryLevel)),
+        final masteryColor = _masteryColor(q.masteryLevel);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-            title: Text(q.correctedText, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(q.subject.label),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              ref.read(currentQuestionProvider.notifier).state = q;
-              context.go('/notebook/question/${q.id}');
-            },
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              leading: CircleAvatar(
+                radius: 18,
+                backgroundColor: masteryColor.withValues(alpha: 0.1),
+                child: Icon(Icons.quiz_outlined, size: 16, color: masteryColor),
+              ),
+              title: Text(q.correctedText, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w500)),
+              subtitle: Text(q.subject.label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              trailing: Icon(Icons.chevron_right, color: Colors.grey.shade300),
+              onTap: () {
+                ref.read(currentQuestionProvider.notifier).state = q;
+                context.go('/notebook/question/${q.id}');
+              },
+            ),
           ),
         );
       }).toList(),
@@ -153,35 +165,35 @@ class _ReviewBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.orange.shade50,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: <Widget>[
-              CircleAvatar(
-                backgroundColor: Colors.orange.shade100,
-                child: const Icon(Icons.refresh, color: Colors.orange),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF7ED),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFED7AA)),
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(color: const Color(0xFFFFEDD5), borderRadius: BorderRadius.circular(22)),
+              child: const Icon(Icons.refresh, color: Color(0xFFF97316), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text('今日待复习', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF92400E))),
+                  Text('$count 道错题等待巩固', style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text('今日待复习', style: Theme.of(context).textTheme.titleSmall),
-                    Text(
-                      '你有 $count 道错题等待巩固',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: Colors.orange),
-            ],
-          ),
+            ),
+            const Icon(Icons.chevron_right, color: Color(0xFFF97316), size: 22),
+          ],
         ),
       ),
     );
@@ -189,25 +201,29 @@ class _ReviewBanner extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value, required this.color});
+  const _StatCard({required this.label, required this.value, required this.bg, required this.border, required this.text});
 
   final String label;
   final String value;
-  final Color color;
+  final Color bg;
+  final Color border;
+  final Color text;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: color.withValues(alpha: 0.1),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: <Widget>[
-            Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 12, color: color)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        children: <Widget>[
+          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: text)),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 11, color: text)),
+        ],
       ),
     );
   }

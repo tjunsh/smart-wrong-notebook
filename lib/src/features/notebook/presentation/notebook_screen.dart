@@ -1,11 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
-import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
 
 class NotebookScreen extends ConsumerStatefulWidget {
   const NotebookScreen({super.key});
@@ -15,233 +13,288 @@ class NotebookScreen extends ConsumerStatefulWidget {
 }
 
 class _NotebookScreenState extends ConsumerState<NotebookScreen> {
-  bool _showSearch = false;
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final questionsAsync = ref.watch(filteredQuestionListProvider);
-    final activeFilters = ref.watch(selectedSubjectFilterProvider) != null ||
-        ref.watch(selectedMasteryFilterProvider) != null ||
-        ref.watch(searchQueryProvider).isNotEmpty;
+    final selectedSubject = ref.watch(selectedSubjectFilterProvider);
+    final selectedMastery = ref.watch(selectedMasteryFilterProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: _showSearch ? _buildSearchField() : const Text('错题本'),
-        actions: <Widget>[
-          if (_showSearch)
-            IconButton(
-              onPressed: () {
-                ref.read(searchQueryProvider.notifier).state = '';
-                setState(() => _showSearch = false);
-              },
-              icon: const Icon(Icons.close),
-            )
-          else ...<Widget>[
-            IconButton(
-              onPressed: () => _showFilterSheet(context),
-              icon: Icon(
-                Icons.filter_list,
-                color: activeFilters ? Theme.of(context).colorScheme.primary : null,
-              ),
-            ),
-            IconButton(
-              onPressed: () => setState(() => _showSearch = true),
-              icon: const Icon(Icons.search),
-            ),
-          ],
+        title: const Text('错题本'),
+        titleSpacing: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_photo_alternate_outlined),
+            onPressed: () => context.go('/capture/correction'),
+            tooltip: '添加错题',
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showModalBottomSheet<void>(
-          context: context,
-          builder: (_) => const CaptureEntrySheet(),
-        ),
-        child: const Icon(Icons.add),
-      ),
-      body: questionsAsync.when(
-        data: (questions) {
-          if (activeFilters && questions.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Icon(Icons.search_off, size: 48, color: Colors.grey),
-                  const SizedBox(height: 12),
-                  const Text('没有匹配的错题', style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () {
-                      ref.read(selectedSubjectFilterProvider.notifier).state = null;
-                      ref.read(selectedMasteryFilterProvider.notifier).state = null;
-                      ref.read(searchQueryProvider.notifier).state = '';
-                    },
-                    child: const Text('清除筛选'),
-                  ),
-                ],
+      body: Column(
+        children: <Widget>[
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '搜索错题',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref.read(searchQueryProvider.notifier).state = '';
+                        },
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                ),
               ),
-            );
-          }
-          if (questions.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(Icons.menu_book_outlined, size: 64, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
-                  const Text('暂无错题', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  Text('点击右下角 + 拍照录题', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
-                ],
-              ),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: questions.length,
-            itemBuilder: (context, index) {
-              final q = questions[index];
-              final hasImage = File(q.imagePath).existsSync();
-              return Card(
-                child: ListTile(
-                  leading: hasImage
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.file(File(q.imagePath), width: 48, height: 48, fit: BoxFit.cover),
-                        )
-                      : null,
-                  title: Text(
-                    q.correctedText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text('${q.subject.label} · ${q.masteryLevel.name}'),
-                  trailing: const Icon(Icons.chevron_right),
+              onChanged: (v) {
+                ref.read(searchQueryProvider.notifier).state = v;
+                setState(() {});
+              },
+            ),
+          ),
+          // Filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: <Widget>[
+                _Chip(
+                  label: '全部',
+                  selected: selectedSubject == null && selectedMastery == null,
                   onTap: () {
-                    ref.read(currentQuestionProvider.notifier).state = q;
-                    context.go('/notebook/question/${q.id}');
+                    ref.read(selectedSubjectFilterProvider.notifier).state = null;
+                    ref.read(selectedMasteryFilterProvider.notifier).state = null;
                   },
                 ),
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败: $e')),
-      ),
-    );
-  }
-
-  Widget _buildSearchField() {
-    return TextField(
-      autofocus: true,
-      decoration: const InputDecoration(
-        hintText: '搜索错题...',
-        border: InputBorder.none,
-      ),
-      onChanged: (value) {
-        ref.read(searchQueryProvider.notifier).state = value;
-      },
-    );
-  }
-
-  void _showFilterSheet(BuildContext context) {
-    final selectedSubject = ref.read(selectedSubjectFilterProvider);
-    final selectedMastery = ref.read(selectedMasteryFilterProvider);
-
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setSheetState) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text('按科目筛选', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _filterChip(
-                      label: '全部',
-                      selected: selectedSubject == null,
-                      onSelected: () {
-                        ref.read(selectedSubjectFilterProvider.notifier).state = null;
-                        setSheetState(() {});
-                      },
-                    ),
-                    ...Subject.values.map((s) => _filterChip(
-                      label: s.label,
-                      selected: selectedSubject == s,
-                      onSelected: () {
-                        ref.read(selectedSubjectFilterProvider.notifier).state = s;
-                        setSheetState(() {});
-                      },
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text('按掌握状态筛选', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _filterChip(
-                      label: '全部',
-                      selected: selectedMastery == null,
-                      onSelected: () {
-                        ref.read(selectedMasteryFilterProvider.notifier).state = null;
-                        setSheetState(() {});
-                      },
-                    ),
-                    ...MasteryLevel.values.map((m) => _filterChip(
-                      label: _masteryLabel(m),
-                      selected: selectedMastery == m,
-                      onSelected: () {
-                        ref.read(selectedMasteryFilterProvider.notifier).state = m;
-                        setSheetState(() {});
-                      },
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: FilledButton.tonal(
-                    onPressed: () {
-                      ref.read(selectedSubjectFilterProvider.notifier).state = null;
-                      ref.read(selectedMasteryFilterProvider.notifier).state = null;
-                      setSheetState(() {});
+                const SizedBox(width: 8),
+                ...Subject.values.map((s) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _Chip(
+                    label: s.label,
+                    selected: selectedSubject == s,
+                    onTap: () {
+                      ref.read(selectedSubjectFilterProvider.notifier).state = selectedSubject == s ? null : s;
                     },
-                    child: const Text('重置筛选'),
                   ),
-                ),
+                )),
               ],
             ),
+          ),
+          const SizedBox(height: 8),
+          // List
+          Expanded(
+            child: questionsAsync.when(
+              data: (questions) {
+                if (questions.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(Icons.quiz_outlined, size: 64, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        const Text('暂无错题', style: TextStyle(fontSize: 16)),
+                        const SizedBox(height: 8),
+                        Text('点击 + 拍照添加', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                      ],
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  itemCount: questions.length,
+                  itemBuilder: (context, index) {
+                    final q = questions[index];
+                    return _QuestionCard(
+                      question: q,
+                      onTap: () {
+                        ref.read(currentQuestionProvider.notifier).state = q;
+                        context.go('/notebook/question/${q.id}');
+                      },
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('加载失败: $e')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? Theme.of(context).colorScheme.primary : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: selected ? Colors.white : Colors.grey.shade700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionCard extends StatelessWidget {
+  const _QuestionCard({required this.question, required this.onTap});
+
+  final dynamic question;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final masteryColor = _masteryColor(question.masteryLevel);
+    final subjectIcon = _subjectIcon(question.subject);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: subjectIcon.color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Icon(subjectIcon.icon, size: 20, color: subjectIcon.color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      question.correctedText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          '${question.subject.label} · ${_formatDate(question.createdAt)}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: masteryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _masteryLabel(question.masteryLevel),
+                            style: TextStyle(fontSize: 11, color: masteryColor, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade300, size: 22),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _filterChip({required String label, required bool selected, required VoidCallback onSelected}) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
-    );
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays == 0) return '今天';
+    if (diff.inDays == 1) return '昨天';
+    if (diff.inDays < 7) return '${diff.inDays}天前';
+    return '${date.month}月${date.day}日';
+  }
+
+  Color _masteryColor(MasteryLevel level) {
+    switch (level) {
+      case MasteryLevel.newQuestion: return Colors.grey;
+      case MasteryLevel.reviewing: return Colors.orange;
+      case MasteryLevel.mastered: return Colors.green;
+    }
   }
 
   String _masteryLabel(MasteryLevel level) {
     switch (level) {
-      case MasteryLevel.newQuestion:
-        return '未复习';
-      case MasteryLevel.reviewing:
-        return '复习中';
-      case MasteryLevel.mastered:
-        return '已掌握';
+      case MasteryLevel.newQuestion: return '新增';
+      case MasteryLevel.reviewing: return '复习中';
+      case MasteryLevel.mastered: return '已掌握';
+    }
+  }
+
+  ({IconData icon, Color color}) _subjectIcon(Subject subject) {
+    switch (subject) {
+      case Subject.math: return (icon: Icons.functions, color: const Color(0xFF6366F1));
+      case Subject.english: return (icon: Icons.translate, color: const Color(0xFFD97706));
+      case Subject.chinese: return (icon: Icons.article_outlined, color: const Color(0xFF16A34A));
+      case Subject.physics: return (icon: Icons.science, color: const Color(0xFFEA580C));
+      case Subject.chemistry: return (icon: Icons.biotech, color: const Color(0xFF7C3AED));
+      case Subject.biology: return (icon: Icons.eco, color: const Color(0xFF16A34A));
+      case Subject.history: return (icon: Icons.history_edu, color: const Color(0xFFD97706));
+      case Subject.geography: return (icon: Icons.public, color: const Color(0xFF6366F1));
+      case Subject.politics: return (icon: Icons.account_balance, color: const Color(0xFF7C3AED));
+      case Subject.science: return (icon: Icons.science, color: const Color(0xFFEA580C));
+      case Subject.custom: return (icon: Icons.quiz_outlined, color: Colors.grey);
     }
   }
 }

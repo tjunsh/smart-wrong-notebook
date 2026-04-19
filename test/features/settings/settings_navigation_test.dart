@@ -34,8 +34,7 @@ void main() {
 
     expect(find.text('深色模式'), findsOneWidget);
     expect(find.text('复习提醒'), findsOneWidget);
-    expect(find.text('AI 服务商配置'), findsOneWidget);
-    expect(find.text('科目管理'), findsOneWidget);
-    expect(find.text('数据管理'), findsOneWidget);
+    expect(find.text('AI 服务'), findsOneWidget);
+    expect(find.text('内容'), findsOneWidget);
   });
 }
