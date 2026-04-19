@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -84,8 +85,15 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
             itemCount: questions.length,
             itemBuilder: (context, index) {
               final q = questions[index];
+              final hasImage = File(q.imagePath).existsSync();
               return Card(
                 child: ListTile(
+                  leading: hasImage
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.file(File(q.imagePath), width: 48, height: 48, fit: BoxFit.cover),
+                        )
+                      : null,
                   title: Text(
                     q.correctedText,
                     maxLines: 1,

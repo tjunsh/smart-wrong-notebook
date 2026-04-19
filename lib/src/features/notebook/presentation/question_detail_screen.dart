@@ -68,14 +68,32 @@ class QuestionDetailScreen extends ConsumerWidget {
             Text('错因：${current.analysisResult!.mistakeReason}'),
           ],
           const SizedBox(height: 24),
-          if (current.analysisResult != null)
-            FilledButton.tonal(
-              onPressed: () {
-                ref.read(currentQuestionProvider.notifier).state = current;
-                context.go('/analysis/result');
-              },
-              child: const Text('查看 AI 解析'),
+          if (current.analysisResult != null) ...<Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FilledButton.tonal(
+                    onPressed: () {
+                      ref.read(currentQuestionProvider.notifier).state = current;
+                      context.go('/analysis/result');
+                    },
+                    child: const Text('查看 AI 解析'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      ref.read(currentQuestionProvider.notifier).state = current;
+                      context.go('/exercise/practice');
+                    },
+                    child: const Text('开始练习'),
+                  ),
+                ),
+              ],
             ),
+          ] else
+            Text('暂无解析结果', style: TextStyle(color: Colors.grey.shade400)),
           const SizedBox(height: 12),
           Row(
             children: <Widget>[
