@@ -17,11 +17,11 @@ class ReviewHistoryScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('复习记录')),
       body: logsAsync.when(
         data: (entries) => entries.isEmpty
-            ? const Center(child: Text('暂无复习记录', style: TextStyle(color: Colors.grey)))
+            ? _EmptyHistoryCard()
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: entries.length,
-                itemBuilder: (_, index) => _buildEntry(context, ref, entries[index], index, entries.length),
+                itemBuilder: (_, index) => _buildEntry(context, ref, entries[index]),
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败: $e')),
@@ -29,50 +29,95 @@ class ReviewHistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEntry(BuildContext context, WidgetRef ref, _ReviewEntry entry, int index, int total) {
-    final isLast = index == total - 1;
-    final icon = entry.log.masteryAfter == MasteryLevel.mastered
-        ? Icons.check_circle
-        : Icons.refresh;
+  Widget _buildEntry(BuildContext context, WidgetRef ref, _ReviewEntry entry) {
+    final isMastered = entry.log.masteryAfter == MasteryLevel.mastered;
 
-    final color = entry.log.masteryAfter == MasteryLevel.mastered
-        ? Colors.green
-        : Colors.orange;
-
-    return Column(
-      children: <Widget>[
-        ListTile(
-          leading: Icon(icon, color: color),
-          title: Text(
-            entry.question?.correctedText ?? '已删除',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: (isMastered ? Colors.green : Colors.orange).withOpacity(0.1),
+          child: Icon(
+            isMastered ? Icons.check_circle : Icons.refresh,
+            color: isMastered ? Colors.green : Colors.orange,
+            size: 18,
           ),
-          subtitle: Text(
-            '${_formatDate(entry.log.reviewedAt)} · ${entry.log.result == "mastered" ? "已掌握" : entry.log.result == "reviewing" ? "复习中" : "重置"}',
-          ),
-          trailing: Text(
-            '${entry.log.masteryAfter.name}',
-            style: TextStyle(color: color, fontSize: 12),
-          ),
-          onTap: () {
-            if (entry.question != null) {
-              ref.read(currentQuestionProvider.notifier).state = entry.question;
-              context.go('/notebook/question/${entry.question!.id}');
-            }
-          },
         ),
-        if (!isLast) const Divider(height: 1),
-      ],
+        title: Text(
+          entry.question?.correctedText ?? '已删除',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          '${_formatDate(entry.log.reviewedAt)} · ${_resultLabel(entry.log.result)}',
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        ),
+        trailing: Chip(
+          label: Text(_masteryLabel(entry.log.masteryAfter)),
+          backgroundColor: (isMastered ? Colors.green : Colors.orange).withOpacity(0.1),
+          labelStyle: TextStyle(
+            fontSize: 11,
+            color: isMastered ? Colors.green : Colors.orange,
+          ),
+          visualDensity: VisualDensity.compact,
+        ),
+        onTap: entry.question != null
+            ? () {
+                ref.read(currentQuestionProvider.notifier).state = entry.question;
+                context.go('/notebook/question/${entry.question!.id}');
+              }
+            : null,
+      ),
     );
   }
 
+  String _resultLabel(String result) {
+    switch (result) {
+      case 'mastered': return '已掌握';
+      case 'reviewing': return '复习中';
+      case 'reset': return '重置';
+      default: return result;
+    }
+  }
+
+  String _masteryLabel(MasteryLevel level) {
+    switch (level) {
+      case MasteryLevel.newQuestion: return '未复习';
+      case MasteryLevel.reviewing: return '复习中';
+      case MasteryLevel.mastered: return '已掌握';
+    }
+  }
+
   String _formatDate(DateTime dt) {
-    final month = dt.month.toString().padLeft(2, '0');
-    final day = dt.day.toString().padLeft(2, '0');
-    final hour = dt.hour.toString().padLeft(2, '0');
-    final minute = dt.minute.toString().padLeft(2, '0');
-    return '$month-$day $hour:$minute';
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays == 0) return '今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    if (diff.inDays == 1) return '昨天';
+    return '${dt.month}/${dt.day}';
+  }
+}
+
+class _EmptyHistoryCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.history, size: 64, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            const Text('暂无复习记录', style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Text(
+              '开始复习后在首页查看历史',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
