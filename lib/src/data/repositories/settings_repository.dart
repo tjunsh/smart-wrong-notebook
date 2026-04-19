@@ -3,10 +3,13 @@ import 'package:smart_wrong_notebook/src/domain/models/ai_provider_config.dart';
 abstract class SettingsRepository {
   Future<AiProviderConfig?> getAiProviderConfig();
   Future<void> saveAiProviderConfig(AiProviderConfig config);
+  Future<String?> getString(String key);
+  Future<void> setString(String key, String value);
 }
 
 class InMemorySettingsRepository implements SettingsRepository {
   AiProviderConfig? _config;
+  final Map<String, String> _strings = {};
 
   @override
   Future<AiProviderConfig?> getAiProviderConfig() async => _config;
@@ -14,5 +17,13 @@ class InMemorySettingsRepository implements SettingsRepository {
   @override
   Future<void> saveAiProviderConfig(AiProviderConfig config) async {
     _config = config;
+  }
+
+  @override
+  Future<String?> getString(String key) async => _strings[key];
+
+  @override
+  Future<void> setString(String key, String value) async {
+    _strings[key] = value;
   }
 }

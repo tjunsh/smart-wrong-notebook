@@ -52,4 +52,19 @@ class DriftSettingsRepository implements SettingsRepository {
       'apiKey': config.apiKey,
     });
   }
+
+  @override
+  Future<String?> getString(String key) async {
+    final results = await (_db.select(_db.settingsEntries)..where((t) => t.key.equals(key))).get();
+    if (results.isEmpty) return null;
+    final value = results.first.value;
+    return value.isEmpty ? null : value;
+  }
+
+  @override
+  Future<void> setString(String key, String value) async {
+    await _db.into(_db.settingsEntries).insertOnConflictUpdate(
+      SettingsEntriesCompanion(key: Value(key), value: Value(value)),
+    );
+  }
 }

@@ -8,12 +8,14 @@ import 'package:smart_wrong_notebook/src/data/remote/ai/ai_analysis_service.dart
 import 'package:smart_wrong_notebook/src/data/repositories/drift_settings_repository.dart';
 import 'package:smart_wrong_notebook/src/data/files/image_storage_service.dart';
 
-class SmartWrongNotebookApp extends StatelessWidget {
+class SmartWrongNotebookApp extends ConsumerWidget {
   const SmartWrongNotebookApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final GoRouter router = buildRouter();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = buildRouter();
+    final themeMode = ref.watch(themeModeProvider);
+
     return ProviderScope(
       overrides: [
         settingsRepositoryProvider.overrideWithValue(DriftSettingsRepository()),
@@ -24,6 +26,7 @@ class SmartWrongNotebookApp extends StatelessWidget {
         title: 'Smart Wrong Notebook',
         theme: buildLightTheme(),
         darkTheme: buildDarkTheme(),
+        themeMode: themeMode,
         routerConfig: router,
       ),
     );

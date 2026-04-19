@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_wrong_notebook/src/data/files/image_storage_service.dart';
 import 'package:smart_wrong_notebook/src/data/remote/ai/ai_analysis_service.dart';
@@ -8,6 +9,7 @@ import 'package:smart_wrong_notebook/src/data/repositories/question_repository.d
 import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.dart';
 import 'package:smart_wrong_notebook/src/domain/repositories/review_log_repository.dart';
 import 'package:smart_wrong_notebook/src/data/services/capture_service.dart';
+import 'package:smart_wrong_notebook/src/data/services/notification_service.dart';
 import 'package:smart_wrong_notebook/src/data/services/ocr_service.dart';
 import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
@@ -40,6 +42,10 @@ final Provider<ImageStorageService> imageStorageServiceProvider = Provider<Image
 
 final Provider<OcrService> ocrServiceProvider = Provider<OcrService>((ref) {
   return OcrService();
+});
+
+final Provider<NotificationService> notificationServiceProvider = Provider<NotificationService>((ref) {
+  return NotificationService(questionRepository: ref.read(questionRepositoryProvider));
 });
 
 final Provider<CaptureService> captureServiceProvider = Provider<CaptureService>((ref) {
@@ -102,3 +108,38 @@ final FutureProvider<List<QuestionRecord>> filteredQuestionListProvider = Future
     return true;
   }).toList();
 });
+
+// --- Theme mode ---
+
+final StateNotifierProvider<ThemeModeNotifier, ThemeMode> themeModeProvider =
+    StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+  return ThemeModeNotifier(ref.read(settingsRepositoryProvider));
+});
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  ThemeModeNotifier(this._settingsRepo) : super(ThemeMode.system) {
+    _load();
+  }
+
+  final SettingsRepository _settingsRepo;
+
+  Future<void> _load() async {
+    final value = await _settingsRepo.getString('theme_mode');
+    final mode = switch (value) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+    state = mode;
+  }
+
+  Future<void> setMode(ThemeMode mode) async {
+    state = mode;
+    final value = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    await _settingsRepo.setString('theme_mode', value);
+  }
+}

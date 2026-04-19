@@ -60,14 +60,16 @@ void main() {
     testWidgets('settings screen shows all required entries', (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
-        child: const MaterialApp(home: Scaffold(body: SettingsScreen())),
+        child: const MaterialApp(home: SettingsScreen()),
       ));
       await tester.pumpAndSettle();
 
       expect(find.text('AI 服务商配置'), findsOneWidget);
       expect(find.text('科目管理'), findsOneWidget);
       expect(find.text('提示词设置'), findsOneWidget);
-      expect(find.text('导出当前题库'), findsOneWidget);
+      expect(find.text('数据管理'), findsOneWidget);
+      expect(find.text('复习提醒'), findsOneWidget);
+      expect(find.text('深色模式'), findsOneWidget);
     });
 
     testWidgets('notebook screen shows filter icons', (tester) async {
