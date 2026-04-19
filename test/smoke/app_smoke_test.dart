@@ -113,7 +113,7 @@ void main() {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
         child: MaterialApp(
-          home: Scaffold(body: CaptureEntrySheet()),
+          home: const Scaffold(body: CaptureEntrySheet()),
         ),
       ));
       await tester.pumpAndSettle();

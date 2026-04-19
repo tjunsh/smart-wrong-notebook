@@ -26,7 +26,7 @@ class DriftSettingsRepository implements SettingsRepository {
   Future<void> saveAiProviderConfig(AiProviderConfig config) async {
     await _db.into(_db.settingsEntries).insertOnConflictUpdate(
       SettingsEntriesCompanion(
-        key: Value(_aiConfigKey),
+        key: const Value(_aiConfigKey),
         value: Value(_encodeConfig(config)),
       ),
     );
