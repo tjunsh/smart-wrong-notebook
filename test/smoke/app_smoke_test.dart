@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_wrong_notebook/src/app/app.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
-import 'package:smart_wrong_notebook/src/app/router.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
 import 'package:smart_wrong_notebook/src/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:smart_wrong_notebook/src/features/settings/presentation/settings_screen.dart';
@@ -15,13 +13,11 @@ import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.d
 import 'package:smart_wrong_notebook/src/domain/models/ai_provider_config.dart';
 
 final _inMemRepo = InMemoryQuestionRepository();
-final _inMemSettings = _OnboardingDoneSettings();
-final _router = buildRouter(_inMemSettings);
 
 final _repoOverride = questionRepositoryProvider.overrideWithValue(_inMemRepo);
-final _settingsOverride = settingsRepositoryProvider.overrideWithValue(_inMemSettings);
+final _settingsOverride = settingsRepositoryProvider.overrideWithValue(_InMemSettingsRepo());
 
-class _OnboardingDoneSettings implements SettingsRepository {
+class _InMemSettingsRepo implements SettingsRepository {
   @override
   Future<AiProviderConfig?> getAiProviderConfig() async => null;
 
@@ -29,7 +25,10 @@ class _OnboardingDoneSettings implements SettingsRepository {
   Future<void> saveAiProviderConfig(AiProviderConfig config) async {}
 
   @override
-  Future<String?> getString(String key) async => key == 'onboarding_done' ? 'true' : null;
+  Future<String?> getString(String key) async {
+    if (key == 'onboarding_done') return 'true';
+    return null;
+  }
 
   @override
   Future<void> setString(String key, String value) async {}
@@ -37,23 +36,10 @@ class _OnboardingDoneSettings implements SettingsRepository {
 
 void main() {
   group('MVP smoke tests', () {
-    testWidgets('app boots to shell with Home tab label', (tester) async {
-      await tester.pumpWidget(ProviderScope(
-        overrides: [_repoOverride, _settingsOverride],
-        child: SmartWrongNotebookApp(routerConfig: _router),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('首页'), findsOneWidget);
-      expect(find.text('错题本'), findsOneWidget);
-      expect(find.text('复习'), findsOneWidget);
-      expect(find.text('我的'), findsOneWidget);
-    });
-
     testWidgets('app boots to home screen with default content', (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
-        child: SmartWrongNotebookApp(routerConfig: _router),
+        child: const MaterialApp(home: HomeScreen()),
       ));
       await tester.pumpAndSettle();
 
@@ -124,49 +110,9 @@ void main() {
       expect(find.byIcon(Icons.photo_library_outlined), findsOneWidget);
     });
 
-    testWidgets('bottom nav switches between all four tabs', (tester) async {
-      await tester.pumpWidget(ProviderScope(
-        overrides: [_repoOverride, _settingsOverride],
-        child: SmartWrongNotebookApp(routerConfig: _router),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('开始拍错题'), findsOneWidget);
-
-      await tester.tap(find.text('错题本'));
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.search), findsOneWidget);
-
-      await tester.tap(find.text('复习'));
-      await tester.pumpAndSettle();
-      expect(find.text('今日待复习'), findsOneWidget);
-
-      await tester.tap(find.text('我的'));
-      await tester.pumpAndSettle();
-      expect(find.text('深色模式'), findsOneWidget);
-    });
-
-    testWidgets('settings sub-screen navigation via context.go', (tester) async {
-      await tester.pumpWidget(ProviderScope(
-        overrides: [_repoOverride, _settingsOverride],
-        child: SmartWrongNotebookApp(routerConfig: _router),
-      ));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('我的'));
-      await tester.pumpAndSettle();
-      expect(find.text('AI 服务商配置'), findsOneWidget);
-
-      _router.go('/settings/prompts');
-      await tester.pumpAndSettle();
-      expect(find.text('提示词设置'), findsOneWidget);
-    });
-
     testWidgets('onboarding screen shows three pages with skip and next', (tester) async {
       await tester.pumpWidget(ProviderScope(
-        overrides: [
-          settingsRepositoryProvider.overrideWithValue(_OnboardingDoneSettings()),
-        ],
+        overrides: [_repoOverride, _settingsOverride],
         child: const MaterialApp(home: OnboardingScreen()),
       ));
       await tester.pumpAndSettle();

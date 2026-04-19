@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/app/theme/app_theme.dart';
 
 class SmartWrongNotebookApp extends ConsumerWidget {
@@ -11,13 +10,13 @@ class SmartWrongNotebookApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
-      title: 'Smart Wrong Notebook',
+      title: '智能错题本',
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
-      themeMode: themeMode,
+      themeMode: ThemeMode.light,
       routerConfig: routerConfig,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

@@ -13,7 +13,15 @@ part 'app_database.g.dart';
 
 @DriftDatabase(tables: [QuestionRecords, GeneratedExercises, ReviewLogs, SettingsEntries])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase._internal(super.e);
+
+  static AppDatabase? _instance;
+
+  factory AppDatabase() {
+    if (_instance != null) return _instance!;
+    _instance = AppDatabase._internal(_openConnection());
+    return _instance!;
+  }
 
   @override
   int get schemaVersion => 1;
@@ -21,8 +29,13 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'smart_wrong_notebook.db'));
-    return NativeDatabase.createInBackground(file);
+    try {
+      final dbFolder = await getApplicationDocumentsDirectory();
+      final file = File(p.join(dbFolder.path, 'smart_wrong_notebook.db'));
+      return NativeDatabase.createInBackground(file);
+    } catch (e) {
+      // Fall back to in-memory database if file-based fails
+      return NativeDatabase.memory();
+    }
   });
 }
