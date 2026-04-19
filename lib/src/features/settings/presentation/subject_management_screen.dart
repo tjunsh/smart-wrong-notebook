@@ -1,28 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 
-class SubjectManagementScreen extends StatelessWidget {
+class SubjectManagementScreen extends ConsumerWidget {
   const SubjectManagementScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final subjects = Subject.values;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final questionsAsync = ref.watch(questionListProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('科目管理')),
-      body: ListView.separated(
-        itemCount: subjects.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final subject = subjects[index];
-          return ListTile(
-            leading: const Icon(Icons.book_outlined),
-            title: Text(subject.label),
-            trailing: subject == Subject.custom
-                ? const Icon(Icons.edit_outlined, size: 18)
-                : null,
-          );
-        },
+      body: questionsAsync.when(
+        data: (questions) => ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: Subject.values.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final subject = Subject.values[index];
+            final count = questions.where((q) => q.subject == subject).length;
+            return ListTile(
+              leading: const Icon(Icons.book_outlined),
+              title: Text(subject.label),
+              trailing: Text(
+                '$count 题',
+                style: TextStyle(color: count > 0 ? Colors.grey.shade600 : Colors.grey.shade400),
+              ),
+            );
+          },
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('加载失败: $e')),
       ),
     );
   }

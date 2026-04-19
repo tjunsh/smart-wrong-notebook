@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
+import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
 
 class NotebookScreen extends ConsumerStatefulWidget {
   const NotebookScreen({super.key});
@@ -51,7 +52,10 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/capture/correction'),
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          builder: (_) => const CaptureEntrySheet(),
+        ),
         child: const Icon(Icons.add),
       ),
       body: questionsAsync.when(
