@@ -60,20 +60,26 @@ class QuestionDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          if (File(current.imagePath).existsSync())
+          if (File(current.imagePath).existsSync()) ...<Widget>[
             GestureDetector(
               onTap: () => _showFullScreenImage(context, current.imagePath),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.file(
                   File(current.imagePath),
-                  height: 240,
                   width: double.infinity,
                   fit: BoxFit.contain,
                 ),
               ),
             ),
-          if (File(current.imagePath).existsSync()) const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            Text(
+              '点击图片查看原图',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+          ],
           Card(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -95,7 +101,7 @@ class QuestionDetailScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(current.correctedText, style: const TextStyle(fontSize: 15)),
                   if (current.tags.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 8),
@@ -127,6 +133,8 @@ class QuestionDetailScreen extends ConsumerWidget {
                       _statItem(context, '复习次数', '${current.reviewCount}'),
                       const SizedBox(width: 24),
                       _statItem(context, '创建时间', _formatDate(current.createdAt)),
+                      const SizedBox(width: 24),
+                      _statItem(context, '掌握状态', _masteryLabel(current.masteryLevel)),
                     ],
                   ),
                 ],
@@ -141,9 +149,14 @@ class QuestionDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('答案', style: Theme.of(context).textTheme.labelMedium),
-                    const SizedBox(height: 4),
-                    Text(current.analysisResult!.finalAnswer, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    Row(
+                      children: <Widget>[
+                        Text('答案', style: Theme.of(context).textTheme.labelMedium),
+                        const Spacer(),
+                        Text(current.analysisResult!.finalAnswer,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     Text('错因', style: Theme.of(context).textTheme.labelMedium),
                     const SizedBox(height: 4),

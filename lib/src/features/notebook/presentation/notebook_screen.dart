@@ -82,7 +82,18 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
             );
           }
           if (questions.isEmpty) {
-            return const Center(child: Text('暂无错题，点击 + 添加'));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(Icons.menu_book_outlined, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  const Text('暂无错题', style: TextStyle(fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text('点击右下角 + 拍照录题', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                ],
+              ),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(8),
