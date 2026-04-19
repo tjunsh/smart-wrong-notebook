@@ -22,6 +22,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.13.1
   share_plus: ^10.1.4
   file_picker: ^8.0.0
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
 
 dev_dependencies:
   flutter_test:

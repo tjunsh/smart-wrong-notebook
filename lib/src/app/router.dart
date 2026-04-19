@@ -4,6 +4,7 @@ import 'package:smart_wrong_notebook/src/core/constants/app_strings.dart';
 import 'package:smart_wrong_notebook/src/features/home/presentation/home_screen.dart';
 import 'package:smart_wrong_notebook/src/features/notebook/presentation/notebook_screen.dart';
 import 'package:smart_wrong_notebook/src/features/notebook/presentation/question_detail_screen.dart';
+import 'package:smart_wrong_notebook/src/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:smart_wrong_notebook/src/features/review/presentation/review_history_screen.dart';
 import 'package:smart_wrong_notebook/src/features/review/presentation/review_screen.dart';
 import 'package:smart_wrong_notebook/src/features/settings/presentation/settings_screen.dart';
@@ -16,12 +17,24 @@ import 'package:smart_wrong_notebook/src/features/ocr/presentation/ocr_confirmat
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_loading_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_result_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/exercise_practice_screen.dart';
-import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
+import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.dart';
 
-GoRouter buildRouter() {
+GoRouter buildRouter(SettingsRepository settingsRepo) {
   return GoRouter(
     initialLocation: '/',
+    redirect: (context, state) async {
+      final onboardingDone = await settingsRepo.getString('onboarding_done');
+      final isOnboarding = state.matchedLocation == '/onboarding';
+      if (onboardingDone == null && !isOnboarding) {
+        return '/onboarding';
+      }
+      if (onboardingDone != null && isOnboarding) {
+        return '/';
+      }
+      return null;
+    },
     routes: <RouteBase>[
+      GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
       StatefulShellRoute.indexedStack(
         builder: (BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);

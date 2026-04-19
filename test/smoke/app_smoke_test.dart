@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_wrong_notebook/src/app/app.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
+import 'package:smart_wrong_notebook/src/app/router.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
 import 'package:smart_wrong_notebook/src/features/settings/presentation/settings_screen.dart';
 import 'package:smart_wrong_notebook/src/features/notebook/presentation/notebook_screen.dart';
@@ -10,19 +11,35 @@ import 'package:smart_wrong_notebook/src/features/review/presentation/review_scr
 import 'package:smart_wrong_notebook/src/features/home/presentation/home_screen.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/question_repository.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.dart';
+import 'package:smart_wrong_notebook/src/domain/models/ai_provider_config.dart';
 
 final _inMemRepo = InMemoryQuestionRepository();
-final _inMemSettings = InMemorySettingsRepository();
+final _inMemSettings = _OnboardingDoneSettings();
+final _router = buildRouter(_inMemSettings);
 
 final _repoOverride = questionRepositoryProvider.overrideWithValue(_inMemRepo);
 final _settingsOverride = settingsRepositoryProvider.overrideWithValue(_inMemSettings);
+
+class _OnboardingDoneSettings implements SettingsRepository {
+  @override
+  Future<AiProviderConfig?> getAiProviderConfig() async => null;
+
+  @override
+  Future<void> saveAiProviderConfig(AiProviderConfig config) async {}
+
+  @override
+  Future<String?> getString(String key) async => key == 'onboarding_done' ? 'true' : null;
+
+  @override
+  Future<void> setString(String key, String value) async {}
+}
 
 void main() {
   group('MVP smoke tests', () {
     testWidgets('app boots to shell with Home tab label', (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
-        child: const SmartWrongNotebookApp(),
+        child: SmartWrongNotebookApp(routerConfig: _router),
       ));
       await tester.pumpAndSettle();
 
@@ -35,7 +52,7 @@ void main() {
     testWidgets('app boots to home screen with default content', (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
-        child: const SmartWrongNotebookApp(),
+        child: SmartWrongNotebookApp(routerConfig: _router),
       ));
       await tester.pumpAndSettle();
 
