@@ -21,6 +21,27 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
     super.dispose();
   }
 
+  void _confirmDelete(BuildContext context, WidgetRef ref, dynamic question) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('删除后无法恢复，确定要删除这道错题吗？'),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          TextButton(
+            onPressed: () async {
+              await ref.read(questionRepositoryProvider).delete(question.id);
+              invalidateQuestionList(ref);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('删除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final questionsAsync = ref.watch(filteredQuestionListProvider);
@@ -127,19 +148,27 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
                     ),
                   );
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                  itemCount: questions.length,
-                  itemBuilder: (context, index) {
-                    final q = questions[index];
-                    return _QuestionCard(
-                      question: q,
-                      onTap: () {
-                        ref.read(currentQuestionProvider.notifier).state = q;
-                        context.go('/notebook/question/${q.id}');
-                      },
-                    );
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(questionListProvider);
                   },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                    itemCount: questions.length,
+                    itemBuilder: (context, index) {
+                      final q = questions[index];
+                      return RepaintBoundary(
+                        child: _QuestionCard(
+                          question: q,
+                          onTap: () {
+                            ref.read(currentQuestionProvider.notifier).state = q;
+                            context.go('/notebook/question/${q.id}');
+                          },
+                          onDelete: () => _confirmDelete(context, ref, q),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -182,75 +211,98 @@ class _Chip extends StatelessWidget {
 }
 
 class _QuestionCard extends StatelessWidget {
-  const _QuestionCard({required this.question, required this.onTap});
+  const _QuestionCard({required this.question, required this.onTap, required this.onDelete});
 
   final dynamic question;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final masteryColor = _masteryColor(question.masteryLevel);
     final subjectIcon = _subjectIcon(question.subject);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
-          ),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                  color: subjectIcon.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Icon(subjectIcon.icon, size: 20, color: subjectIcon.color),
+    return Dismissible(
+      key: ValueKey(question.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        onDelete();
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.red),
+      ),
+      child: Semantics(
+        button: true,
+        label: '错题: ${question.correctedText}，科目: ${question.subject.label}，状态: ${_masteryLabel(question.masteryLevel)}，日期: ${_formatDate(question.createdAt)}，左滑删除',
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      question.correctedText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: subjectIcon.color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(22),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                    child: Icon(subjectIcon.icon, size: 20, color: subjectIcon.color),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          '${question.subject.label} · ${_formatDate(question.createdAt)}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                          question.correctedText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: masteryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            _masteryLabel(question.masteryLevel),
-                            style: TextStyle(fontSize: 11, color: masteryColor, fontWeight: FontWeight.w500),
-                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: <Widget>[
+                            Text(
+                              '${question.subject.label} · ${_formatDate(question.createdAt)}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: masteryColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                _masteryLabel(question.masteryLevel),
+                                style: TextStyle(fontSize: 11, color: masteryColor, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  Icon(Icons.chevron_right, color: Colors.grey.shade300, size: 22),
+                ],
               ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade300, size: 22),
-            ],
+            ),
           ),
         ),
       ),
