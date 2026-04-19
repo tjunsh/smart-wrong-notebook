@@ -123,5 +123,43 @@ void main() {
       expect(find.text('相册'), findsOneWidget);
       expect(find.byIcon(Icons.photo_library_outlined), findsOneWidget);
     });
+
+    testWidgets('bottom nav switches between all four tabs', (tester) async {
+      await tester.pumpWidget(ProviderScope(
+        overrides: [_repoOverride, _settingsOverride],
+        child: SmartWrongNotebookApp(routerConfig: _router),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('开始拍错题'), findsOneWidget);
+
+      await tester.tap(find.text('错题本'));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.filter_list), findsOneWidget);
+
+      await tester.tap(find.text('复习'));
+      await tester.pumpAndSettle();
+      expect(find.text('今日待复习'), findsOneWidget);
+
+      await tester.tap(find.text('我的'));
+      await tester.pumpAndSettle();
+      expect(find.text('深色模式'), findsOneWidget);
+    });
+
+    testWidgets('settings sub-screen navigation via context.go', (tester) async {
+      await tester.pumpWidget(ProviderScope(
+        overrides: [_repoOverride, _settingsOverride],
+        child: SmartWrongNotebookApp(routerConfig: _router),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('我的'));
+      await tester.pumpAndSettle();
+      expect(find.text('AI 服务商配置'), findsOneWidget);
+
+      _router.go('/settings/prompts');
+      await tester.pumpAndSettle();
+      expect(find.text('提示词设置'), findsOneWidget);
+    });
   });
 }
