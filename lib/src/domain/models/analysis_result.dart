@@ -16,4 +16,15 @@ class AnalysisResult {
   final String mistakeReason;
   final String studyAdvice;
   final List<GeneratedExercise> generatedExercises;
+
+  AnalysisResult copyWith({List<GeneratedExercise>? generatedExercises}) {
+    return AnalysisResult(
+      finalAnswer: finalAnswer,
+      steps: steps,
+      knowledgePoints: knowledgePoints,
+      mistakeReason: mistakeReason,
+      studyAdvice: studyAdvice,
+      generatedExercises: generatedExercises ?? this.generatedExercises,
+    );
+  }
 }

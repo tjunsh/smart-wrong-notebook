@@ -14,4 +14,15 @@ class GeneratedExercise {
   final String answer;
   final String explanation;
   final bool? isCorrect;
+
+  GeneratedExercise copyWith({bool? isCorrect}) {
+    return GeneratedExercise(
+      id: id,
+      difficulty: difficulty,
+      question: question,
+      answer: answer,
+      explanation: explanation,
+      isCorrect: isCorrect ?? this.isCorrect,
+    );
+  }
 }

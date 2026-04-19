@@ -7,15 +7,11 @@ import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/features/review/presentation/review_controller.dart';
 
 class QuestionDetailScreen extends ConsumerWidget {
-  const QuestionDetailScreen({super.key, required this.record});
-
-  final dynamic record;
+  const QuestionDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final current = record is QuestionRecord
-        ? record as QuestionRecord
-        : ref.watch(currentQuestionProvider);
+    final current = ref.watch(currentQuestionProvider);
 
     if (current == null) {
       return Scaffold(

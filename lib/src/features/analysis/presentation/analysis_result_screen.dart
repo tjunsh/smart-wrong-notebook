@@ -5,12 +5,19 @@ import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 
 class AnalysisResultScreen extends ConsumerWidget {
-  const AnalysisResultScreen({super.key, required this.record});
-
-  final QuestionRecord record;
+  const AnalysisResultScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final record = ref.watch(currentQuestionProvider);
+
+    if (record == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('AI 解析结果')),
+        body: const Center(child: Text('未找到错题记录')),
+      );
+    }
+
     final result = record.analysisResult;
     return Scaffold(
       appBar: AppBar(title: const Text('AI 解析结果')),
@@ -42,6 +49,15 @@ class AnalysisResultScreen extends ConsumerWidget {
           ] else
             const Text('暂无解析结果'),
           const SizedBox(height: 24),
+          if (result != null && result.generatedExercises.isNotEmpty)
+            FilledButton.tonal(
+              onPressed: () {
+                ref.read(currentQuestionProvider.notifier).state = record;
+                context.go('/exercise/practice');
+              },
+              child: const Text('开始练习'),
+            ),
+          const SizedBox(height: 12),
           FilledButton(
             onPressed: () async {
               await ref.read(questionRepositoryProvider).saveDraft(record);

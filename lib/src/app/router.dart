@@ -14,6 +14,7 @@ import 'package:smart_wrong_notebook/src/features/capture/presentation/question_
 import 'package:smart_wrong_notebook/src/features/ocr/presentation/ocr_confirmation_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_loading_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_result_screen.dart';
+import 'package:smart_wrong_notebook/src/features/analysis/presentation/exercise_practice_screen.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 
 GoRouter buildRouter() {
@@ -59,14 +60,9 @@ GoRouter buildRouter() {
       GoRoute(path: '/capture/correction', builder: (_, __) => const QuestionCorrectionScreen()),
       GoRoute(path: '/capture/ocr-confirmation', builder: (_, __) => const OcrConfirmationScreen()),
       GoRoute(path: '/analysis/loading', builder: (_, __) => const AnalysisLoadingScreen()),
-      GoRoute(
-        path: '/analysis/result',
-        builder: (_, state) => AnalysisResultScreen(record: state.extra as QuestionRecord),
-      ),
-      GoRoute(
-        path: '/notebook/question/:id',
-        builder: (_, state) => QuestionDetailScreen(record: state.extra as QuestionRecord),
-      ),
+      GoRoute(path: '/analysis/result', builder: (_, __) => const AnalysisResultScreen()),
+      GoRoute(path: '/exercise/practice', builder: (_, __) => const ExercisePracticeScreen()),
+      GoRoute(path: '/notebook/question/:id', builder: (_, __) => const QuestionDetailScreen()),
     ],
   );
 }
