@@ -35,8 +35,8 @@ QuestionRecord _makeQuestion({List<GeneratedExercise>? exercises}) {
       mistakeReason: 'careless',
       studyAdvice: 'practice',
       generatedExercises: exercises ?? const [
-        GeneratedExercise(id: 'e-1', difficulty: 'easy', question: '1+1=?', answer: '2', explanation: 'basic addition'),
-        GeneratedExercise(id: 'e-2', difficulty: 'medium', question: '2+2=?', answer: '4', explanation: 'basic addition'),
+        GeneratedExercise(id: 'e-1', difficulty: '简单', question: '1+1=?', answer: '2', explanation: 'basic addition'),
+        GeneratedExercise(id: 'e-2', difficulty: '中等', question: '2+2=?', answer: '4', explanation: 'basic addition'),
       ],
     ),
   );
@@ -63,7 +63,7 @@ void main() {
     await tester.pumpWidget(_buildApp(question, repo));
     await tester.pumpAndSettle();
 
-    expect(find.text('练习 1/2'), findsOneWidget);
+    expect(find.text('举一反三 1/2'), findsOneWidget);
     expect(find.text('1+1=?'), findsOneWidget);
     expect(find.text('做错了'), findsOneWidget);
     expect(find.text('做对了'), findsOneWidget);
@@ -107,13 +107,13 @@ void main() {
     await tester.tap(find.text('下一题'));
     await tester.pumpAndSettle();
 
-    expect(find.text('练习 2/2'), findsOneWidget);
+    expect(find.text('举一反三 2/2'), findsOneWidget);
     expect(find.text('2+2=?'), findsOneWidget);
 
     await tester.tap(find.text('做错了'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('完成'));
+    await tester.tap(find.text('完成练习'));
     await tester.pumpAndSettle();
 
     final saved = await repo.getById('q-1');
