@@ -14,6 +14,20 @@ class QuestionCorrectionScreen extends ConsumerStatefulWidget {
 class _QuestionCorrectionScreenState extends ConsumerState<QuestionCorrectionScreen> {
   bool _ocrLoading = false;
   String? _ocrError;
+  bool _showManualInput = false;
+  late TextEditingController _manualController;
+
+  @override
+  void initState() {
+    super.initState();
+    _manualController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _manualController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,62 +36,122 @@ class _QuestionCorrectionScreenState extends ConsumerState<QuestionCorrectionScr
 
     return Scaffold(
       appBar: AppBar(title: const Text('校正与框选')),
-      body: Stack(
+      body: Column(
         children: <Widget>[
-          if (imagePath != null && File(imagePath).existsSync())
-            Center(child: Image.file(File(imagePath), fit: BoxFit.contain))
-          else
-            const Center(child: Text('未选择图片')),
-          if (_ocrLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 12),
-                    Text('正在识别文字...', style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ],
-                ),
-              ),
+          Expanded(
+            child: Stack(
+              children: <Widget>[
+                if (imagePath != null && File(imagePath).existsSync())
+                  Center(
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: Image.file(File(imagePath), fit: BoxFit.contain),
+                    ),
+                  )
+                else
+                  const Center(child: Text('未选择图片', style: TextStyle(color: Colors.grey))),
+                if (_ocrLoading)
+                  Container(
+                    color: Colors.black54,
+                    child: const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          CircularProgressIndicator(color: Colors.white),
+                          SizedBox(height: 12),
+                          Text('正在识别文字...', style: TextStyle(color: Colors.white, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (_showManualInput)
+                  Container(
+                    color: Colors.black54,
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Text('手动输入题目', style: TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: _manualController,
+                                maxLines: 5,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: '请输入题目内容...',
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  TextButton(
+                                    onPressed: () => setState(() => _showManualInput = false),
+                                    child: const Text('取消'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FilledButton(
+                                    onPressed: () {
+                                      final text = _manualController.text.trim();
+                                      if (text.isNotEmpty) {
+                                        ref.read(currentQuestionProvider.notifier).state =
+                                            current?.copyWith(correctedText: text);
+                                        setState(() => _showManualInput = false);
+                                        context.go('/capture/ocr-confirmation');
+                                      }
+                                    },
+                                    child: const Text('确认'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (_ocrError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(_ocrError!, style: const TextStyle(color: Colors.red, fontSize: 12)),
             ),
         ],
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: <Widget>[
-              if (_ocrError != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(_ocrError!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    ref.read(currentQuestionProvider.notifier).state = current?.copyWith(
+                      correctedText: '',
+                    );
+                    setState(() {
+                      _showManualInput = true;
+                      _ocrError = null;
+                    });
+                  },
+                  child: const Text('手动输入'),
                 ),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      child: const Text('重置'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      child: const Text('旋转'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _ocrLoading ? null : _runOcr,
-                      child: const Text('继续 OCR'),
-                    ),
-                  ),
-                ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _ocrLoading ? null : _runOcr,
+                  child: _ocrLoading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('识别文字'),
+                ),
               ),
             ],
           ),
@@ -99,8 +173,10 @@ class _QuestionCorrectionScreenState extends ConsumerState<QuestionCorrectionScr
       final ocr = ref.read(ocrServiceProvider);
       final text = await ocr.recognizeImage(current.imagePath);
 
+      if (mounted) setState(() => _ocrLoading = false);
+
       if (text.isEmpty) {
-        if (mounted) setState(() => _ocrError = '未识别到文字，请手动输入');
+        if (mounted) setState(() => _ocrError = '未识别到文字，可以选择手动输入');
         return;
       }
 
@@ -110,9 +186,10 @@ class _QuestionCorrectionScreenState extends ConsumerState<QuestionCorrectionScr
 
       if (mounted) context.go('/capture/ocr-confirmation');
     } catch (e) {
-      if (mounted) setState(() => _ocrError = 'OCR 失败: $e');
-    } finally {
-      if (mounted) setState(() => _ocrLoading = false);
+      setState(() {
+        _ocrLoading = false;
+        _ocrError = 'OCR 失败: $e';
+      });
     }
   }
 }
