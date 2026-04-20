@@ -22,22 +22,6 @@ import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.d
 GoRouter buildRouter(SettingsRepository settingsRepo) {
   return GoRouter(
     initialLocation: '/',
-    redirect: (context, state) async {
-      try {
-        final onboardingDone = await settingsRepo.getString('onboarding_done');
-        final isOnboarding = state.matchedLocation == '/onboarding';
-        if (onboardingDone == null && !isOnboarding) {
-          return '/onboarding';
-        }
-        if (onboardingDone != null && isOnboarding) {
-          return '/';
-        }
-        return null;
-      } catch (e) {
-        // On error, skip redirect
-        return null;
-      }
-    },
     routes: <RouteBase>[
       GoRoute(path: '/onboarding', pageBuilder: (_, __) => _buildPage(const OnboardingScreen())),
       StatefulShellRoute.indexedStack(
