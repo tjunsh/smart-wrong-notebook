@@ -13,6 +13,35 @@ class AiAnalysisService {
 
   final SettingsRepository settingsRepository;
 
+  static const _maxRetries = 2; // 最多重试2次（总共3次请求）
+  static const _baseDelayMs = 1000; // 基础延迟1秒
+
+  /// 带重试的 POST 请求（指数退避）
+  Future<Response<T>> _retryPost<T>(
+    Dio dio,
+    String path, {
+    required Map<String, dynamic> data,
+    int attempt = 1,
+  }) async {
+    try {
+      return await dio.post<T>(path, data: data);
+    } on DioException catch (e) {
+      // 只对网络错误和超时进行重试，不重试 HTTP 错误（如401、403）
+      final shouldRetry = e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError;
+
+      if (shouldRetry && attempt <= _maxRetries) {
+        final delayMs = _baseDelayMs * attempt;
+        debugPrint('[AiAnalysisService] 请求失败，${delayMs}ms 后重试 (第 $attempt 次)...');
+        await Future.delayed(Duration(milliseconds: delayMs));
+        return _retryPost(dio, path, data: data, attempt: attempt + 1);
+      }
+      rethrow;
+    }
+  }
+
   factory AiAnalysisService.fake() =>
       AiAnalysisService(settingsRepository: InMemorySettingsRepository());
 
@@ -255,7 +284,7 @@ class AiAnalysisService {
       },
     ];
 
-    final response = await dio.post('/chat/completions', data: <String, dynamic>{
+    final response = await _retryPost(dio, '/chat/completions', data: <String, dynamic>{
       'model': config.model,
       'messages': messages,
       'temperature': 0.7,
@@ -316,7 +345,7 @@ $correctedText
   ) async {
     final prompt = _buildPrompt(correctedText, subjectName);
 
-    final response = await dio.post('/chat/completions', data: <String, dynamic>{
+    final response = await _retryPost(dio, '/chat/completions', data: <String, dynamic>{
       'model': config.model,
       'messages': <Map<String, String>>[
         <String, String>{'role': 'system', 'content': systemPrompt},
@@ -486,15 +515,15 @@ $correctedText
     final prompt = _buildJudgePrompt(question, userAnswer, correctAnswer, options);
 
     try {
-      final response = await dio.post('/chat/completions', data: <String, dynamic>{
-        'model': config.model,
-        'messages': <Map<String, String>>[
-          <String, String>{'role': 'system', 'content': '你是一个判断答案是否正确的助手。请仔细分析题目和答案，给出判断结果。'},
-          <String, String>{'role': 'user', 'content': prompt},
-        ],
-        'temperature': 0.1,
-        'max_tokens': 50,
-      });
+      final response = await _retryPost(dio, '/chat/completions', data: <String, dynamic>{
+      'model': config.model,
+      'messages': <Map<String, String>>[
+        <String, String>{'role': 'system', 'content': '你是一个判断答案是否正确的助手。请仔细分析题目和答案，给出判断结果。'},
+        <String, String>{'role': 'user', 'content': prompt},
+      ],
+      'temperature': 0.1,
+      'max_tokens': 50,
+    });
 
       final content = response.data['choices'][0]['message']['content'] as String;
       debugPrint('[AiAnalysisService] judgeAnswer response: $content');
