@@ -34,7 +34,6 @@
 | 数据导入导出 | share_plus + file_picker |
 | 本地通知 | flutter_local_notifications |
 | 安全存储 | flutter_secure_storage |
-| 轻量存储 | SharedPreferences |
 | 序列化 | json_annotation + json_serializable |
 | ID 生成 | uuid |
 | 国际化 | intl |
