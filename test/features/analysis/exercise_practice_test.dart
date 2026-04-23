@@ -31,6 +31,7 @@ QuestionRecord _makeQuestion({List<GeneratedExercise>? exercises}) {
     analysisResult: AnalysisResult(
       finalAnswer: '42',
       steps: const ['step1'],
+      aiTags: const [],
       knowledgePoints: const ['math'],
       mistakeReason: 'careless',
       studyAdvice: 'practice',

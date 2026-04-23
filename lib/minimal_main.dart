@@ -14,7 +14,7 @@ import 'package:smart_wrong_notebook/src/features/onboarding/presentation/onboar
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final settingsRepo = SharedPrefsSettingsRepository();
+  final settingsRepo = SharedPrefsSettingsRepository.instance;
 
   final router = GoRouter(
     initialLocation: '/',
