@@ -199,10 +199,13 @@ class _RecentQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final masteryColor = _masteryColor(question.masteryLevel);
+    final aiTags = question.aiTags ?? <String>[];
+    final customTags = question.customTags ?? <String>[];
+    final allTags = [...aiTags, ...customTags];
+
     return Semantics(
       button: true,
-      label: '错题: ${question.correctedText}，科目: ${question.subject.label}，状态: ${_masteryLabel(question.masteryLevel)}',
+      label: '错题: ${question.correctedText}，科目: ${question.subject.label}',
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Container(
@@ -213,10 +216,13 @@ class _RecentQuestionCard extends StatelessWidget {
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            leading: CircleAvatar(
-              radius: 18,
-              backgroundColor: masteryColor.withValues(alpha: 0.1),
-              child: Icon(CupertinoIcons.question, size: 16, color: masteryColor),
+            leading: Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: question.subject.color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(question.subject.icon, size: 16, color: question.subject.color),
             ),
             title: Text(
               question.correctedText,
@@ -224,29 +230,32 @@ class _RecentQuestionCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
-            subtitle: Text(question.subject.label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+            subtitle: Row(
+              children: <Widget>[
+                Text(question.subject.label, style: TextStyle(fontSize: 12, color: question.subject.color)),
+                if (allTags.isNotEmpty) ...<Widget>[
+                  const SizedBox(width: 8),
+                  ...allTags.take(2).map((tag) {
+                    final isAiTag = aiTags.contains(tag);
+                    return Container(
+                      margin: const EdgeInsets.only(right: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isAiTag ? const Color(0xFFFFF7ED) : const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Text(tag, style: TextStyle(fontSize: 9, color: isAiTag ? const Color(0xFFD97706) : const Color(0xFF4F46E5))),
+                    );
+                  }),
+                ],
+              ],
+            ),
             trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.grey),
             onTap: onTap,
           ),
         ),
       ),
     );
-  }
-
-  Color _masteryColor(MasteryLevel level) {
-    switch (level) {
-      case MasteryLevel.newQuestion: return Colors.grey;
-      case MasteryLevel.reviewing: return Colors.orange;
-      case MasteryLevel.mastered: return Colors.green;
-    }
-  }
-
-  String _masteryLabel(MasteryLevel level) {
-    switch (level) {
-      case MasteryLevel.newQuestion: return '新增';
-      case MasteryLevel.reviewing: return '复习中';
-      case MasteryLevel.mastered: return '已掌握';
-    }
   }
 }
 
