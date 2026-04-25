@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.dart';
@@ -68,50 +69,39 @@ class AiAnalysisService {
     final baseUrl = config.baseUrl.toLowerCase();
 
     try {
-      String responseText;
-
-      // OpenRouter 使用 OpenAI 兼容格式
+      // 只检查 HTTP 200 状态码，不检查返回内容
       if (baseUrl.contains('openrouter')) {
-        debugPrint('[AiAnalysisService] Using OpenAI format for OpenRouter');
-        final response = await dio.post('/chat/completions', data: <String, dynamic>{
+        debugPrint('[AiAnalysisService] Testing OpenRouter endpoint');
+        await dio.post('/chat/completions', data: <String, dynamic>{
           'model': config.model,
           'messages': [
-            {'role': 'user', 'content': 'Hi, reply with "OK" if you receive this.'},
+            {'role': 'user', 'content': 'Hi'},
           ],
-          'max_tokens': 10,
+          'max_tokens': 1,
         });
-        responseText = response.data['choices'][0]['message']['content'] as String;
       } else if (config.model.toLowerCase().contains('gemini')) {
-        // Gemini 原生格式
-        debugPrint('[AiAnalysisService] Using Gemini format');
-        final response = await dio.post(
+        debugPrint('[AiAnalysisService] Testing Gemini endpoint');
+        await dio.post(
           '/v1beta/models/${config.model}:generateContent',
           data: <String, dynamic>{
             'contents': [
-              {'parts': [{'text': 'Hi, reply with "OK" if you receive this.'}]},
+              {'parts': [{'text': 'Hi'}]},
             ],
-            'generationConfig': {'maxOutputTokens': 10},
+            'generationConfig': {'maxOutputTokens': 1},
           },
         );
-        responseText = response.data['candidates'][0]['content']['parts'][0]['text'] as String;
       } else {
-        // 默认 OpenAI 格式
-        debugPrint('[AiAnalysisService] Using default OpenAI format');
-        final response = await dio.post('/chat/completions', data: <String, dynamic>{
+        debugPrint('[AiAnalysisService] Testing default OpenAI endpoint');
+        await dio.post('/chat/completions', data: <String, dynamic>{
           'model': config.model,
           'messages': [
-            {'role': 'user', 'content': 'Hi, reply with "OK" if you receive this.'},
+            {'role': 'user', 'content': 'Hi'},
           ],
-          'max_tokens': 10,
+          'max_tokens': 1,
         });
-        responseText = response.data['choices'][0]['message']['content'] as String;
       }
 
-      debugPrint('[AiAnalysisService] Response: $responseText');
-
-      if (!responseText.toLowerCase().contains('ok')) {
-        throw AiAnalysisException('API 返回异常: $responseText');
-      }
+      debugPrint('[AiAnalysisService] Connection test passed (HTTP 200)');
     } on DioException catch (e) {
       debugPrint('[AiAnalysisService] testConnection DioException: type=${e.type}, message=${e.message}');
       throw AiAnalysisException(_dioErrorMessage(e));
@@ -231,6 +221,10 @@ class AiAnalysisService {
 
     debugPrint('[AiAnalysisService] Image encoded to base64, size: ${imageBytes.length} bytes');
 
+    // 统一使用 JPEG 格式（DeepSeek 对 PNG 可能有问题）
+    const mimeType = 'image/jpeg';
+    debugPrint('[AiAnalysisService] Using JPEG format for DeepSeek compatibility');
+
     // 根据 baseUrl 判断 API 兼容格式
     final baseUrl = config.baseUrl.toLowerCase();
     debugPrint('[AiAnalysisService] baseUrl: ${config.baseUrl}');
@@ -238,7 +232,7 @@ class AiAnalysisService {
     // OpenRouter 使用 OpenAI 兼容格式
     if (baseUrl.contains('openrouter')) {
       debugPrint('[AiAnalysisService] Using OpenAI format (OpenRouter compatible)');
-      return await _analyzeWithOpenAI(dio, config, base64Image, correctedText, subjectName, systemPrompt);
+      return await _analyzeWithOpenAI(dio, config, base64Image, mimeType, correctedText, subjectName, systemPrompt);
     }
 
     // 根据模型类型选择格式
@@ -246,14 +240,14 @@ class AiAnalysisService {
 
     if (model.contains('gpt') || model.contains('4o') || model.contains('4-turbo')) {
       debugPrint('[AiAnalysisService] Using OpenAI format');
-      return await _analyzeWithOpenAI(dio, config, base64Image, correctedText, subjectName, systemPrompt);
+      return await _analyzeWithOpenAI(dio, config, base64Image, mimeType, correctedText, subjectName, systemPrompt);
     } else if (model.contains('gemini') && !baseUrl.contains('openrouter')) {
       debugPrint('[AiAnalysisService] Using Gemini format');
       return await _analyzeWithGemini(dio, config, base64Image, correctedText, subjectName, systemPrompt);
     } else {
       // 默认使用 OpenAI 格式
       debugPrint('[AiAnalysisService] Using default OpenAI format');
-      return await _analyzeWithOpenAI(dio, config, base64Image, correctedText, subjectName, systemPrompt);
+      return await _analyzeWithOpenAI(dio, config, base64Image, mimeType, correctedText, subjectName, systemPrompt);
     }
   }
 
@@ -262,23 +256,24 @@ class AiAnalysisService {
     Dio dio,
     AiProviderConfig config,
     String base64Image,
+    String mimeType,
     String correctedText,
     String subjectName,
     String systemPrompt,
   ) async {
     final prompt = _buildPrompt(correctedText, subjectName);
 
-    // 构造 vision 消息
+    // 构造 vision 消息（图片在前，prompt在后）
     final messages = <Map<String, dynamic>>[
       {'role': 'system', 'content': systemPrompt},
       {
         'role': 'user',
         'content': [
-          {'type': 'text', 'text': prompt},
           {
             'type': 'image_url',
-            'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
+            'image_url': {'url': 'data:$mimeType;base64,$base64Image', 'detail': 'high'},
           },
+          {'type': 'text', 'text': prompt},
         ],
       },
     ];
@@ -361,7 +356,7 @@ $correctedText
   static const _defaultSystemPrompt = '''你是一个专业的错题分析助手，专门帮助学生分析和理解错题。
 
 你的任务是：
-1. 识别图片中的题目内容（包括文本、图表、公式等）
+1. 仔细识别图片中的题目内容（包括文本、图表、公式、手写内容等）
 2. 根据题目内容判断所属科目（数学、语文、英语、物理、化学、生物、历史、地理、政治等）
 3. 提供正确的解题思路和答案
 4. 分析学生可能犯错误的原因
@@ -369,9 +364,9 @@ $correctedText
 6. 生成举一反三的练习题（选择题格式，带 A/B/C/D 选项）
 
 重要规则：
+- 图片优先：必须以图片内容为准进行识别和分析，不要虚构题目
 - 科目判断：根据图片中的实际内容判断，比如有数学公式/计算=数学，有古诗词=语文，有英语单词=英语，有电路图=物理，有化学式=化学
-- 如果图片中包含题目，请仔细识别并分析
-- 如果无法从图片识别题目内容，请根据你看到的实际情况回答，不要虚构题目
+- 如果无法从图片识别出有效题目内容，请明确指出"无法识别图片中的题目"
 - 答案必须准确、有条理
 - 生成的练习题应该难度适中、与原题相关
 - 练习题必须是选择题格式，包含 A/B/C/D 四个选项，其中一个是正确答案

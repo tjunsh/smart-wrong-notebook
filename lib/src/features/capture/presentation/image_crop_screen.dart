@@ -38,6 +38,8 @@ class _ImageCropScreenState extends ConsumerState<ImageCropScreen> {
     try {
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: current.imagePath,
+        compressFormat: ImageCompressFormat.png,
+        compressQuality: 100, // 最大质量，不压缩
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: '框选题目',

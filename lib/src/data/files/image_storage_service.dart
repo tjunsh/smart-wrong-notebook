@@ -14,7 +14,9 @@ class ImageStorageService {
       final String imagesDir = '${appDir.path}/wrong_question_images';
       await Directory(imagesDir).create(recursive: true).timeout(const Duration(seconds: 5));
       final String id = const Uuid().v4();
-      final String newPath = '$imagesDir/$id.jpg';
+      // 保留原文件扩展名
+      final String ext = _getExtension(source.path);
+      final String newPath = '$imagesDir/$id$ext';
       await source.copy(newPath);
       return newPath;
     } catch (e) {
@@ -23,10 +25,17 @@ class ImageStorageService {
       final imagesDir = '${tempDir.path}/wrong_question_images';
       await Directory(imagesDir).create(recursive: true);
       final String id = const Uuid().v4();
-      final String newPath = '$imagesDir/$id.jpg';
+      final String ext = _getExtension(source.path);
+      final String newPath = '$imagesDir/$id$ext';
       await source.copy(newPath);
       return newPath;
     }
+  }
+
+  String _getExtension(String path) {
+    final lastDot = path.lastIndexOf('.');
+    if (lastDot < 0) return '.jpg';
+    return path.substring(lastDot);
   }
 
   Future<void> deleteImage(String imagePath) async {
