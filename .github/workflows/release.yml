@@ -25,7 +25,7 @@ jobs:
         run: flutter build appbundle --release
 
       - name: Upload APK
-        run: gh release upload ${{ github.event.release.tag_name }} build/app/outputs/flutter-apk/app-release.apk --clobber
+        run: gh release upload ${{ github.ref_name }} build/app/outputs/flutter-apk/app-release.apk --clobber
 
       - name: Upload AAB
-        run: gh release upload ${{ github.event.release.tag_name }} build/app/outputs/bundle/release/app-release.aab --clobber
+        run: gh release upload ${{ github.ref_name }} build/app/outputs/bundle/release/app-release.aab --clobber

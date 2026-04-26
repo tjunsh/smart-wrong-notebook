@@ -216,10 +216,10 @@ class _ReviewCard extends StatelessWidget {
                             margin: const EdgeInsets.only(right: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: const Color(0xFFFFF7ED),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text(tag, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                            child: Text(tag, style: const TextStyle(fontSize: 10, color: Color(0xFFD97706))),
                           )),
                         ],
                       ],

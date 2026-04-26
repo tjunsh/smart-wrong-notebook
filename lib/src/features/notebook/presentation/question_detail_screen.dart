@@ -261,7 +261,7 @@ class QuestionDetailScreen extends ConsumerWidget {
                     ),
                   if (current.imagePath.isNotEmpty) const SizedBox(height: 10),
                   Text(
-                    current.correctedText.isNotEmpty ? current.correctedText : '（从图片识别）',
+                    current.correctedText,
                     style: const TextStyle(fontSize: 14, color: Color(0xFF3730A3)),
                   ),
                 ],

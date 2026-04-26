@@ -236,15 +236,14 @@ class _RecentQuestionCard extends StatelessWidget {
                 if (allTags.isNotEmpty) ...<Widget>[
                   const SizedBox(width: 8),
                   ...allTags.take(2).map((tag) {
-                    final isAiTag = aiTags.contains(tag);
                     return Container(
                       margin: const EdgeInsets.only(right: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                       decoration: BoxDecoration(
-                        color: isAiTag ? const Color(0xFFFFF7ED) : const Color(0xFFEEF2FF),
+                        color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(2),
                       ),
-                      child: Text(tag, style: TextStyle(fontSize: 9, color: isAiTag ? const Color(0xFFD97706) : const Color(0xFF4F46E5))),
+                      child: Text(tag, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
                     );
                   }),
                 ],
