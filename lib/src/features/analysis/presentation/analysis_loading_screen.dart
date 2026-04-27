@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
-import 'package:smart_wrong_notebook/src/common/widgets/state_views.dart';
 import 'package:smart_wrong_notebook/src/data/remote/ai/ai_analysis_service.dart';
 import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
+import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 
 class AnalysisLoadingScreen extends ConsumerStatefulWidget {
   const AnalysisLoadingScreen({super.key});
@@ -19,8 +19,9 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
   String? _errorMessage;
   String? _debugInfo;
   int _step = 0;
+  Timer? _stepTimer;
 
-  final _steps = const ['正在识别图片...', '正在分析题目...', '正在生成结果...', '即将完成...'];
+  final _steps = const ['正在提取题目...', '正在确认内容...', '正在学习分析...', '即将完成...'];
 
   @override
   void initState() {
@@ -30,7 +31,8 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
   }
 
   void _animateSteps() {
-    Timer.periodic(const Duration(seconds: 2), (timer) {
+    _stepTimer?.cancel();
+    _stepTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -41,6 +43,12 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
         timer.cancel();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _stepTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _runAnalysis() async {
@@ -68,24 +76,80 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
 
     try {
       final service = ref.read(aiAnalysisServiceProvider);
-      final analysis = await service.analyzeQuestion(
-        correctedText: current.correctedText,
-        subjectName: current.subject.name,
-        imagePath: current.imagePath,
-      );
 
-      // 如果 AI 返回了科目，更新 QuestionRecord 的科目和知识点
-      final updated = current.copyWith(
+      var working = current;
+      if (working.normalizedQuestionText.isEmpty) {
+        final extraction = await service.extractQuestionStructure(
+          subjectName: working.subject.name,
+          imagePath: working.imagePath,
+          textHint: working.extractedQuestionText,
+        );
+        working = working.copyWith(
+          extractedQuestionText: extraction.extractedQuestionText,
+          normalizedQuestionText: extraction.normalizedQuestionText.isNotEmpty
+              ? extraction.normalizedQuestionText
+              : extraction.extractedQuestionText,
+          subject: extraction.subject ?? working.subject,
+          splitResult: extraction.splitResult,
+        );
+        ref.read(currentQuestionProvider.notifier).state = working;
+      }
+
+      final candidateSnapshots = working.splitResult != null && working.splitResult!.hasMultipleCandidates
+          ? await service.analyzeSplitCandidates(
+              questionId: working.id,
+              subjectName: working.subject.name,
+              splitResult: working.splitResult!,
+              imagePath: working.imagePath,
+            )
+          : const <CandidateAnalysisPayload>[];
+
+      final analysis = candidateSnapshots.isNotEmpty
+          ? candidateSnapshots.first.analysisResult
+          : await service.analyzeExtractedQuestion(
+              correctedText: working.correctedText,
+              subjectName: working.subject.name,
+              imagePath: working.imagePath,
+            );
+
+      final generatedExercises = candidateSnapshots.isNotEmpty
+          ? candidateSnapshots.first.savedExercises
+          : analysis is ParsedAnalysisResult
+              ? service.extractGeneratedExercisesFromContent(
+                  analysis.rawContent,
+                  questionId: working.id,
+                )
+              : service.extractGeneratedExercises(
+                  analysis,
+                  questionId: working.id,
+                );
+
+      final updated = working.copyWith(
         contentStatus: ContentStatus.ready,
         analysisResult: analysis,
-        subject: analysis.subject ?? current.subject,
-        // AI 短标签和知识点自动打标
+        savedExercises: generatedExercises,
+        subject: analysis.subject ?? working.subject,
         aiTags: analysis.aiTags,
         aiKnowledgePoints: analysis.knowledgePoints,
+        candidateAnalyses: candidateSnapshots.map((payload) {
+          return CandidateAnalysisSnapshot(
+            candidateId: payload.candidateId,
+            order: payload.order,
+            questionText: payload.questionText,
+            analysisResult: payload.analysisResult,
+            savedExercises: payload.savedExercises,
+            subject: payload.subject,
+            aiTags: payload.aiTags,
+            aiKnowledgePoints: payload.aiKnowledgePoints,
+          );
+        }).toList(),
       );
       ref.read(currentQuestionProvider.notifier).state = updated;
 
-      if (mounted) context.go('/analysis/result');
+      if (mounted) {
+        _stepTimer?.cancel();
+        context.go('/analysis/result');
+      }
     } on AiAnalysisException catch (e) {
       if (mounted) {
         setState(() {
@@ -236,7 +300,7 @@ class _LoadingViewState extends State<_LoadingView> with SingleTickerProviderSta
             ),
             const SizedBox(height: 8),
             Text(
-              'AI 正在分析中，请稍候...',
+              'AI 正在生成学习分析，请稍候...',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
             ),
           ],

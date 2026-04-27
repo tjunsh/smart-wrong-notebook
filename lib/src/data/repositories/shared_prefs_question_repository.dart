@@ -43,6 +43,16 @@ class SharedPrefsQuestionRepository implements QuestionRepository {
   }
 
   @override
+  Future<void> saveDrafts(List<QuestionRecord> records) async {
+    final all = await listAll();
+    for (final record in records) {
+      all.removeWhere((q) => q.id == record.id);
+      all.add(record);
+    }
+    await _saveAll(all);
+  }
+
+  @override
   Future<void> delete(String id) async {
     final all = await listAll();
     all.removeWhere((q) => q.id == id);

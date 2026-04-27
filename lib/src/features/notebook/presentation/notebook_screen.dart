@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
+import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
+import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
 
 class NotebookScreen extends ConsumerStatefulWidget {
   const NotebookScreen({super.key});
@@ -300,10 +302,11 @@ class _QuestionCard extends StatelessWidget {
                           tag: 'question_text_${question.id}',
                           child: Material(
                             color: Colors.transparent,
-                            child: Text(
+                            child: MathContentView(
                               question.correctedText,
+                              contentFormat: question.contentFormat,
+                              mode: MathContentViewMode.compact,
                               maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                             ),
                           ),
@@ -329,6 +332,13 @@ class _QuestionCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        if (_batchLabel(question) != null) ...<Widget>[
+                          const SizedBox(height: 4),
+                          Text(
+                            _batchLabel(question)!,
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                          ),
+                        ],
                         // AI 知识点标签（有颜色区分 AI 生成和手动）
                         if (allTags.isNotEmpty) ...<Widget>[
                           const SizedBox(height: 6),
@@ -393,5 +403,11 @@ class _QuestionCard extends StatelessWidget {
       case MasteryLevel.reviewing: return '复习中';
       case MasteryLevel.mastered: return '已掌握';
     }
+  }
+
+  String? _batchLabel(QuestionRecord question) {
+    if (question.parentQuestionId == null && question.rootQuestionId == null) return null;
+    final order = question.splitOrder;
+    return order == null ? '来自同一拍照批次' : '来自同一拍照批次 · 第 $order 题';
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
-import 'package:smart_wrong_notebook/src/data/services/capture_service.dart';
 
 class CaptureEntrySheet extends ConsumerStatefulWidget {
   const CaptureEntrySheet({super.key});
@@ -146,7 +145,7 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
       if (result.record != null) {
         Navigator.pop(context);
         ref.read(currentQuestionProvider.notifier).state = result.record;
-        print('[CaptureEntrySheet] Navigating to /capture/crop');
+        debugPrint('[CaptureEntrySheet] Navigating to /capture/crop');
         router.go('/capture/crop');
       }
     } catch (e) {

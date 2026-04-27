@@ -1,4 +1,3 @@
-import 'generated_exercise.dart';
 import 'subject.dart';
 
 class AnalysisResult {
@@ -9,7 +8,6 @@ class AnalysisResult {
     required this.knowledgePoints,
     required this.mistakeReason,
     required this.studyAdvice,
-    required this.generatedExercises,
     this.subject,
   });
 
@@ -28,24 +26,18 @@ class AnalysisResult {
       knowledgePoints: List<String>.from(json['knowledgePoints'] as List? ?? []),
       mistakeReason: json['mistakeReason'] as String? ?? '',
       studyAdvice: json['studyAdvice'] as String? ?? '',
-      generatedExercises: (json['generatedExercises'] as List?)
-              ?.map((e) => GeneratedExercise.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
     );
   }
 
   static Subject? _parseSubject(String input) {
     final lower = input.toLowerCase();
 
-    // 精确匹配
     for (final s in Subject.values) {
       if (s.label == input || s.name == input) {
         return s;
       }
     }
 
-    // 模糊匹配
     if (lower.contains('物理') || lower == 'wuli' || lower == 'physics') {
       return Subject.physics;
     }
@@ -89,7 +81,6 @@ class AnalysisResult {
       'knowledgePoints': knowledgePoints,
       'mistakeReason': mistakeReason,
       'studyAdvice': studyAdvice,
-      'generatedExercises': generatedExercises.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -100,9 +91,8 @@ class AnalysisResult {
   final List<String> knowledgePoints;
   final String mistakeReason;
   final String studyAdvice;
-  final List<GeneratedExercise> generatedExercises;
 
-  AnalysisResult copyWith({List<GeneratedExercise>? generatedExercises, Subject? subject}) {
+  AnalysisResult copyWith({Subject? subject}) {
     return AnalysisResult(
       subject: subject ?? this.subject,
       finalAnswer: finalAnswer,
@@ -111,7 +101,6 @@ class AnalysisResult {
       knowledgePoints: knowledgePoints,
       mistakeReason: mistakeReason,
       studyAdvice: studyAdvice,
-      generatedExercises: generatedExercises ?? this.generatedExercises,
     );
   }
 }

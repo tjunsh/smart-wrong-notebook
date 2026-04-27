@@ -22,8 +22,25 @@ class AppDatabase extends _$AppDatabase {
     return _instance!;
   }
 
+  AppDatabase.memory() : super(NativeDatabase.memory());
+
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (migrator, from, to) async {
+          if (from < 2) {
+            await migrator.deleteTable('generated_exercises');
+            await migrator.createTable(generatedExercises);
+          }
+          if (from < 3) {
+            await migrator.addColumn(questionRecords, questionRecords.parentQuestionId);
+            await migrator.addColumn(questionRecords, questionRecords.rootQuestionId);
+            await migrator.addColumn(questionRecords, questionRecords.splitOrder);
+          }
+        },
+      );
 }
 
 LazyDatabase _openConnection() {

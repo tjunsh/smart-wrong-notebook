@@ -7,12 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
-import 'package:smart_wrong_notebook/src/domain/models/analysis_result.dart';
-import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
-import 'package:smart_wrong_notebook/src/domain/models/generated_exercise.dart';
-import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
-import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 
 class DataManagementScreen extends ConsumerWidget {
   const DataManagementScreen({super.key});
@@ -102,41 +97,7 @@ class DataManagementScreen extends ConsumerWidget {
     }
   }
 
-  Map<String, dynamic> _questionToJson(QuestionRecord q) {
-    final exercises = q.analysisResult?.generatedExercises.map((e) => {
-      'id': e.id,
-      'difficulty': e.difficulty,
-      'question': e.question,
-      'answer': e.answer,
-      'explanation': e.explanation,
-      'isCorrect': e.isCorrect,
-    }).toList();
-
-    return {
-      'id': q.id,
-      'subject': q.subject.name,
-      'recognizedText': q.recognizedText,
-      'correctedText': q.correctedText,
-      'tags': q.tags,
-      'contentStatus': q.contentStatus.name,
-      'masteryLevel': q.masteryLevel.name,
-      'isFavorite': q.isFavorite,
-      'reviewCount': q.reviewCount,
-      'createdAt': q.createdAt.toIso8601String(),
-      'updatedAt': q.updatedAt.toIso8601String(),
-      'lastReviewedAt': q.lastReviewedAt?.toIso8601String(),
-      'analysisResult': q.analysisResult != null
-          ? {
-              'finalAnswer': q.analysisResult!.finalAnswer,
-              'steps': q.analysisResult!.steps,
-              'knowledgePoints': q.analysisResult!.knowledgePoints,
-              'mistakeReason': q.analysisResult!.mistakeReason,
-              'studyAdvice': q.analysisResult!.studyAdvice,
-              'generatedExercises': exercises,
-            }
-          : null,
-    };
-  }
+  Map<String, dynamic> _questionToJson(QuestionRecord q) => q.toJson();
 
   Future<void> _importQuestions(BuildContext context, WidgetRef ref) async {
     try {
@@ -175,62 +136,7 @@ class DataManagementScreen extends ConsumerWidget {
 
   QuestionRecord? _jsonToQuestion(Map<String, dynamic> map) {
     try {
-      final analysisMap = map['analysisResult'] as Map<String, dynamic>?;
-      List<GeneratedExercise>? exercises;
-      if (analysisMap != null) {
-        final exList = analysisMap['generatedExercises'] as List?;
-        if (exList != null) {
-          exercises = exList.map((e) {
-            final em = e as Map<String, dynamic>;
-            return GeneratedExercise(
-              id: em['id'] as String? ?? '',
-              difficulty: em['difficulty'] as String? ?? '',
-              question: em['question'] as String? ?? '',
-              answer: em['answer'] as String? ?? '',
-              explanation: em['explanation'] as String? ?? '',
-              isCorrect: em['isCorrect'] as bool?,
-            );
-          }).toList();
-        }
-      }
-
-      return QuestionRecord(
-        id: map['id'] as String? ?? '',
-        imagePath: map['imagePath'] as String? ?? '',
-        subject: Subject.values.firstWhere(
-          (s) => s.name == map['subject'],
-          orElse: () => Subject.math,
-        ),
-        recognizedText: map['recognizedText'] as String? ?? '',
-        correctedText: map['correctedText'] as String? ?? '',
-        tags: List<String>.from(map['tags'] as List? ?? []),
-        contentStatus: ContentStatus.values.firstWhere(
-          (s) => s.name == map['contentStatus'],
-          orElse: () => ContentStatus.processing,
-        ),
-        masteryLevel: MasteryLevel.values.firstWhere(
-          (m) => m.name == map['masteryLevel'],
-          orElse: () => MasteryLevel.newQuestion,
-        ),
-        isFavorite: map['isFavorite'] as bool? ?? false,
-        reviewCount: map['reviewCount'] as int? ?? 0,
-        createdAt: DateTime.tryParse(map['createdAt'] as String? ?? '') ?? DateTime.now(),
-        updatedAt: DateTime.tryParse(map['updatedAt'] as String? ?? '') ?? DateTime.now(),
-        lastReviewedAt: map['lastReviewedAt'] != null
-            ? DateTime.tryParse(map['lastReviewedAt'] as String)
-            : null,
-        analysisResult: analysisMap != null
-            ? AnalysisResult(
-                finalAnswer: analysisMap['finalAnswer'] as String? ?? '',
-                steps: List<String>.from(analysisMap['steps'] as List? ?? []),
-                aiTags: List<String>.from(analysisMap['aiTags'] as List? ?? []),
-                knowledgePoints: List<String>.from(analysisMap['knowledgePoints'] as List? ?? []),
-                mistakeReason: analysisMap['mistakeReason'] as String? ?? '',
-                studyAdvice: analysisMap['studyAdvice'] as String? ?? '',
-                generatedExercises: exercises ?? [],
-              )
-            : null,
-      );
+      return QuestionRecord.fromJson(map);
     } catch (_) {
       return null;
     }

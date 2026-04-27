@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 服务配置 - 原型</title>
+    <style>
+      :root {
+        --bg: #f7f8fb;
+        --card: #ffffff;
+        --text: #111827;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --primary: #6366f1;
+        --primary-soft: #eef2ff;
+        --orange: #f97316;
+        --orange-soft: #fff7ed;
+        --green: #16a34a;
+        --green-soft: #f0fdf4;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+        background: linear-gradient(180deg, #f8f9fd 0%, #f4f6fb 100%);
+        color: var(--text);
+      }
+
+      .phone {
+        width: 430px;
+        min-height: 932px;
+        margin: 24px auto;
+        background: var(--bg);
+        border-radius: 32px;
+        overflow: hidden;
+        border: 1px solid #e8eaf2;
+        box-shadow: 0 20px 60px rgba(17, 24, 39, 0.18);
+      }
+
+      .status {
+        height: 52px;
+        padding: 14px 24px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        font-size: 16px;
+        background: #fff;
+      }
+
+      .header {
+        background: #fff;
+        padding: 12px 20px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 1px solid #f0f1f6;
+      }
+
+      .back {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 18px;
+        color: #111827;
+        font-size: 22px;
+      }
+
+      .title {
+        flex: 1;
+        margin-right: 36px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .content {
+        padding: 24px;
+      }
+
+      .section {
+        margin-bottom: 24px;
+      }
+
+      .section h3 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .section-head h3 {
+        margin: 0;
+      }
+
+      .text-btn {
+        color: var(--primary);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+
+      .active-card {
+        padding: 16px;
+      }
+
+      .active-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .active-name {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        color: var(--primary);
+      }
+
+      .active-meta {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--primary-soft);
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .template-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .template-chip {
+        padding: 12px 14px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .config-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .config-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+
+      .config-item.active {
+        border: 2px solid var(--primary);
+        background: #f8f8ff;
+      }
+
+      .radio {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid #cfd4dc;
+        position: relative;
+        flex: 0 0 22px;
+      }
+
+      .config-item.active .radio {
+        border-color: var(--primary);
+      }
+
+      .config-item.active .radio::after {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        background: var(--primary);
+      }
+
+      .config-main {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .config-main .name {
+        margin: 0 0 4px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .config-main .sub {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .pill {
+        margin-top: 8px;
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: var(--green-soft);
+        color: var(--green);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        color: #9ca3af;
+        font-size: 18px;
+      }
+
+      .form-card {
+        padding: 16px;
+      }
+
+      .form-title {
+        margin: 0 0 14px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .selected-template {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: var(--primary-soft);
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .field {
+        margin-bottom: 12px;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 14px;
+        background: #fff;
+        color: #111827;
+      }
+
+      .hint {
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .result {
+        margin-top: 4px;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #bbf7d0;
+        background: var(--green-soft);
+        color: #166534;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .btn {
+        flex: 1;
+        height: 40px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        display: grid;
+        place-items: center;
+      }
+
+      .btn.primary {
+        border-color: transparent;
+        background: var(--primary);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone">
+      <div class="status">
+        <span>16:02</span>
+        <span>📶 67%</span>
+      </div>
+
+      <div class="header">
+        <div class="back">‹</div>
+        <div class="title">AI 服务配置</div>
+      </div>
+
+      <div class="content">
+        <section class="section">
+          <h3>当前启用</h3>
+          <div class="card active-card">
+            <div class="active-row">
+              <div>
+                <p class="active-name">数学主力</p>
+                <p class="active-meta">OpenRouter</p>
+                <p class="active-meta">openai/gpt-4o-mini</p>
+                <p class="active-meta">最近一次连接测试成功</p>
+              </div>
+              <span class="badge">当前启用</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h3>从预设模板添加</h3>
+          <div class="template-grid">
+            <div class="template-chip">OpenRouter</div>
+            <div class="template-chip">智谱 GLM</div>
+            <div class="template-chip">DeepSeek</div>
+            <div class="template-chip">Gemini</div>
+            <div class="template-chip">OpenAI Compatible</div>
+            <div class="template-chip">+ 自定义</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>已保存配置</h3>
+            <div class="text-btn">+ 自定义</div>
+          </div>
+          <div class="config-list">
+            <div class="config-item active">
+              <div class="radio"></div>
+              <div class="config-main">
+                <p class="name">数学主力</p>
+                <p class="sub">OpenRouter</p>
+                <p class="sub">openai/gpt-4o-mini</p>
+                <span class="pill">当前启用</span>
+              </div>
+              <div class="actions">
+                <span>✎</span>
+                <span>🗑</span>
+              </div>
+            </div>
+
+            <div class="config-item">
+              <div class="radio"></div>
+              <div class="config-main">
+                <p class="name">GLM OCR 备用</p>
+                <p class="sub">智谱 GLM</p>
+                <p class="sub">glm-4.5v</p>
+              </div>
+              <div class="actions">
+                <span>✎</span>
+                <span>🗑</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="card form-card">
+            <p class="form-title">新增服务配置</p>
+            <div class="selected-template">当前模板：智谱 GLM</div>
+
+            <div class="field">
+              <label>服务商名称</label>
+              <input class="input" value="GLM 数学识别" />
+            </div>
+
+            <div class="field">
+              <label>API 地址</label>
+              <input class="input" value="https://open.bigmodel.cn/api/paas/v4" />
+              <div class="hint">模板已自动填充地址；你也可以在这里修改。</div>
+            </div>
+
+            <div class="field">
+              <label>模型</label>
+              <input class="input" value="glm-4.5v" />
+            </div>
+
+            <div class="field">
+              <label>API Key</label>
+              <input class="input" value="sk-********************************" />
+              <div class="hint">模板模式下主要填写这里即可。</div>
+            </div>
+
+            <div class="result">✓ 连接成功。当前配置可用于拍照识别与题目解析。</div>
+
+            <div class="buttons">
+              <div class="btn">测试连接</div>
+              <div class="btn primary">保存并启用</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

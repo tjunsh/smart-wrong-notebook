@@ -4,14 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
-import 'package:smart_wrong_notebook/src/features/onboarding/presentation/onboarding_screen.dart';
-import 'package:smart_wrong_notebook/src/features/settings/presentation/settings_screen.dart';
-import 'package:smart_wrong_notebook/src/features/notebook/presentation/notebook_screen.dart';
-import 'package:smart_wrong_notebook/src/features/review/presentation/review_screen.dart';
 import 'package:smart_wrong_notebook/src/features/home/presentation/home_screen.dart';
+import 'package:smart_wrong_notebook/src/features/notebook/presentation/notebook_screen.dart';
+import 'package:smart_wrong_notebook/src/features/onboarding/presentation/onboarding_screen.dart';
+import 'package:smart_wrong_notebook/src/features/ocr/presentation/ocr_confirmation_screen.dart';
+import 'package:smart_wrong_notebook/src/features/review/presentation/review_screen.dart';
+import 'package:smart_wrong_notebook/src/features/settings/presentation/settings_screen.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/question_repository.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/settings_repository.dart';
 import 'package:smart_wrong_notebook/src/domain/models/ai_provider_config.dart';
+import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
+import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 
 final _inMemRepo = InMemoryQuestionRepository();
 
@@ -109,6 +112,52 @@ void main() {
       expect(find.byIcon(CupertinoIcons.camera), findsOneWidget);
       expect(find.text('相册'), findsOneWidget);
       expect(find.byIcon(CupertinoIcons.photo), findsOneWidget);
+    });
+
+    testWidgets('ocr confirmation screen shows editable extracted text', (tester) async {
+      final container = ProviderContainer(overrides: [_repoOverride, _settingsOverride]);
+      addTearDown(container.dispose);
+      container.read(currentQuestionProvider.notifier).state = QuestionRecord.draft(
+        id: 'q-1',
+        imagePath: '',
+        subject: Subject.math,
+        recognizedText: '已知 2x+1=5，求 x 的值',
+      );
+
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: OcrConfirmationScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('确认题目内容'), findsOneWidget);
+      expect(find.text('确认并保存到错题本'), findsOneWidget);
+      expect(find.text('已知 2x+1=5，求 x 的值'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('ocr confirmation screen blocks empty text before saving', (tester) async {
+      final container = ProviderContainer(overrides: [_repoOverride, _settingsOverride]);
+      addTearDown(container.dispose);
+      container.read(currentQuestionProvider.notifier).state = QuestionRecord.draft(
+        id: 'q-empty',
+        imagePath: '',
+        subject: Subject.math,
+        recognizedText: '',
+      );
+
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: OcrConfirmationScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('确认并保存到错题本'));
+      await tester.tap(find.text('确认并保存到错题本'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('请先补充题目内容，再保存到错题本'), findsWidgets);
+      expect(find.byType(OcrConfirmationScreen), findsOneWidget);
     });
 
     testWidgets('onboarding screen shows three pages with skip and next', (tester) async {

@@ -67,7 +67,7 @@ void main() {
     await repository.saveDraft(record);
 
     final updated = record.copyWith(
-      correctedText: '2x + 3 = 7',
+      normalizedQuestionText: '2x + 3 = 7',
       masteryLevel: MasteryLevel.reviewing,
       reviewCount: 1,
     );
@@ -78,5 +78,42 @@ void main() {
     expect(items.single.correctedText, '2x + 3 = 7');
     expect(items.single.masteryLevel, MasteryLevel.reviewing);
     expect(items.single.reviewCount, 1);
+  });
+
+  test('repository preserves lineage metadata', () async {
+    final repository = InMemoryQuestionRepository();
+    final record = QuestionRecord.draft(
+      id: 'q-child-1',
+      imagePath: '/tmp/q-child-1.jpg',
+      subject: Subject.math,
+      recognizedText: '第一题',
+    ).copyWith(
+      parentQuestionId: 'q-parent',
+      rootQuestionId: 'q-root',
+      splitOrder: 1,
+    );
+
+    await repository.saveDraft(record);
+    final found = await repository.getById('q-child-1');
+
+    expect(found?.parentQuestionId, 'q-parent');
+    expect(found?.rootQuestionId, 'q-root');
+    expect(found?.splitOrder, 1);
+
+    final json = found!.toJson();
+    final restored = QuestionRecord.fromJson(json);
+    expect(restored.parentQuestionId, 'q-parent');
+    expect(restored.rootQuestionId, 'q-root');
+    expect(restored.splitOrder, 1);
+
+    final legacyRestored = QuestionRecord.fromJson(<String, dynamic>{
+      ...json,
+      'parentQuestionId': '',
+      'rootQuestionId': '',
+      'splitOrder': '2',
+    });
+    expect(legacyRestored.parentQuestionId, isNull);
+    expect(legacyRestored.rootQuestionId, isNull);
+    expect(legacyRestored.splitOrder, 2);
   });
 }

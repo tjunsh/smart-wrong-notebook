@@ -107,11 +107,29 @@ class $QuestionRecordsTable extends QuestionRecords
   static const VerificationMeta _customTagsMeta =
       const VerificationMeta('customTags');
   @override
-  late final GeneratedColumn<String> customTags =
-      GeneratedColumn<String>('custom_tags', aliasedName, false,
-          type: DriftSqlType.string,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(''));
+  late final GeneratedColumn<String> customTags = GeneratedColumn<String>(
+      'custom_tags', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
+  static const VerificationMeta _parentQuestionIdMeta =
+      const VerificationMeta('parentQuestionId');
+  @override
+  late final GeneratedColumn<String> parentQuestionId = GeneratedColumn<String>(
+      'parent_question_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _rootQuestionIdMeta =
+      const VerificationMeta('rootQuestionId');
+  @override
+  late final GeneratedColumn<String> rootQuestionId = GeneratedColumn<String>(
+      'root_question_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _splitOrderMeta =
+      const VerificationMeta('splitOrder');
+  @override
+  late final GeneratedColumn<int> splitOrder = GeneratedColumn<int>(
+      'split_order', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -129,7 +147,10 @@ class $QuestionRecordsTable extends QuestionRecords
         tags,
         aiTags,
         aiKnowledgePoints,
-        customTags
+        customTags,
+        parentQuestionId,
+        rootQuestionId,
+        splitOrder
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -224,6 +245,40 @@ class $QuestionRecordsTable extends QuestionRecords
       context.handle(
           _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
     }
+    if (data.containsKey('ai_tags')) {
+      context.handle(_aiTagsMeta,
+          aiTags.isAcceptableOrUnknown(data['ai_tags']!, _aiTagsMeta));
+    }
+    if (data.containsKey('ai_knowledge_points')) {
+      context.handle(
+          _aiKnowledgePointsMeta,
+          aiKnowledgePoints.isAcceptableOrUnknown(
+              data['ai_knowledge_points']!, _aiKnowledgePointsMeta));
+    }
+    if (data.containsKey('custom_tags')) {
+      context.handle(
+          _customTagsMeta,
+          customTags.isAcceptableOrUnknown(
+              data['custom_tags']!, _customTagsMeta));
+    }
+    if (data.containsKey('parent_question_id')) {
+      context.handle(
+          _parentQuestionIdMeta,
+          parentQuestionId.isAcceptableOrUnknown(
+              data['parent_question_id']!, _parentQuestionIdMeta));
+    }
+    if (data.containsKey('root_question_id')) {
+      context.handle(
+          _rootQuestionIdMeta,
+          rootQuestionId.isAcceptableOrUnknown(
+              data['root_question_id']!, _rootQuestionIdMeta));
+    }
+    if (data.containsKey('split_order')) {
+      context.handle(
+          _splitOrderMeta,
+          splitOrder.isAcceptableOrUnknown(
+              data['split_order']!, _splitOrderMeta));
+    }
     return context;
   }
 
@@ -261,6 +316,16 @@ class $QuestionRecordsTable extends QuestionRecords
           .read(DriftSqlType.string, data['${effectivePrefix}tags'])!,
       aiTags: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}ai_tags'])!,
+      aiKnowledgePoints: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}ai_knowledge_points'])!,
+      customTags: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}custom_tags'])!,
+      parentQuestionId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}parent_question_id']),
+      rootQuestionId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}root_question_id']),
+      splitOrder: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}split_order']),
     );
   }
 
@@ -287,6 +352,9 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
   final String aiTags;
   final String aiKnowledgePoints;
   final String customTags;
+  final String? parentQuestionId;
+  final String? rootQuestionId;
+  final int? splitOrder;
   const QuestionRecord(
       {required this.id,
       required this.subject,
@@ -301,9 +369,12 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
       required this.updatedAt,
       this.aiAnalysisJson,
       required this.tags,
-      this.aiTags = '',
-      this.aiKnowledgePoints = '',
-      this.customTags = ''});
+      required this.aiTags,
+      required this.aiKnowledgePoints,
+      required this.customTags,
+      this.parentQuestionId,
+      this.rootQuestionId,
+      this.splitOrder});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -329,6 +400,15 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
     map['ai_tags'] = Variable<String>(aiTags);
     map['ai_knowledge_points'] = Variable<String>(aiKnowledgePoints);
     map['custom_tags'] = Variable<String>(customTags);
+    if (!nullToAbsent || parentQuestionId != null) {
+      map['parent_question_id'] = Variable<String>(parentQuestionId);
+    }
+    if (!nullToAbsent || rootQuestionId != null) {
+      map['root_question_id'] = Variable<String>(rootQuestionId);
+    }
+    if (!nullToAbsent || splitOrder != null) {
+      map['split_order'] = Variable<int>(splitOrder);
+    }
     return map;
   }
 
@@ -354,6 +434,17 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
           : Value(aiAnalysisJson),
       tags: Value(tags),
       aiTags: Value(aiTags),
+      aiKnowledgePoints: Value(aiKnowledgePoints),
+      customTags: Value(customTags),
+      parentQuestionId: parentQuestionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentQuestionId),
+      rootQuestionId: rootQuestionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rootQuestionId),
+      splitOrder: splitOrder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(splitOrder),
     );
   }
 
@@ -376,6 +467,11 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
       aiAnalysisJson: serializer.fromJson<String?>(json['aiAnalysisJson']),
       tags: serializer.fromJson<String>(json['tags']),
       aiTags: serializer.fromJson<String>(json['aiTags']),
+      aiKnowledgePoints: serializer.fromJson<String>(json['aiKnowledgePoints']),
+      customTags: serializer.fromJson<String>(json['customTags']),
+      parentQuestionId: serializer.fromJson<String?>(json['parentQuestionId']),
+      rootQuestionId: serializer.fromJson<String?>(json['rootQuestionId']),
+      splitOrder: serializer.fromJson<int?>(json['splitOrder']),
     );
   }
   @override
@@ -396,6 +492,11 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
       'aiAnalysisJson': serializer.toJson<String?>(aiAnalysisJson),
       'tags': serializer.toJson<String>(tags),
       'aiTags': serializer.toJson<String>(aiTags),
+      'aiKnowledgePoints': serializer.toJson<String>(aiKnowledgePoints),
+      'customTags': serializer.toJson<String>(customTags),
+      'parentQuestionId': serializer.toJson<String?>(parentQuestionId),
+      'rootQuestionId': serializer.toJson<String?>(rootQuestionId),
+      'splitOrder': serializer.toJson<int?>(splitOrder),
     };
   }
 
@@ -413,7 +514,12 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
           DateTime? updatedAt,
           Value<String?> aiAnalysisJson = const Value.absent(),
           String? tags,
-          String? aiTags}) =>
+          String? aiTags,
+          String? aiKnowledgePoints,
+          String? customTags,
+          Value<String?> parentQuestionId = const Value.absent(),
+          Value<String?> rootQuestionId = const Value.absent(),
+          Value<int?> splitOrder = const Value.absent()}) =>
       QuestionRecord(
         id: id ?? this.id,
         subject: subject ?? this.subject,
@@ -433,6 +539,14 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
             aiAnalysisJson.present ? aiAnalysisJson.value : this.aiAnalysisJson,
         tags: tags ?? this.tags,
         aiTags: aiTags ?? this.aiTags,
+        aiKnowledgePoints: aiKnowledgePoints ?? this.aiKnowledgePoints,
+        customTags: customTags ?? this.customTags,
+        parentQuestionId: parentQuestionId.present
+            ? parentQuestionId.value
+            : this.parentQuestionId,
+        rootQuestionId:
+            rootQuestionId.present ? rootQuestionId.value : this.rootQuestionId,
+        splitOrder: splitOrder.present ? splitOrder.value : this.splitOrder,
       );
   QuestionRecord copyWithCompanion(QuestionRecordsCompanion data) {
     return QuestionRecord(
@@ -465,6 +579,19 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
           : this.aiAnalysisJson,
       tags: data.tags.present ? data.tags.value : this.tags,
       aiTags: data.aiTags.present ? data.aiTags.value : this.aiTags,
+      aiKnowledgePoints: data.aiKnowledgePoints.present
+          ? data.aiKnowledgePoints.value
+          : this.aiKnowledgePoints,
+      customTags:
+          data.customTags.present ? data.customTags.value : this.customTags,
+      parentQuestionId: data.parentQuestionId.present
+          ? data.parentQuestionId.value
+          : this.parentQuestionId,
+      rootQuestionId: data.rootQuestionId.present
+          ? data.rootQuestionId.value
+          : this.rootQuestionId,
+      splitOrder:
+          data.splitOrder.present ? data.splitOrder.value : this.splitOrder,
     );
   }
 
@@ -483,7 +610,13 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('aiAnalysisJson: $aiAnalysisJson, ')
-          ..write('tags: $tags')
+          ..write('tags: $tags, ')
+          ..write('aiTags: $aiTags, ')
+          ..write('aiKnowledgePoints: $aiKnowledgePoints, ')
+          ..write('customTags: $customTags, ')
+          ..write('parentQuestionId: $parentQuestionId, ')
+          ..write('rootQuestionId: $rootQuestionId, ')
+          ..write('splitOrder: $splitOrder')
           ..write(')'))
         .toString();
   }
@@ -505,7 +638,10 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
       tags,
       aiTags,
       aiKnowledgePoints,
-      customTags);
+      customTags,
+      parentQuestionId,
+      rootQuestionId,
+      splitOrder);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -525,7 +661,10 @@ class QuestionRecord extends DataClass implements Insertable<QuestionRecord> {
           other.tags == this.tags &&
           other.aiTags == this.aiTags &&
           other.aiKnowledgePoints == this.aiKnowledgePoints &&
-          other.customTags == this.customTags);
+          other.customTags == this.customTags &&
+          other.parentQuestionId == this.parentQuestionId &&
+          other.rootQuestionId == this.rootQuestionId &&
+          other.splitOrder == this.splitOrder);
 }
 
 class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
@@ -545,6 +684,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
   final Value<String> aiTags;
   final Value<String> aiKnowledgePoints;
   final Value<String> customTags;
+  final Value<String?> parentQuestionId;
+  final Value<String?> rootQuestionId;
+  final Value<int?> splitOrder;
   final Value<int> rowid;
   const QuestionRecordsCompanion({
     this.id = const Value.absent(),
@@ -563,6 +705,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
     this.aiTags = const Value.absent(),
     this.aiKnowledgePoints = const Value.absent(),
     this.customTags = const Value.absent(),
+    this.parentQuestionId = const Value.absent(),
+    this.rootQuestionId = const Value.absent(),
+    this.splitOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuestionRecordsCompanion.insert({
@@ -582,6 +727,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
     this.aiTags = const Value.absent(),
     this.aiKnowledgePoints = const Value.absent(),
     this.customTags = const Value.absent(),
+    this.parentQuestionId = const Value.absent(),
+    this.rootQuestionId = const Value.absent(),
+    this.splitOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         subject = Value(subject),
@@ -608,6 +756,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
     Expression<String>? aiTags,
     Expression<String>? aiKnowledgePoints,
     Expression<String>? customTags,
+    Expression<String>? parentQuestionId,
+    Expression<String>? rootQuestionId,
+    Expression<int>? splitOrder,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -627,6 +778,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
       if (aiTags != null) 'ai_tags': aiTags,
       if (aiKnowledgePoints != null) 'ai_knowledge_points': aiKnowledgePoints,
       if (customTags != null) 'custom_tags': customTags,
+      if (parentQuestionId != null) 'parent_question_id': parentQuestionId,
+      if (rootQuestionId != null) 'root_question_id': rootQuestionId,
+      if (splitOrder != null) 'split_order': splitOrder,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -648,6 +802,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
       Value<String>? aiTags,
       Value<String>? aiKnowledgePoints,
       Value<String>? customTags,
+      Value<String?>? parentQuestionId,
+      Value<String?>? rootQuestionId,
+      Value<int?>? splitOrder,
       Value<int>? rowid}) {
     return QuestionRecordsCompanion(
       id: id ?? this.id,
@@ -666,6 +823,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
       aiTags: aiTags ?? this.aiTags,
       aiKnowledgePoints: aiKnowledgePoints ?? this.aiKnowledgePoints,
       customTags: customTags ?? this.customTags,
+      parentQuestionId: parentQuestionId ?? this.parentQuestionId,
+      rootQuestionId: rootQuestionId ?? this.rootQuestionId,
+      splitOrder: splitOrder ?? this.splitOrder,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -721,6 +881,15 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
     if (customTags.present) {
       map['custom_tags'] = Variable<String>(customTags.value);
     }
+    if (parentQuestionId.present) {
+      map['parent_question_id'] = Variable<String>(parentQuestionId.value);
+    }
+    if (rootQuestionId.present) {
+      map['root_question_id'] = Variable<String>(rootQuestionId.value);
+    }
+    if (splitOrder.present) {
+      map['split_order'] = Variable<int>(splitOrder.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -746,6 +915,9 @@ class QuestionRecordsCompanion extends UpdateCompanion<QuestionRecord> {
           ..write('aiTags: $aiTags, ')
           ..write('aiKnowledgePoints: $aiKnowledgePoints, ')
           ..write('customTags: $customTags, ')
+          ..write('parentQuestionId: $parentQuestionId, ')
+          ..write('rootQuestionId: $rootQuestionId, ')
+          ..write('splitOrder: $splitOrder, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -760,13 +932,9 @@ class $GeneratedExercisesTable extends GeneratedExercises
   $GeneratedExercisesTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
-      hasAutoIncrement: true,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _questionIdMeta =
       const VerificationMeta('questionId');
   @override
@@ -776,6 +944,20 @@ class $GeneratedExercisesTable extends GeneratedExercises
       requiredDuringInsert: true,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'REFERENCES question_records (id)'));
+  static const VerificationMeta _generationModeMeta =
+      const VerificationMeta('generationMode');
+  @override
+  late final GeneratedColumn<String> generationMode = GeneratedColumn<String>(
+      'generation_mode', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('practice'));
+  static const VerificationMeta _orderIndexMeta =
+      const VerificationMeta('orderIndex');
+  @override
+  late final GeneratedColumn<int> orderIndex = GeneratedColumn<int>(
+      'order_index', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _difficultyMeta =
       const VerificationMeta('difficulty');
   @override
@@ -799,6 +981,27 @@ class $GeneratedExercisesTable extends GeneratedExercises
   late final GeneratedColumn<String> explanation = GeneratedColumn<String>(
       'explanation', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _optionsJsonMeta =
+      const VerificationMeta('optionsJson');
+  @override
+  late final GeneratedColumn<String> optionsJson = GeneratedColumn<String>(
+      'options_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _userAnswerMeta =
+      const VerificationMeta('userAnswer');
+  @override
+  late final GeneratedColumn<String> userAnswer = GeneratedColumn<String>(
+      'user_answer', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isCorrectMeta =
+      const VerificationMeta('isCorrect');
+  @override
+  late final GeneratedColumn<bool> isCorrect = GeneratedColumn<bool>(
+      'is_correct', aliasedName, true,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_correct" IN (0, 1))'));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -806,8 +1009,20 @@ class $GeneratedExercisesTable extends GeneratedExercises
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, questionId, difficulty, question, answer, explanation, createdAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        questionId,
+        generationMode,
+        orderIndex,
+        difficulty,
+        question,
+        answer,
+        explanation,
+        optionsJson,
+        userAnswer,
+        isCorrect,
+        createdAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -820,6 +1035,8 @@ class $GeneratedExercisesTable extends GeneratedExercises
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
     }
     if (data.containsKey('question_id')) {
       context.handle(
@@ -828,6 +1045,18 @@ class $GeneratedExercisesTable extends GeneratedExercises
               data['question_id']!, _questionIdMeta));
     } else if (isInserting) {
       context.missing(_questionIdMeta);
+    }
+    if (data.containsKey('generation_mode')) {
+      context.handle(
+          _generationModeMeta,
+          generationMode.isAcceptableOrUnknown(
+              data['generation_mode']!, _generationModeMeta));
+    }
+    if (data.containsKey('order_index')) {
+      context.handle(
+          _orderIndexMeta,
+          orderIndex.isAcceptableOrUnknown(
+              data['order_index']!, _orderIndexMeta));
     }
     if (data.containsKey('difficulty')) {
       context.handle(
@@ -855,6 +1084,22 @@ class $GeneratedExercisesTable extends GeneratedExercises
           explanation.isAcceptableOrUnknown(
               data['explanation']!, _explanationMeta));
     }
+    if (data.containsKey('options_json')) {
+      context.handle(
+          _optionsJsonMeta,
+          optionsJson.isAcceptableOrUnknown(
+              data['options_json']!, _optionsJsonMeta));
+    }
+    if (data.containsKey('user_answer')) {
+      context.handle(
+          _userAnswerMeta,
+          userAnswer.isAcceptableOrUnknown(
+              data['user_answer']!, _userAnswerMeta));
+    }
+    if (data.containsKey('is_correct')) {
+      context.handle(_isCorrectMeta,
+          isCorrect.isAcceptableOrUnknown(data['is_correct']!, _isCorrectMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -871,9 +1116,13 @@ class $GeneratedExercisesTable extends GeneratedExercises
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return GeneratedExercise(
       id: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       questionId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}question_id'])!,
+      generationMode: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}generation_mode'])!,
+      orderIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}order_index']),
       difficulty: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}difficulty'])!,
       question: attachedDatabase.typeMapping
@@ -882,6 +1131,12 @@ class $GeneratedExercisesTable extends GeneratedExercises
           .read(DriftSqlType.string, data['${effectivePrefix}answer'])!,
       explanation: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}explanation']),
+      optionsJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}options_json']),
+      userAnswer: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_answer']),
+      isCorrect: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_correct']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -895,31 +1150,54 @@ class $GeneratedExercisesTable extends GeneratedExercises
 
 class GeneratedExercise extends DataClass
     implements Insertable<GeneratedExercise> {
-  final int id;
+  final String id;
   final String questionId;
+  final String generationMode;
+  final int? orderIndex;
   final String difficulty;
   final String question;
   final String answer;
   final String? explanation;
+  final String? optionsJson;
+  final String? userAnswer;
+  final bool? isCorrect;
   final DateTime createdAt;
   const GeneratedExercise(
       {required this.id,
       required this.questionId,
+      required this.generationMode,
+      this.orderIndex,
       required this.difficulty,
       required this.question,
       required this.answer,
       this.explanation,
+      this.optionsJson,
+      this.userAnswer,
+      this.isCorrect,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
     map['question_id'] = Variable<String>(questionId);
+    map['generation_mode'] = Variable<String>(generationMode);
+    if (!nullToAbsent || orderIndex != null) {
+      map['order_index'] = Variable<int>(orderIndex);
+    }
     map['difficulty'] = Variable<String>(difficulty);
     map['question'] = Variable<String>(question);
     map['answer'] = Variable<String>(answer);
     if (!nullToAbsent || explanation != null) {
       map['explanation'] = Variable<String>(explanation);
+    }
+    if (!nullToAbsent || optionsJson != null) {
+      map['options_json'] = Variable<String>(optionsJson);
+    }
+    if (!nullToAbsent || userAnswer != null) {
+      map['user_answer'] = Variable<String>(userAnswer);
+    }
+    if (!nullToAbsent || isCorrect != null) {
+      map['is_correct'] = Variable<bool>(isCorrect);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -929,12 +1207,25 @@ class GeneratedExercise extends DataClass
     return GeneratedExercisesCompanion(
       id: Value(id),
       questionId: Value(questionId),
+      generationMode: Value(generationMode),
+      orderIndex: orderIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(orderIndex),
       difficulty: Value(difficulty),
       question: Value(question),
       answer: Value(answer),
       explanation: explanation == null && nullToAbsent
           ? const Value.absent()
           : Value(explanation),
+      optionsJson: optionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(optionsJson),
+      userAnswer: userAnswer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userAnswer),
+      isCorrect: isCorrect == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isCorrect),
       createdAt: Value(createdAt),
     );
   }
@@ -943,12 +1234,17 @@ class GeneratedExercise extends DataClass
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return GeneratedExercise(
-      id: serializer.fromJson<int>(json['id']),
+      id: serializer.fromJson<String>(json['id']),
       questionId: serializer.fromJson<String>(json['questionId']),
+      generationMode: serializer.fromJson<String>(json['generationMode']),
+      orderIndex: serializer.fromJson<int?>(json['orderIndex']),
       difficulty: serializer.fromJson<String>(json['difficulty']),
       question: serializer.fromJson<String>(json['question']),
       answer: serializer.fromJson<String>(json['answer']),
       explanation: serializer.fromJson<String?>(json['explanation']),
+      optionsJson: serializer.fromJson<String?>(json['optionsJson']),
+      userAnswer: serializer.fromJson<String?>(json['userAnswer']),
+      isCorrect: serializer.fromJson<bool?>(json['isCorrect']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -956,31 +1252,46 @@ class GeneratedExercise extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'id': serializer.toJson<String>(id),
       'questionId': serializer.toJson<String>(questionId),
+      'generationMode': serializer.toJson<String>(generationMode),
+      'orderIndex': serializer.toJson<int?>(orderIndex),
       'difficulty': serializer.toJson<String>(difficulty),
       'question': serializer.toJson<String>(question),
       'answer': serializer.toJson<String>(answer),
       'explanation': serializer.toJson<String?>(explanation),
+      'optionsJson': serializer.toJson<String?>(optionsJson),
+      'userAnswer': serializer.toJson<String?>(userAnswer),
+      'isCorrect': serializer.toJson<bool?>(isCorrect),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
   GeneratedExercise copyWith(
-          {int? id,
+          {String? id,
           String? questionId,
+          String? generationMode,
+          Value<int?> orderIndex = const Value.absent(),
           String? difficulty,
           String? question,
           String? answer,
           Value<String?> explanation = const Value.absent(),
+          Value<String?> optionsJson = const Value.absent(),
+          Value<String?> userAnswer = const Value.absent(),
+          Value<bool?> isCorrect = const Value.absent(),
           DateTime? createdAt}) =>
       GeneratedExercise(
         id: id ?? this.id,
         questionId: questionId ?? this.questionId,
+        generationMode: generationMode ?? this.generationMode,
+        orderIndex: orderIndex.present ? orderIndex.value : this.orderIndex,
         difficulty: difficulty ?? this.difficulty,
         question: question ?? this.question,
         answer: answer ?? this.answer,
         explanation: explanation.present ? explanation.value : this.explanation,
+        optionsJson: optionsJson.present ? optionsJson.value : this.optionsJson,
+        userAnswer: userAnswer.present ? userAnswer.value : this.userAnswer,
+        isCorrect: isCorrect.present ? isCorrect.value : this.isCorrect,
         createdAt: createdAt ?? this.createdAt,
       );
   GeneratedExercise copyWithCompanion(GeneratedExercisesCompanion data) {
@@ -988,12 +1299,22 @@ class GeneratedExercise extends DataClass
       id: data.id.present ? data.id.value : this.id,
       questionId:
           data.questionId.present ? data.questionId.value : this.questionId,
+      generationMode: data.generationMode.present
+          ? data.generationMode.value
+          : this.generationMode,
+      orderIndex:
+          data.orderIndex.present ? data.orderIndex.value : this.orderIndex,
       difficulty:
           data.difficulty.present ? data.difficulty.value : this.difficulty,
       question: data.question.present ? data.question.value : this.question,
       answer: data.answer.present ? data.answer.value : this.answer,
       explanation:
           data.explanation.present ? data.explanation.value : this.explanation,
+      optionsJson:
+          data.optionsJson.present ? data.optionsJson.value : this.optionsJson,
+      userAnswer:
+          data.userAnswer.present ? data.userAnswer.value : this.userAnswer,
+      isCorrect: data.isCorrect.present ? data.isCorrect.value : this.isCorrect,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1003,10 +1324,15 @@ class GeneratedExercise extends DataClass
     return (StringBuffer('GeneratedExercise(')
           ..write('id: $id, ')
           ..write('questionId: $questionId, ')
+          ..write('generationMode: $generationMode, ')
+          ..write('orderIndex: $orderIndex, ')
           ..write('difficulty: $difficulty, ')
           ..write('question: $question, ')
           ..write('answer: $answer, ')
           ..write('explanation: $explanation, ')
+          ..write('optionsJson: $optionsJson, ')
+          ..write('userAnswer: $userAnswer, ')
+          ..write('isCorrect: $isCorrect, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1014,86 +1340,145 @@ class GeneratedExercise extends DataClass
 
   @override
   int get hashCode => Object.hash(
-      id, questionId, difficulty, question, answer, explanation, createdAt);
+      id,
+      questionId,
+      generationMode,
+      orderIndex,
+      difficulty,
+      question,
+      answer,
+      explanation,
+      optionsJson,
+      userAnswer,
+      isCorrect,
+      createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is GeneratedExercise &&
           other.id == this.id &&
           other.questionId == this.questionId &&
+          other.generationMode == this.generationMode &&
+          other.orderIndex == this.orderIndex &&
           other.difficulty == this.difficulty &&
           other.question == this.question &&
           other.answer == this.answer &&
           other.explanation == this.explanation &&
+          other.optionsJson == this.optionsJson &&
+          other.userAnswer == this.userAnswer &&
+          other.isCorrect == this.isCorrect &&
           other.createdAt == this.createdAt);
 }
 
 class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
-  final Value<int> id;
+  final Value<String> id;
   final Value<String> questionId;
+  final Value<String> generationMode;
+  final Value<int?> orderIndex;
   final Value<String> difficulty;
   final Value<String> question;
   final Value<String> answer;
   final Value<String?> explanation;
+  final Value<String?> optionsJson;
+  final Value<String?> userAnswer;
+  final Value<bool?> isCorrect;
   final Value<DateTime> createdAt;
+  final Value<int> rowid;
   const GeneratedExercisesCompanion({
     this.id = const Value.absent(),
     this.questionId = const Value.absent(),
+    this.generationMode = const Value.absent(),
+    this.orderIndex = const Value.absent(),
     this.difficulty = const Value.absent(),
     this.question = const Value.absent(),
     this.answer = const Value.absent(),
     this.explanation = const Value.absent(),
+    this.optionsJson = const Value.absent(),
+    this.userAnswer = const Value.absent(),
+    this.isCorrect = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   GeneratedExercisesCompanion.insert({
-    this.id = const Value.absent(),
+    required String id,
     required String questionId,
+    this.generationMode = const Value.absent(),
+    this.orderIndex = const Value.absent(),
     required String difficulty,
     required String question,
     required String answer,
     this.explanation = const Value.absent(),
+    this.optionsJson = const Value.absent(),
+    this.userAnswer = const Value.absent(),
+    this.isCorrect = const Value.absent(),
     required DateTime createdAt,
-  })  : questionId = Value(questionId),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        questionId = Value(questionId),
         difficulty = Value(difficulty),
         question = Value(question),
         answer = Value(answer),
         createdAt = Value(createdAt);
   static Insertable<GeneratedExercise> custom({
-    Expression<int>? id,
+    Expression<String>? id,
     Expression<String>? questionId,
+    Expression<String>? generationMode,
+    Expression<int>? orderIndex,
     Expression<String>? difficulty,
     Expression<String>? question,
     Expression<String>? answer,
     Expression<String>? explanation,
+    Expression<String>? optionsJson,
+    Expression<String>? userAnswer,
+    Expression<bool>? isCorrect,
     Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (questionId != null) 'question_id': questionId,
+      if (generationMode != null) 'generation_mode': generationMode,
+      if (orderIndex != null) 'order_index': orderIndex,
       if (difficulty != null) 'difficulty': difficulty,
       if (question != null) 'question': question,
       if (answer != null) 'answer': answer,
       if (explanation != null) 'explanation': explanation,
+      if (optionsJson != null) 'options_json': optionsJson,
+      if (userAnswer != null) 'user_answer': userAnswer,
+      if (isCorrect != null) 'is_correct': isCorrect,
       if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   GeneratedExercisesCompanion copyWith(
-      {Value<int>? id,
+      {Value<String>? id,
       Value<String>? questionId,
+      Value<String>? generationMode,
+      Value<int?>? orderIndex,
       Value<String>? difficulty,
       Value<String>? question,
       Value<String>? answer,
       Value<String?>? explanation,
-      Value<DateTime>? createdAt}) {
+      Value<String?>? optionsJson,
+      Value<String?>? userAnswer,
+      Value<bool?>? isCorrect,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
     return GeneratedExercisesCompanion(
       id: id ?? this.id,
       questionId: questionId ?? this.questionId,
+      generationMode: generationMode ?? this.generationMode,
+      orderIndex: orderIndex ?? this.orderIndex,
       difficulty: difficulty ?? this.difficulty,
       question: question ?? this.question,
       answer: answer ?? this.answer,
       explanation: explanation ?? this.explanation,
+      optionsJson: optionsJson ?? this.optionsJson,
+      userAnswer: userAnswer ?? this.userAnswer,
+      isCorrect: isCorrect ?? this.isCorrect,
       createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -1101,10 +1486,16 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (questionId.present) {
       map['question_id'] = Variable<String>(questionId.value);
+    }
+    if (generationMode.present) {
+      map['generation_mode'] = Variable<String>(generationMode.value);
+    }
+    if (orderIndex.present) {
+      map['order_index'] = Variable<int>(orderIndex.value);
     }
     if (difficulty.present) {
       map['difficulty'] = Variable<String>(difficulty.value);
@@ -1118,8 +1509,20 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
     if (explanation.present) {
       map['explanation'] = Variable<String>(explanation.value);
     }
+    if (optionsJson.present) {
+      map['options_json'] = Variable<String>(optionsJson.value);
+    }
+    if (userAnswer.present) {
+      map['user_answer'] = Variable<String>(userAnswer.value);
+    }
+    if (isCorrect.present) {
+      map['is_correct'] = Variable<bool>(isCorrect.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
     }
     return map;
   }
@@ -1129,11 +1532,17 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
     return (StringBuffer('GeneratedExercisesCompanion(')
           ..write('id: $id, ')
           ..write('questionId: $questionId, ')
+          ..write('generationMode: $generationMode, ')
+          ..write('orderIndex: $orderIndex, ')
           ..write('difficulty: $difficulty, ')
           ..write('question: $question, ')
           ..write('answer: $answer, ')
           ..write('explanation: $explanation, ')
-          ..write('createdAt: $createdAt')
+          ..write('optionsJson: $optionsJson, ')
+          ..write('userAnswer: $userAnswer, ')
+          ..write('isCorrect: $isCorrect, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -1758,6 +2167,12 @@ typedef $$QuestionRecordsTableCreateCompanionBuilder = QuestionRecordsCompanion
   required DateTime updatedAt,
   Value<String?> aiAnalysisJson,
   Value<String> tags,
+  Value<String> aiTags,
+  Value<String> aiKnowledgePoints,
+  Value<String> customTags,
+  Value<String?> parentQuestionId,
+  Value<String?> rootQuestionId,
+  Value<int?> splitOrder,
   Value<int> rowid,
 });
 typedef $$QuestionRecordsTableUpdateCompanionBuilder = QuestionRecordsCompanion
@@ -1775,6 +2190,12 @@ typedef $$QuestionRecordsTableUpdateCompanionBuilder = QuestionRecordsCompanion
   Value<DateTime> updatedAt,
   Value<String?> aiAnalysisJson,
   Value<String> tags,
+  Value<String> aiTags,
+  Value<String> aiKnowledgePoints,
+  Value<String> customTags,
+  Value<String?> parentQuestionId,
+  Value<String?> rootQuestionId,
+  Value<int?> splitOrder,
   Value<int> rowid,
 });
 
@@ -1865,6 +2286,27 @@ class $$QuestionRecordsTableFilterComposer
 
   ColumnFilters<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get aiTags => $composableBuilder(
+      column: $table.aiTags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get aiKnowledgePoints => $composableBuilder(
+      column: $table.aiKnowledgePoints,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get customTags => $composableBuilder(
+      column: $table.customTags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get parentQuestionId => $composableBuilder(
+      column: $table.parentQuestionId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rootQuestionId => $composableBuilder(
+      column: $table.rootQuestionId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get splitOrder => $composableBuilder(
+      column: $table.splitOrder, builder: (column) => ColumnFilters(column));
 
   Expression<bool> generatedExercisesRefs(
       Expression<bool> Function($$GeneratedExercisesTableFilterComposer f) f) {
@@ -1963,6 +2405,27 @@ class $$QuestionRecordsTableOrderingComposer
 
   ColumnOrderings<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get aiTags => $composableBuilder(
+      column: $table.aiTags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get aiKnowledgePoints => $composableBuilder(
+      column: $table.aiKnowledgePoints,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get customTags => $composableBuilder(
+      column: $table.customTags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get parentQuestionId => $composableBuilder(
+      column: $table.parentQuestionId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rootQuestionId => $composableBuilder(
+      column: $table.rootQuestionId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get splitOrder => $composableBuilder(
+      column: $table.splitOrder, builder: (column) => ColumnOrderings(column));
 }
 
 class $$QuestionRecordsTableAnnotationComposer
@@ -2012,6 +2475,24 @@ class $$QuestionRecordsTableAnnotationComposer
 
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<String> get aiTags =>
+      $composableBuilder(column: $table.aiTags, builder: (column) => column);
+
+  GeneratedColumn<String> get aiKnowledgePoints => $composableBuilder(
+      column: $table.aiKnowledgePoints, builder: (column) => column);
+
+  GeneratedColumn<String> get customTags => $composableBuilder(
+      column: $table.customTags, builder: (column) => column);
+
+  GeneratedColumn<String> get parentQuestionId => $composableBuilder(
+      column: $table.parentQuestionId, builder: (column) => column);
+
+  GeneratedColumn<String> get rootQuestionId => $composableBuilder(
+      column: $table.rootQuestionId, builder: (column) => column);
+
+  GeneratedColumn<int> get splitOrder => $composableBuilder(
+      column: $table.splitOrder, builder: (column) => column);
 
   Expression<T> generatedExercisesRefs<T extends Object>(
       Expression<T> Function($$GeneratedExercisesTableAnnotationComposer a) f) {
@@ -2095,6 +2576,12 @@ class $$QuestionRecordsTableTableManager extends RootTableManager<
             Value<DateTime> updatedAt = const Value.absent(),
             Value<String?> aiAnalysisJson = const Value.absent(),
             Value<String> tags = const Value.absent(),
+            Value<String> aiTags = const Value.absent(),
+            Value<String> aiKnowledgePoints = const Value.absent(),
+            Value<String> customTags = const Value.absent(),
+            Value<String?> parentQuestionId = const Value.absent(),
+            Value<String?> rootQuestionId = const Value.absent(),
+            Value<int?> splitOrder = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               QuestionRecordsCompanion(
@@ -2111,6 +2598,12 @@ class $$QuestionRecordsTableTableManager extends RootTableManager<
             updatedAt: updatedAt,
             aiAnalysisJson: aiAnalysisJson,
             tags: tags,
+            aiTags: aiTags,
+            aiKnowledgePoints: aiKnowledgePoints,
+            customTags: customTags,
+            parentQuestionId: parentQuestionId,
+            rootQuestionId: rootQuestionId,
+            splitOrder: splitOrder,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2127,6 +2620,12 @@ class $$QuestionRecordsTableTableManager extends RootTableManager<
             required DateTime updatedAt,
             Value<String?> aiAnalysisJson = const Value.absent(),
             Value<String> tags = const Value.absent(),
+            Value<String> aiTags = const Value.absent(),
+            Value<String> aiKnowledgePoints = const Value.absent(),
+            Value<String> customTags = const Value.absent(),
+            Value<String?> parentQuestionId = const Value.absent(),
+            Value<String?> rootQuestionId = const Value.absent(),
+            Value<int?> splitOrder = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               QuestionRecordsCompanion.insert(
@@ -2143,6 +2642,12 @@ class $$QuestionRecordsTableTableManager extends RootTableManager<
             updatedAt: updatedAt,
             aiAnalysisJson: aiAnalysisJson,
             tags: tags,
+            aiTags: aiTags,
+            aiKnowledgePoints: aiKnowledgePoints,
+            customTags: customTags,
+            parentQuestionId: parentQuestionId,
+            rootQuestionId: rootQuestionId,
+            splitOrder: splitOrder,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -2209,23 +2714,35 @@ typedef $$QuestionRecordsTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function({bool generatedExercisesRefs, bool reviewLogsRefs})>;
 typedef $$GeneratedExercisesTableCreateCompanionBuilder
     = GeneratedExercisesCompanion Function({
-  Value<int> id,
+  required String id,
   required String questionId,
+  Value<String> generationMode,
+  Value<int?> orderIndex,
   required String difficulty,
   required String question,
   required String answer,
   Value<String?> explanation,
+  Value<String?> optionsJson,
+  Value<String?> userAnswer,
+  Value<bool?> isCorrect,
   required DateTime createdAt,
+  Value<int> rowid,
 });
 typedef $$GeneratedExercisesTableUpdateCompanionBuilder
     = GeneratedExercisesCompanion Function({
-  Value<int> id,
+  Value<String> id,
   Value<String> questionId,
+  Value<String> generationMode,
+  Value<int?> orderIndex,
   Value<String> difficulty,
   Value<String> question,
   Value<String> answer,
   Value<String?> explanation,
+  Value<String?> optionsJson,
+  Value<String?> userAnswer,
+  Value<bool?> isCorrect,
   Value<DateTime> createdAt,
+  Value<int> rowid,
 });
 
 final class $$GeneratedExercisesTableReferences extends BaseReferences<
@@ -2259,8 +2776,15 @@ class $$GeneratedExercisesTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get generationMode => $composableBuilder(
+      column: $table.generationMode,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get orderIndex => $composableBuilder(
+      column: $table.orderIndex, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get difficulty => $composableBuilder(
       column: $table.difficulty, builder: (column) => ColumnFilters(column));
@@ -2273,6 +2797,15 @@ class $$GeneratedExercisesTableFilterComposer
 
   ColumnFilters<String> get explanation => $composableBuilder(
       column: $table.explanation, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get optionsJson => $composableBuilder(
+      column: $table.optionsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userAnswer => $composableBuilder(
+      column: $table.userAnswer, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isCorrect => $composableBuilder(
+      column: $table.isCorrect, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -2307,8 +2840,15 @@ class $$GeneratedExercisesTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get generationMode => $composableBuilder(
+      column: $table.generationMode,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get orderIndex => $composableBuilder(
+      column: $table.orderIndex, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get difficulty => $composableBuilder(
       column: $table.difficulty, builder: (column) => ColumnOrderings(column));
@@ -2321,6 +2861,15 @@ class $$GeneratedExercisesTableOrderingComposer
 
   ColumnOrderings<String> get explanation => $composableBuilder(
       column: $table.explanation, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get optionsJson => $composableBuilder(
+      column: $table.optionsJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userAnswer => $composableBuilder(
+      column: $table.userAnswer, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isCorrect => $composableBuilder(
+      column: $table.isCorrect, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
@@ -2355,8 +2904,14 @@ class $$GeneratedExercisesTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get generationMode => $composableBuilder(
+      column: $table.generationMode, builder: (column) => column);
+
+  GeneratedColumn<int> get orderIndex => $composableBuilder(
+      column: $table.orderIndex, builder: (column) => column);
 
   GeneratedColumn<String> get difficulty => $composableBuilder(
       column: $table.difficulty, builder: (column) => column);
@@ -2369,6 +2924,15 @@ class $$GeneratedExercisesTableAnnotationComposer
 
   GeneratedColumn<String> get explanation => $composableBuilder(
       column: $table.explanation, builder: (column) => column);
+
+  GeneratedColumn<String> get optionsJson => $composableBuilder(
+      column: $table.optionsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get userAnswer => $composableBuilder(
+      column: $table.userAnswer, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCorrect =>
+      $composableBuilder(column: $table.isCorrect, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -2419,40 +2983,64 @@ class $$GeneratedExercisesTableTableManager extends RootTableManager<
               $$GeneratedExercisesTableAnnotationComposer(
                   $db: db, $table: table),
           updateCompanionCallback: ({
-            Value<int> id = const Value.absent(),
+            Value<String> id = const Value.absent(),
             Value<String> questionId = const Value.absent(),
+            Value<String> generationMode = const Value.absent(),
+            Value<int?> orderIndex = const Value.absent(),
             Value<String> difficulty = const Value.absent(),
             Value<String> question = const Value.absent(),
             Value<String> answer = const Value.absent(),
             Value<String?> explanation = const Value.absent(),
+            Value<String?> optionsJson = const Value.absent(),
+            Value<String?> userAnswer = const Value.absent(),
+            Value<bool?> isCorrect = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
           }) =>
               GeneratedExercisesCompanion(
             id: id,
             questionId: questionId,
+            generationMode: generationMode,
+            orderIndex: orderIndex,
             difficulty: difficulty,
             question: question,
             answer: answer,
             explanation: explanation,
+            optionsJson: optionsJson,
+            userAnswer: userAnswer,
+            isCorrect: isCorrect,
             createdAt: createdAt,
+            rowid: rowid,
           ),
           createCompanionCallback: ({
-            Value<int> id = const Value.absent(),
+            required String id,
             required String questionId,
+            Value<String> generationMode = const Value.absent(),
+            Value<int?> orderIndex = const Value.absent(),
             required String difficulty,
             required String question,
             required String answer,
             Value<String?> explanation = const Value.absent(),
+            Value<String?> optionsJson = const Value.absent(),
+            Value<String?> userAnswer = const Value.absent(),
+            Value<bool?> isCorrect = const Value.absent(),
             required DateTime createdAt,
+            Value<int> rowid = const Value.absent(),
           }) =>
               GeneratedExercisesCompanion.insert(
             id: id,
             questionId: questionId,
+            generationMode: generationMode,
+            orderIndex: orderIndex,
             difficulty: difficulty,
             question: question,
             answer: answer,
             explanation: explanation,
+            optionsJson: optionsJson,
+            userAnswer: userAnswer,
+            isCorrect: isCorrect,
             createdAt: createdAt,
+            rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (

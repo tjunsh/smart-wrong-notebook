@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smart_wrong_notebook/src/data/files/image_storage_service.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
@@ -33,44 +34,44 @@ class CaptureService {
 
   Future<CaptureResult> pickFromCamera() async {
     try {
-      print('[CaptureService] Opening camera...');
+      debugPrint('[CaptureService] Opening camera...');
       final XFile? file = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 85,
       );
-      print('[CaptureService] Camera result: ${file?.path ?? "cancelled"}');
+      debugPrint('[CaptureService] Camera result: ${file?.path ?? "cancelled"}');
 
       if (file == null) {
         return CaptureResult.cancel();
       }
 
       final record = await _saveToDraft(file);
-      print('[CaptureService] Image saved: ${record.imagePath}');
+      debugPrint('[CaptureService] Image saved: ${record.imagePath}');
       return CaptureResult.success(record);
     } catch (e) {
-      print('[CaptureService] Camera error: $e');
+      debugPrint('[CaptureService] Camera error: $e');
       return CaptureResult.error(e.toString());
     }
   }
 
   Future<CaptureResult> pickFromGallery() async {
     try {
-      print('[CaptureService] Opening gallery...');
+      debugPrint('[CaptureService] Opening gallery...');
       final XFile? file = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 85,
       );
-      print('[CaptureService] Gallery result: ${file?.path ?? "cancelled"}');
+      debugPrint('[CaptureService] Gallery result: ${file?.path ?? "cancelled"}');
 
       if (file == null) {
         return CaptureResult.cancel();
       }
 
       final record = await _saveToDraft(file);
-      print('[CaptureService] Image saved: ${record.imagePath}');
+      debugPrint('[CaptureService] Image saved: ${record.imagePath}');
       return CaptureResult.success(record);
     } catch (e) {
-      print('[CaptureService] Gallery error: $e');
+      debugPrint('[CaptureService] Gallery error: $e');
       return CaptureResult.error(e.toString());
     }
   }

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,8 +18,9 @@ QuestionRecord _makeQuestion({List<GeneratedExercise>? exercises}) {
     id: 'q-1',
     imagePath: '/tmp/q-1.jpg',
     subject: Subject.math,
-    recognizedText: 'sample',
-    correctedText: 'corrected',
+    extractedQuestionText: 'sample',
+    normalizedQuestionText: 'corrected',
+    contentFormat: QuestionContentFormat.plain,
     tags: const [],
     createdAt: now,
     updatedAt: now,
@@ -29,18 +29,40 @@ QuestionRecord _makeQuestion({List<GeneratedExercise>? exercises}) {
     isFavorite: false,
     contentStatus: ContentStatus.ready,
     masteryLevel: MasteryLevel.newQuestion,
-    analysisResult: AnalysisResult(
+    analysisResult: const AnalysisResult(
       finalAnswer: '42',
-      steps: const ['step1'],
-      aiTags: const [],
-      knowledgePoints: const ['math'],
+      steps: ['step1'],
+      aiTags: [],
+      knowledgePoints: ['math'],
       mistakeReason: 'careless',
       studyAdvice: 'practice',
-      generatedExercises: exercises ?? const [
-        GeneratedExercise(id: 'e-1', difficulty: '简单', question: '1+1=?', options: ['A. 1', 'B. 2', 'C. 3', 'D. 4'], answer: 'B', explanation: 'basic addition'),
-        GeneratedExercise(id: 'e-2', difficulty: '中等', question: '2+2=?', options: ['A. 2', 'B. 3', 'C. 4', 'D. 5'], answer: 'C', explanation: 'basic addition'),
-      ],
     ),
+    savedExercises: exercises ?? [
+      GeneratedExercise(
+        id: 'e-1',
+        questionId: 'q-1',
+        generationMode: ExerciseGenerationMode.practice,
+        difficulty: '简单',
+        question: '1+1=?',
+        options: ['A. 1', 'B. 2', 'C. 3', 'D. 4'],
+        answer: 'B',
+        explanation: 'basic addition',
+        createdAt: now,
+        order: 0,
+      ),
+      GeneratedExercise(
+        id: 'e-2',
+        questionId: 'q-1',
+        generationMode: ExerciseGenerationMode.practice,
+        difficulty: '中等',
+        question: '2+2=?',
+        options: ['A. 2', 'B. 3', 'C. 4', 'D. 5'],
+        answer: 'C',
+        explanation: 'basic addition',
+        createdAt: now,
+        order: 1,
+      ),
+    ],
   );
 }
 

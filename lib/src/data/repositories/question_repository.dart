@@ -2,6 +2,7 @@ import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 
 abstract class QuestionRepository {
   Future<void> saveDraft(QuestionRecord record);
+  Future<void> saveDrafts(List<QuestionRecord> records);
   Future<List<QuestionRecord>> listAll();
   Future<QuestionRecord?> getById(String id);
   Future<void> delete(String id);
@@ -26,6 +27,14 @@ class InMemoryQuestionRepository implements QuestionRepository {
   Future<void> saveDraft(QuestionRecord record) async {
     _items.removeWhere((QuestionRecord item) => item.id == record.id);
     _items.add(record);
+  }
+
+  @override
+  Future<void> saveDrafts(List<QuestionRecord> records) async {
+    for (final record in records) {
+      _items.removeWhere((QuestionRecord item) => item.id == record.id);
+      _items.add(record);
+    }
   }
 
   @override

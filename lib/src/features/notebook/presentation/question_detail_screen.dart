@@ -7,6 +7,7 @@ import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/features/review/presentation/review_controller.dart';
+import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
 
 class QuestionDetailScreen extends ConsumerWidget {
   const QuestionDetailScreen({super.key});
@@ -80,10 +81,10 @@ class QuestionDetailScreen extends ConsumerWidget {
                     ),
                     if (result?.subject != null) ...<Widget>[
                       const SizedBox(width: 8),
-                      _TagChip(
+                      const _TagChip(
                         label: 'AI识别',
-                        bgColor: const Color(0xFFF0FDF4),
-                        textColor: const Color(0xFF16A34A),
+                        bgColor: Color(0xFFF0FDF4),
+                        textColor: Color(0xFF16A34A),
                       ),
                     ],
                     const SizedBox(width: 8),
@@ -92,6 +93,14 @@ class QuestionDetailScreen extends ConsumerWidget {
                       bgColor: masteryColor.withValues(alpha: 0.1),
                       textColor: masteryColor,
                     ),
+                    if (_batchLabel(current) != null) ...<Widget>[
+                      const SizedBox(width: 8),
+                      _TagChip(
+                        label: _batchLabel(current)!,
+                        bgColor: const Color(0xFFF8FAFC),
+                        textColor: const Color(0xFF64748B),
+                      ),
+                    ],
                   ],
                 ),
                 // AI 短标签（橙色）
@@ -164,7 +173,11 @@ class QuestionDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text(current.correctedText, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          MathContentView(
+            current.correctedText,
+            contentFormat: current.contentFormat,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
           if (result == null) ...<Widget>[
             const SizedBox(height: 20),
             Container(
@@ -193,6 +206,55 @@ class QuestionDetailScreen extends ConsumerWidget {
             ),
           ],
           if (result != null) ...<Widget>[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      const Icon(CupertinoIcons.arrow_2_circlepath, size: 18, color: Color(0xFF6366F1)),
+                      const SizedBox(width: 8),
+                      const Text('举一反三', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      Text(
+                        current.savedExercises.isEmpty
+                            ? '暂无练习'
+                            : '${current.savedExercises.where((e) => e.isCorrect != null).length}/${current.savedExercises.length} 已答',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    current.savedExercises.isEmpty
+                        ? '这道错题还没有可继续的练习题。'
+                        : '继续基于这道原题完成练习，已作答状态会保留。',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: current.savedExercises.isEmpty
+                          ? null
+                          : () {
+                              ref.read(currentQuestionProvider.notifier).state = current;
+                              context.go('/exercise/practice');
+                            },
+                      icon: const Icon(CupertinoIcons.play_fill),
+                      label: Text(current.savedExercises.isEmpty ? '暂无可练习内容' : '继续练习'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
             // 原题（包含图片和文本）
             _InfoCard(
@@ -260,8 +322,9 @@ class QuestionDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   if (current.imagePath.isNotEmpty) const SizedBox(height: 10),
-                  Text(
+                  MathContentView(
                     current.correctedText,
+                    contentFormat: current.contentFormat,
                     style: const TextStyle(fontSize: 14, color: Color(0xFF3730A3)),
                   ),
                 ],
@@ -276,8 +339,10 @@ class QuestionDetailScreen extends ConsumerWidget {
               border: const Color(0xFFBBF7D0),
               title: '正确答案',
               titleColor: const Color(0xFF166534),
-              value: result.finalAnswer,
-              valueColor: const Color(0xFF15803D),
+              child: MathContentView(
+                result.finalAnswer,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF15803D)),
+              ),
             ),
             const SizedBox(height: 10),
             // Mistake reason
@@ -288,8 +353,10 @@ class QuestionDetailScreen extends ConsumerWidget {
               border: const Color(0xFFFED7AA),
               title: '错因分析',
               titleColor: const Color(0xFF9A3412),
-              value: result.mistakeReason,
-              valueColor: const Color(0xFFC2410C),
+              child: MathContentView(
+                result.mistakeReason,
+                style: const TextStyle(fontSize: 14, color: Color(0xFFC2410C)),
+              ),
             ),
             const SizedBox(height: 10),
             // Study advice
@@ -300,8 +367,10 @@ class QuestionDetailScreen extends ConsumerWidget {
               border: const Color(0xFFFDE68A),
               title: '学习建议',
               titleColor: const Color(0xFF92400E),
-              value: result.studyAdvice,
-              valueColor: const Color(0xFFB45309),
+              child: MathContentView(
+                result.studyAdvice,
+                style: const TextStyle(fontSize: 14, color: Color(0xFFB45309)),
+              ),
             ),
             // Knowledge points
             if (result.knowledgePoints.isNotEmpty) ...<Widget>[
@@ -341,7 +410,7 @@ class QuestionDetailScreen extends ConsumerWidget {
                       child: Center(child: Text('${e.key + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5)))),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(e.value, style: const TextStyle(fontSize: 14))),
+                    Expanded(child: MathContentView(e.value, style: const TextStyle(fontSize: 14))),
                   ],
                 ),
               )),
@@ -386,6 +455,12 @@ class QuestionDetailScreen extends ConsumerWidget {
     }
   }
 
+  String? _batchLabel(QuestionRecord question) {
+    if (question.parentQuestionId == null && question.rootQuestionId == null) return null;
+    final order = question.splitOrder;
+    return order == null ? '拍照批次' : '拍照批次 · 第 $order 题';
+  }
+
   void _editQuestion(BuildContext context, WidgetRef ref, QuestionRecord question) {
     final controller = TextEditingController(text: question.correctedText);
     showDialog<void>(
@@ -401,7 +476,7 @@ class QuestionDetailScreen extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
             onPressed: () async {
-              final updated = question.copyWith(correctedText: controller.text.trim());
+              final updated = question.copyWith(normalizedQuestionText: controller.text.trim());
               await ref.read(questionRepositoryProvider).update(updated);
               ref.read(currentQuestionProvider.notifier).state = updated;
               invalidateQuestionList(ref);
@@ -551,8 +626,6 @@ class _InfoCard extends StatelessWidget {
     required this.border,
     required this.title,
     required this.titleColor,
-    this.value,
-    this.valueColor,
     this.child,
   });
 
@@ -562,8 +635,6 @@ class _InfoCard extends StatelessWidget {
   final Color border;
   final String title;
   final Color titleColor;
-  final String? value;
-  final Color? valueColor;
   final Widget? child;
 
   @override
@@ -589,7 +660,7 @@ class _InfoCard extends StatelessWidget {
           if (child != null)
             child!
           else
-            Text(value ?? '', style: TextStyle(fontSize: 14, color: valueColor)),
+            const SizedBox.shrink(),
         ],
       ),
     );

@@ -12,7 +12,7 @@ class InMemorySettingsRepository implements SettingsRepository {
   final Map<String, String> _strings = {};
 
   InMemorySettingsRepository() {
-    _config = AiProviderConfig(
+    _config = const AiProviderConfig(
       id: 'test',
       displayName: 'Test',
       baseUrl: 'https://api.test.com',

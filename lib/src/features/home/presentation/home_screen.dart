@@ -7,6 +7,7 @@ import 'package:smart_wrong_notebook/src/common/widgets/stats_chart.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_entry_sheet.dart';
+import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -199,8 +200,8 @@ class _RecentQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final aiTags = question.aiTags ?? <String>[];
-    final customTags = question.customTags ?? <String>[];
+    final aiTags = question.aiTags;
+    final customTags = question.customTags;
     final allTags = [...aiTags, ...customTags];
 
     return Semantics(
@@ -224,10 +225,11 @@ class _RecentQuestionCard extends StatelessWidget {
               ),
               child: Icon(question.subject.icon, size: 16, color: question.subject.color),
             ),
-            title: Text(
+            title: MathContentView(
               question.correctedText,
+              contentFormat: question.contentFormat,
+              mode: MathContentViewMode.compact,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             subtitle: Row(

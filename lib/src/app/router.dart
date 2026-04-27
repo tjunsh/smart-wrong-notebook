@@ -15,6 +15,7 @@ import 'package:smart_wrong_notebook/src/features/settings/presentation/prompt_s
 import 'package:smart_wrong_notebook/src/features/settings/presentation/data_management_screen.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/question_correction_screen.dart';
 import 'package:smart_wrong_notebook/src/features/ocr/presentation/ocr_confirmation_screen.dart';
+import 'package:smart_wrong_notebook/src/features/ocr/presentation/question_split_confirmation_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_loading_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_result_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/exercise_practice_screen.dart';
@@ -63,6 +64,7 @@ GoRouter buildRouter(SettingsRepository settingsRepo) {
       ),
       GoRoute(path: '/capture/correction', pageBuilder: (_, __) => _buildPage(const QuestionCorrectionScreen())),
       GoRoute(path: '/capture/ocr-confirmation', pageBuilder: (_, __) => _buildPage(const OcrConfirmationScreen())),
+      GoRoute(path: '/capture/split-confirmation', pageBuilder: (_, __) => _buildPage(const QuestionSplitConfirmationScreen())),
       GoRoute(path: '/analysis/loading', pageBuilder: (_, __) => _buildPage(const AnalysisLoadingScreen())),
       GoRoute(path: '/analysis/result', pageBuilder: (_, __) => _buildPage(const AnalysisResultScreen())),
       GoRoute(path: '/exercise/practice', pageBuilder: (_, __) => _buildPage(const ExercisePracticeScreen())),
@@ -98,7 +100,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (int index) => navigationShell.goBranch(index),
-        destinations: <NavigationDestination>[
+        destinations: const <NavigationDestination>[
           NavigationDestination(icon: Icon(CupertinoIcons.house), label: AppStrings.homeTab),
           NavigationDestination(icon: Icon(CupertinoIcons.book), label: AppStrings.notebookTab),
           NavigationDestination(icon: Icon(CupertinoIcons.arrow_2_circlepath), label: AppStrings.reviewTab),

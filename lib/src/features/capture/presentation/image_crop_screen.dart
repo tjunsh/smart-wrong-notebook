@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
-import 'package:smart_wrong_notebook/src/data/files/image_storage_service.dart';
+import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 
 class ImageCropScreen extends ConsumerStatefulWidget {
@@ -70,12 +70,11 @@ class _ImageCropScreenState extends ConsumerState<ImageCropScreen> {
           imagePath: savedPath,
           subject: current.subject,
           recognizedText: '',
-        );
+        ).copyWith(contentStatus: ContentStatus.processing);
         ref.read(currentQuestionProvider.notifier).state = newRecord;
       }
 
       if (mounted) {
-        // Go directly to AI analysis - AI will recognize the question from image
         context.go('/analysis/loading');
       }
     } catch (e) {
@@ -83,7 +82,7 @@ class _ImageCropScreenState extends ConsumerState<ImageCropScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('裁剪失败: $e')),
         );
-        context.go('/capture/ocr-confirmation');
+        context.go('/capture/correction');
       }
     } finally {
       if (mounted) setState(() => _cropping = false);

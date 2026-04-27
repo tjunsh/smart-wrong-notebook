@@ -17,6 +17,9 @@ class QuestionRecords extends Table {
   TextColumn get aiTags => text().withDefault(const Constant(''))();
   TextColumn get aiKnowledgePoints => text().withDefault(const Constant(''))();
   TextColumn get customTags => text().withDefault(const Constant(''))();
+  TextColumn get parentQuestionId => text().nullable()();
+  TextColumn get rootQuestionId => text().nullable()();
+  IntColumn get splitOrder => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
