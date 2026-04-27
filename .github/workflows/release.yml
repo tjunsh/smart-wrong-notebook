@@ -27,9 +27,9 @@ jobs:
       - name: Upload APK
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.ref_name }} build/app/outputs/flutter-apk/app-release.apk --clobber
+        run: gh release upload "${{ github.event.release.tag_name }}" build/app/outputs/flutter-apk/app-release.apk --clobber
 
       - name: Upload AAB
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.ref_name }} build/app/outputs/bundle/release/app-release.aab --clobber
+        run: gh release upload "${{ github.event.release.tag_name }}" build/app/outputs/bundle/release/app-release.aab --clobber
