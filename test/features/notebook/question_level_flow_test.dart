@@ -16,14 +16,18 @@ import 'package:smart_wrong_notebook/src/features/analysis/presentation/exercise
 import 'package:smart_wrong_notebook/src/features/notebook/presentation/notebook_screen.dart';
 import 'package:smart_wrong_notebook/src/features/notebook/presentation/question_detail_screen.dart';
 
-QuestionRecord _buildSavedSplitQuestion() {
+QuestionRecord _buildSavedSplitQuestion({
+  String id = 'q-batch-1',
+  String text = '第一题：已知 x+1=3，求 x',
+  int splitOrder = 1,
+}) {
   final now = DateTime(2026);
   return QuestionRecord(
-    id: 'q-batch-1',
+    id: id,
     imagePath: '/tmp/q-batch.jpg',
     subject: Subject.math,
-    extractedQuestionText: '第一题：已知 x+1=3，求 x',
-    normalizedQuestionText: '第一题：已知 x+1=3，求 x',
+    extractedQuestionText: text,
+    normalizedQuestionText: text,
     contentFormat: QuestionContentFormat.plain,
     tags: const [],
     createdAt: now,
@@ -45,7 +49,7 @@ QuestionRecord _buildSavedSplitQuestion() {
     savedExercises: <GeneratedExercise>[
       GeneratedExercise(
         id: 'e-1',
-        questionId: 'q-batch-1',
+        questionId: id,
         generationMode: ExerciseGenerationMode.practice,
         difficulty: '同级',
         question: '练习题1',
@@ -60,7 +64,7 @@ QuestionRecord _buildSavedSplitQuestion() {
     customTags: const <String>['课堂'],
     parentQuestionId: 'q-batch-root',
     rootQuestionId: 'q-batch-root',
-    splitOrder: 1,
+    splitOrder: splitOrder,
   );
 }
 
@@ -268,6 +272,60 @@ void main() {
 
     expect(find.text('PRACTICE'), findsOneWidget);
     expect(container.read(currentQuestionProvider)?.savedExercises.map((exercise) => exercise.question).toList(), <String>['练习题1']);
+  });
+
+  testWidgets('question detail screen switches between same batch siblings', (tester) async {
+    final repository = InMemoryQuestionRepository();
+    final first = _buildSavedSplitQuestion();
+    final second = _buildSavedSplitQuestion(
+      id: 'q-batch-2',
+      text: '第二题：已知 y-2=0，求 y',
+      splitOrder: 2,
+    );
+    await repository.saveDrafts(<QuestionRecord>[first, second]);
+
+    final container = ProviderContainer(
+      overrides: <Override>[
+        questionRepositoryProvider.overrideWithValue(repository),
+        currentQuestionProvider.overrideWith((ref) => first),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final router = GoRouter(
+      initialLocation: '/notebook/question/${first.id}',
+      routes: <GoRoute>[
+        GoRoute(
+          path: '/notebook',
+          builder: (_, __) => const NotebookScreen(),
+        ),
+        GoRoute(
+          path: '/notebook/question/:id',
+          builder: (_, __) => const QuestionDetailScreen(),
+        ),
+        GoRoute(
+          path: '/exercise/practice',
+          builder: (_, __) => const Scaffold(body: Text('PRACTICE')),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('同批题目'), findsOneWidget);
+    expect(find.text('第 1 题'), findsOneWidget);
+    expect(find.text('第 2 题'), findsOneWidget);
+    expect(find.text('第一题：已知 x+1=3，求 x'), findsOneWidget);
+
+    await tester.tap(find.text('第 2 题'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(currentQuestionProvider)?.id, 'q-batch-2');
+    expect(find.text('第二题：已知 y-2=0，求 y'), findsOneWidget);
   });
 
   testWidgets('exercise practice screen uses saved split question exercises', (tester) async {

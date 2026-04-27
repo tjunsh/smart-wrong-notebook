@@ -165,6 +165,55 @@ final FutureProvider<List<QuestionRecord>> questionListProvider = FutureProvider
   return ref.read(questionRepositoryProvider).listAll();
 });
 
+class QuestionBatchGroup {
+  const QuestionBatchGroup({required this.rootId, required this.questions});
+
+  final String rootId;
+  final List<QuestionRecord> questions;
+}
+
+final FutureProvider<Map<String, QuestionBatchGroup>> questionBatchGroupsProvider = FutureProvider<Map<String, QuestionBatchGroup>>((ref) async {
+  ref.watch(_listVersionProvider);
+  final all = await ref.read(questionRepositoryProvider).listAll();
+  return buildQuestionBatchGroups(all);
+});
+
+Map<String, QuestionBatchGroup> buildQuestionBatchGroups(List<QuestionRecord> questions) {
+  final grouped = <String, List<QuestionRecord>>{};
+
+  for (final question in questions) {
+    final rootId = _questionBatchRootId(question);
+    if (rootId == null) continue;
+    grouped.putIfAbsent(rootId, () => <QuestionRecord>[]).add(question);
+  }
+
+  final result = <String, QuestionBatchGroup>{};
+  for (final entry in grouped.entries) {
+    if (entry.value.length < 2) continue;
+    final sorted = [...entry.value]..sort(_compareBatchQuestions);
+    result[entry.key] = QuestionBatchGroup(rootId: entry.key, questions: sorted);
+  }
+  return result;
+}
+
+String? questionBatchRootId(QuestionRecord question) => _questionBatchRootId(question);
+
+String? _questionBatchRootId(QuestionRecord question) {
+  final rootId = question.rootQuestionId ?? question.parentQuestionId;
+  return rootId == null || rootId.isEmpty ? null : rootId;
+}
+
+int _compareBatchQuestions(QuestionRecord a, QuestionRecord b) {
+  final orderA = a.splitOrder;
+  final orderB = b.splitOrder;
+  if (orderA != null && orderB != null && orderA != orderB) return orderA.compareTo(orderB);
+  if (orderA != null && orderB == null) return -1;
+  if (orderA == null && orderB != null) return 1;
+  final created = a.createdAt.compareTo(b.createdAt);
+  if (created != 0) return created;
+  return a.id.compareTo(b.id);
+}
+
 // --- Questions due for review ---
 
 final FutureProvider<List<QuestionRecord>> dueReviewProvider = FutureProvider<List<QuestionRecord>>((ref) async {

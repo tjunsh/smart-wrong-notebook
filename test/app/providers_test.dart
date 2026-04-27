@@ -140,4 +140,28 @@ void main() {
     expect(child.aiTags, <String>['tag']);
     expect(child.aiKnowledgePoints, <String>['kp']);
   });
+
+  test('buildQuestionBatchGroups groups siblings and sorts by split order', () {
+    QuestionRecord record(String id, {String? rootId, int? splitOrder}) {
+      return QuestionRecord.draft(
+        id: id,
+        imagePath: '',
+        subject: Subject.math,
+        recognizedText: id,
+      ).copyWith(
+        rootQuestionId: rootId,
+        splitOrder: splitOrder,
+      );
+    }
+
+    final groups = buildQuestionBatchGroups(<QuestionRecord>[
+      record('standalone'),
+      record('child-2', rootId: 'root-1', splitOrder: 2),
+      record('child-1', rootId: 'root-1', splitOrder: 1),
+      record('lonely-child', rootId: 'root-2', splitOrder: 1),
+    ]);
+
+    expect(groups.keys, <String>['root-1']);
+    expect(groups['root-1']!.questions.map((question) => question.id).toList(), <String>['child-1', 'child-2']);
+  });
 }

@@ -25,6 +25,8 @@ class QuestionDetailScreen extends ConsumerWidget {
 
     final result = current.analysisResult;
     final masteryColor = _masteryColor(current.masteryLevel);
+    final batchGroups = ref.watch(questionBatchGroupsProvider).valueOrNull;
+    final batchGroup = batchGroups?[questionBatchRootId(current)];
 
     return Scaffold(
       appBar: AppBar(
@@ -172,6 +174,17 @@ class QuestionDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (batchGroup != null) ...<Widget>[
+            const SizedBox(height: 12),
+            _BatchSiblingCard(
+              current: current,
+              group: batchGroup,
+              onSelect: (question) {
+                ref.read(currentQuestionProvider.notifier).state = question;
+                context.go('/notebook/question/${question.id}');
+              },
+            ),
+          ],
           const SizedBox(height: 12),
           MathContentView(
             current.correctedText,
@@ -664,6 +677,68 @@ class _InfoCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _BatchSiblingCard extends StatelessWidget {
+  const _BatchSiblingCard({required this.current, required this.group, required this.onSelect});
+
+  final QuestionRecord current;
+  final QuestionBatchGroup group;
+  final void Function(QuestionRecord question) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(CupertinoIcons.square_grid_2x2, size: 16, color: Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Text('同批题目', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+              const SizedBox(width: 6),
+              Text('${group.questions.length} 题', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: group.questions.map((question) {
+              final selected = question.id == current.id;
+              return GestureDetector(
+                onTap: selected ? null : () => onSelect(question),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: selected ? const Color(0xFF6366F1) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: selected ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0)),
+                  ),
+                  child: Text(
+                    _siblingLabel(question),
+                    style: TextStyle(fontSize: 12, color: selected ? Colors.white : Colors.grey.shade700, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _siblingLabel(QuestionRecord question) {
+    final order = question.splitOrder;
+    return order == null ? '同批题' : '第 $order 题';
   }
 }
 
