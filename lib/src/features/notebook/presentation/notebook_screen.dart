@@ -313,7 +313,7 @@ class _QuestionCard extends StatelessWidget {
                           children: <Widget>[
                             Text(
                               '${question.subject.label} · ${_formatDate(question.createdAt)}',
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                              style: TextStyle(fontSize: 12, color: question.subject.color),
                             ),
                             const SizedBox(width: 8),
                             Container(
@@ -329,26 +329,27 @@ class _QuestionCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        // AI 知识点标签（统一灰色）
+                        // AI 知识点标签（有颜色区分 AI 生成和手动）
                         if (allTags.isNotEmpty) ...<Widget>[
                           const SizedBox(height: 6),
                           Wrap(
                             spacing: 4,
                             runSpacing: 4,
                             children: allTags.take(5).map((tag) {
+                              final isAiTag = aiTags.contains(tag);
                               return GestureDetector(
                                 onTap: () => onKnowledgePointTap(tag),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
+                                    color: isAiTag ? const Color(0xFFFFF7ED) : const Color(0xFFEEF2FF),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     tag,
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: Colors.grey.shade600,
+                                      color: isAiTag ? const Color(0xFFD97706) : const Color(0xFF4F46E5),
                                     ),
                                   ),
                                 ),
