@@ -13,11 +13,17 @@
 - 数据导入导出已改为复用 `QuestionRecord.toJson/fromJson()`，避免 `splitResult / candidateAnalyses / lineage / savedExercises` 等字段遗漏。
 - 已补充 Drift 持久化直测：`AppDatabase.memory()` 支持测试内存库，`drift_question_repository_test.dart` 覆盖 lineage、保存练习、options/userAnswer/isCorrect、AI 标签和自定义标签 round-trip。
 - 已上线轻量批次提示 UI：notebook 列表显示“来自同一拍照批次 · 第 N 题”，错题详情标签区显示“拍照批次 · 第 N 题”；普通单题不显示额外提示。
-- 本轮关键验证已通过：`dart run build_runner build --delete-conflicting-outputs`、`flutter analyze`、`flutter test test/app/providers_test.dart`、`flutter test test/data/local/question_repository_test.dart`、`flutter test test/data/local/drift_question_repository_test.dart`、`flutter test test/features/ocr/question_split_confirmation_screen_test.dart`、`flutter test test/features/notebook/question_level_flow_test.dart`、`flutter test test/smoke/app_smoke_test.dart`、`flutter test`。
+- 复习页已补齐批次上下文：同一拍照批次的待复习卡片显示“来自同一拍照批次 · 第 N 题”，普通单题不显示批次提示。
+- 复习卡片已加入快捷操作与掌握状态：支持在列表中直接标记“仍需复习/继续巩固”和“已掌握”，并即时刷新待复习列表。
+- 复习页与错题详情页的复习动作已统一写入 `ReviewLogRepository`，复习历史可追踪列表页和详情页产生的记录。
+- 数据管理已纳入复习记录生命周期：页面显示“复习记录总量”，清空所有数据时会同步清空错题与复习记录，文案也已明确不可恢复范围。
+- 已清理保存确认流程语义：`OcrConfirmationScreen` 重命名为 `QuestionSaveConfirmationScreen`，路由改为 `/capture/save-confirmation`，明确当前流程是拍照后直接 AI 识别/解题，保存时再确认题目文本。
+- AI 解析 loading 文案已调整为“正在识别题目 / 正在理解题意 / 正在生成解析 / 即将完成”，返回路径也回到题目预览页，避免误导为解题前 OCR 确认。
+- 本轮关键验证已通过：`flutter analyze`、`flutter test`；此前 targeted 验证包括 `flutter test test/features/settings/data_management_screen_test.dart`、`flutter test test/features/review/review_controller_test.dart`、`flutter test test/features/review/review_screen_test.dart`、`flutter test test/features/review/review_history_screen_test.dart`、`flutter test test/features/analysis/analysis_result_screen_test.dart`、`flutter test test/features/notebook/question_level_flow_test.dart`、`flutter test test/smoke/app_smoke_test.dart`。
 
 ## Blockers
-- 当前没有新的代码阻塞；多题保存、保存后题级闭环、lineage 数据模型、Drift 持久化测试和轻量批次提示都已跑通。
-- 工作区仍包含大量历史未提交改动和未跟踪文件；如果要做 WIP commit，必须先手动确认精确文件范围，不能直接批量 stage。
+- 当前没有新的代码阻塞；多题保存、题级闭环、lineage、批次提示、复习快捷动作、复习记录写入、数据清理和保存确认流程语义清理都已跑通。
+- 工作区仍包含较多未提交改动和未跟踪文件；如果要做 WIP commit，必须先确认精确文件范围，不能直接批量 stage。
 
 ## Next First Step
-- 下一步建议做一次提交前整理：按功能边界检查 diff，确认是否要把“多题拆分/lineage/批次提示/测试修复”作为一个 WIP 提交，或先继续做更完整的 parent batch 分组与批量管理。
+- 下一步建议做 WIP commit：提交范围限定为本轮多题保存/批次 lineage/LaTeX 展示/复习流程/数据管理/保存确认语义清理及对应测试文件，提交前继续使用显式文件列表 stage。

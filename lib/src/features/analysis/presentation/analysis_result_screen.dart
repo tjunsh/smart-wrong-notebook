@@ -11,7 +11,8 @@ class AnalysisResultScreen extends ConsumerStatefulWidget {
   const AnalysisResultScreen({super.key});
 
   @override
-  ConsumerState<AnalysisResultScreen> createState() => _AnalysisResultScreenState();
+  ConsumerState<AnalysisResultScreen> createState() =>
+      _AnalysisResultScreenState();
 }
 
 class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
@@ -40,15 +41,23 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
     final safeCandidateIndex = hasMultipleCandidates
         ? _activeCandidateIndex.clamp(0, splitResult!.candidates.length - 1)
         : 0;
-    final activeCandidate = hasMultipleCandidates ? splitResult!.candidates[safeCandidateIndex] : null;
+    final activeCandidate = hasMultipleCandidates
+        ? splitResult!.candidates[safeCandidateIndex]
+        : null;
     final activeCandidateAnalysis = activeCandidate == null
         ? null
-        : record.candidateAnalyses.firstWhereOrNull((candidate) => candidate.candidateId == activeCandidate.id);
+        : record.candidateAnalyses.firstWhereOrNull(
+            (candidate) => candidate.candidateId == activeCandidate.id);
     final displayResult = activeCandidateAnalysis?.analysisResult ?? result;
     final displayAiTags = activeCandidateAnalysis?.aiTags ?? record.aiTags;
-    final displayKnowledgePoints = activeCandidateAnalysis?.aiKnowledgePoints ?? result?.knowledgePoints ?? const <String>[];
-    final displayQuestionText = activeCandidateAnalysis?.questionText ?? activeCandidate?.text ?? record.correctedText;
-    final displayExercises = activeCandidateAnalysis?.savedExercises ?? record.savedExercises;
+    final displayKnowledgePoints = activeCandidateAnalysis?.aiKnowledgePoints ??
+        result?.knowledgePoints ??
+        const <String>[];
+    final displayQuestionText = activeCandidateAnalysis?.questionText ??
+        activeCandidate?.text ??
+        record.correctedText;
+    final displayExercises =
+        activeCandidateAnalysis?.savedExercises ?? record.savedExercises;
     final candidateInsight = hasMultipleCandidates
         ? _candidateInsight(
             candidateOrder: activeCandidate?.order ?? 1,
@@ -61,7 +70,7 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
         title: const Text('AI 解析结果'),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.chevron_left),
-          onPressed: () => context.go('/capture/ocr-confirmation'),
+          onPressed: () => context.go('/capture/save-confirmation'),
         ),
       ),
       body: ListView(
@@ -82,7 +91,8 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                 Row(
                   children: <Widget>[
                     _TagChip(
-                      label: displayResult?.subject?.label ?? record.subject.label,
+                      label:
+                          displayResult?.subject?.label ?? record.subject.label,
                       bgColor: const Color(0xFFEEF2FF),
                       textColor: const Color(0xFF4F46E5),
                     ),
@@ -97,7 +107,8 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                     const SizedBox(width: 8),
                     _TagChip(
                       label: _masteryLabel(record.masteryLevel),
-                      bgColor: _masteryColor(record.masteryLevel).withValues(alpha: 0.1),
+                      bgColor: _masteryColor(record.masteryLevel)
+                          .withValues(alpha: 0.1),
                       textColor: _masteryColor(record.masteryLevel),
                     ),
                   ],
@@ -114,7 +125,8 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                         textColor: const Color(0xFF7C3AED),
                       ),
                       _TagChip(
-                        label: _splitStrategyLabel(record.splitResult!.strategy),
+                        label:
+                            _splitStrategyLabel(record.splitResult!.strategy),
                         bgColor: const Color(0xFFF8FAFC),
                         textColor: const Color(0xFF475569),
                       ),
@@ -130,38 +142,47 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                     const SizedBox(height: 8),
                     Text(
                       '这张图片已识别为多题内容，保存时会进入逐题确认。',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey.shade600),
                     ),
                   ],
                 ],
                 // AI 短标签（橙色）
                 if (displayAiTags.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 10),
-                  Text('AI标签', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  Text('AI标签',
+                      style:
+                          TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children: displayAiTags.map((tag) => _TagChip(
-                      label: tag,
-                      bgColor: const Color(0xFFFFF7ED),
-                      textColor: const Color(0xFFD97706),
-                    )).toList(),
+                    children: displayAiTags
+                        .map((tag) => _TagChip(
+                              label: tag,
+                              bgColor: const Color(0xFFFFF7ED),
+                              textColor: const Color(0xFFD97706),
+                            ))
+                        .toList(),
                   ),
                 ],
                 // 自定义标签（蓝色）
                 if (record.customTags.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 8),
-                  Text('自定义标签', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  Text('自定义标签',
+                      style:
+                          TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children: record.customTags.map((t) => _TagChip(
-                      label: t,
-                      bgColor: const Color(0xFFEEF2FF),
-                      textColor: const Color(0xFF4F46E5),
-                    )).toList(),
+                    children: record.customTags
+                        .map((t) => _TagChip(
+                              label: t,
+                              bgColor: const Color(0xFFEEF2FF),
+                              textColor: const Color(0xFF4F46E5),
+                            ))
+                        .toList(),
                   ),
                 ],
               ],
@@ -182,7 +203,8 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: splitResult!.candidates.asMap().entries.map((entry) {
+                      children:
+                          splitResult!.candidates.asMap().entries.map((entry) {
                         final candidate = entry.value;
                         final isActive = entry.key == safeCandidateIndex;
                         return Padding(
@@ -212,12 +234,18 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                       children: <Widget>[
                         Text(
                           '当前预览',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade700),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           activeCandidate?.text ?? '',
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF374151), height: 1.5),
+                          style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF374151),
+                              height: 1.5),
                         ),
                       ],
                     ),
@@ -234,7 +262,9 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
           ),
           if (displayResult == null) ...<Widget>[
             const SizedBox(height: 40),
-            Center(child: Text('暂无解析结果', style: TextStyle(color: Colors.grey.shade500))),
+            Center(
+                child: Text('暂无解析结果',
+                    style: TextStyle(color: Colors.grey.shade500))),
           ],
           if (displayResult != null) ...<Widget>[
             const SizedBox(height: 20),
@@ -274,7 +304,8 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                               top: 6,
                               right: 6,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: Colors.black54,
                                   borderRadius: BorderRadius.circular(10),
@@ -282,9 +313,12 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
-                                    Icon(CupertinoIcons.zoom_in, size: 12, color: Colors.white),
+                                    Icon(CupertinoIcons.zoom_in,
+                                        size: 12, color: Colors.white),
                                     SizedBox(width: 3),
-                                    Text('查看原图', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                    Text('查看原图',
+                                        style: TextStyle(
+                                            fontSize: 10, color: Colors.white)),
                                   ],
                                 ),
                               ),
@@ -293,11 +327,13 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                         ),
                       ),
                     ),
-                  if (File(record.imagePath).existsSync()) const SizedBox(height: 10),
+                  if (File(record.imagePath).existsSync())
+                    const SizedBox(height: 10),
                   MathContentView(
                     displayQuestionText,
                     contentFormat: record.contentFormat,
-                    style: const TextStyle(fontSize: 14, color: Color(0xFF3730A3)),
+                    style:
+                        const TextStyle(fontSize: 14, color: Color(0xFF3730A3)),
                   ),
                 ],
               ),
@@ -313,7 +349,10 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
               titleColor: const Color(0xFF166534),
               contentWidget: MathContentView(
                 displayResult.finalAnswer,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF15803D), fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF15803D),
+                    fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(height: 10),
@@ -358,14 +397,18 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                   children: <Widget>[
                     Text(
                       candidateInsight,
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF134E4A), height: 1.5),
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFF134E4A), height: 1.5),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       activeCandidateAnalysis != null
                           ? '当前已切换到第 ${activeCandidate?.order ?? 1} 题独立解析。'
                           : '当前仍复用整题解析；后续接入逐题分析后，这里会展示第 ${activeCandidate?.order ?? 1} 题独立解析。',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.5),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          height: 1.5),
                     ),
                   ],
                 ),
@@ -374,45 +417,66 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
             // Knowledge points
             if (displayKnowledgePoints.isNotEmpty) ...<Widget>[
               const SizedBox(height: 16),
-              Text('知识点', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              Text('知识点',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
-                children: displayKnowledgePoints.map((p) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFC7D2FE)),
-                  ),
-                  child: Text(p, style: const TextStyle(fontSize: 12, color: Color(0xFF4F46E5))),
-                )).toList(),
+                children: displayKnowledgePoints
+                    .map((p) => Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFC7D2FE)),
+                          ),
+                          child: Text(p,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Color(0xFF4F46E5))),
+                        ))
+                    .toList(),
               ),
             ],
             // Steps
             if (displayResult.steps.isNotEmpty) ...<Widget>[
               const SizedBox(height: 16),
-              Text('解题步骤', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              Text('解题步骤',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
               ...displayResult.steps.asMap().entries.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      width: 24, height: 24,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEEF2FF),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(child: Text('${e.key + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5)))),
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                              child: Text('${e.key + 1}',
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF4F46E5)))),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                            child: MathContentView(e.value,
+                                style: const TextStyle(fontSize: 14))),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(child: MathContentView(e.value, style: const TextStyle(fontSize: 14))),
-                  ],
-                ),
-              )),
+                  )),
             ],
             // Exercises
             if (displayExercises.isNotEmpty) ...<Widget>[
@@ -420,8 +484,14 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Text('举一反三', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                  Text('${displayExercises.length} 题', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  Text('举一反三',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  Text('${displayExercises.length} 题',
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey.shade500)),
                 ],
               ),
               if (activeCandidate != null) ...<Widget>[
@@ -435,70 +505,79 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
               ],
               const SizedBox(height: 10),
               ...displayExercises.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: _difficultyColor(e.difficulty).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              e.difficulty,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: _difficultyColor(e.difficulty),
-                                fontWeight: FontWeight.w500,
+                          Row(
+                            children: <Widget>[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _difficultyColor(e.difficulty)
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  e.difficulty,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: _difficultyColor(e.difficulty),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const Spacer(),
+                              if (e.isCorrect == true)
+                                const Icon(CupertinoIcons.checkmark_circle,
+                                    color: Color(0xFF16A34A), size: 18)
+                              else if (e.isCorrect == false)
+                                const Icon(CupertinoIcons.xmark_circle,
+                                    color: Color(0xFFEA580C), size: 18),
+                            ],
                           ),
-                          const Spacer(),
-                          if (e.isCorrect == true)
-                            const Icon(CupertinoIcons.checkmark_circle, color: Color(0xFF16A34A), size: 18)
-                          else if (e.isCorrect == false)
-                            const Icon(CupertinoIcons.xmark_circle, color: Color(0xFFEA580C), size: 18),
+                          const SizedBox(height: 8),
+                          MathContentView(
+                            e.question,
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: <Widget>[
+                              Icon(CupertinoIcons.lightbulb,
+                                  size: 14, color: Colors.grey.shade400),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: MathContentView(
+                                  '答案：${e.answer}',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (e.explanation.isNotEmpty) ...<Widget>[
+                            const SizedBox(height: 4),
+                            MathContentView(
+                              e.explanation,
+                              style: TextStyle(
+                                  fontSize: 11, color: Colors.grey.shade500),
+                            ),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      MathContentView(
-                        e.question,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: <Widget>[
-                          Icon(CupertinoIcons.lightbulb, size: 14, color: Colors.grey.shade400),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: MathContentView(
-                              '答案：${e.answer}',
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (e.explanation.isNotEmpty) ...<Widget>[
-                        const SizedBox(height: 4),
-                        MathContentView(
-                          e.explanation,
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              )),
+                    ),
+                  )),
             ],
             const SizedBox(height: 24),
             Row(
@@ -517,7 +596,9 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                   child: FilledButton(
                     onPressed: () async {
                       final splitter = ref.read(questionSplitServiceProvider);
-                      ref.read(currentQuestionSplitSessionProvider.notifier).state = await buildQuestionSplitSession(
+                      ref
+                          .read(currentQuestionSplitSessionProvider.notifier)
+                          .state = await buildQuestionSplitSession(
                         record,
                         splitter: splitter,
                       );
@@ -558,12 +639,18 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
 
   Color _difficultyColor(String difficulty) {
     switch (difficulty) {
-      case '简单': return Colors.green;
-      case '中等': return Colors.orange;
-      case '困难': return Colors.red;
-      case '提高': return const Color(0xFF7C3AED);
-      case '同级': return Colors.blue;
-      default: return Colors.grey;
+      case '简单':
+        return Colors.green;
+      case '中等':
+        return Colors.orange;
+      case '困难':
+        return Colors.red;
+      case '提高':
+        return const Color(0xFF7C3AED);
+      case '同级':
+        return Colors.blue;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -634,7 +721,11 @@ class _SectionCard extends StatelessWidget {
             children: <Widget>[
               Icon(icon, size: 18, color: iconColor),
               const SizedBox(width: 8),
-              Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: titleColor)),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor)),
             ],
           ),
           const SizedBox(height: 10),
@@ -651,7 +742,8 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _TagChip extends StatelessWidget {
-  const _TagChip({required this.label, required this.bgColor, required this.textColor});
+  const _TagChip(
+      {required this.label, required this.bgColor, required this.textColor});
 
   final String label;
   final Color bgColor;
@@ -665,23 +757,31 @@ class _TagChip extends StatelessWidget {
         color: bgColor,
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(label, style: TextStyle(fontSize: 12, color: textColor, fontWeight: FontWeight.w500)),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 12, color: textColor, fontWeight: FontWeight.w500)),
     );
   }
 }
 
 String _masteryLabel(MasteryLevel level) {
   switch (level) {
-    case MasteryLevel.newQuestion: return '未复习';
-    case MasteryLevel.reviewing: return '复习中';
-    case MasteryLevel.mastered: return '已掌握';
+    case MasteryLevel.newQuestion:
+      return '未复习';
+    case MasteryLevel.reviewing:
+      return '复习中';
+    case MasteryLevel.mastered:
+      return '已掌握';
   }
 }
 
 Color _masteryColor(MasteryLevel level) {
   switch (level) {
-    case MasteryLevel.newQuestion: return Colors.grey;
-    case MasteryLevel.reviewing: return Colors.orange;
-    case MasteryLevel.mastered: return Colors.green;
+    case MasteryLevel.newQuestion:
+      return Colors.grey;
+    case MasteryLevel.reviewing:
+      return Colors.orange;
+    case MasteryLevel.mastered:
+      return Colors.green;
   }
 }

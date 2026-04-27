@@ -5,14 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 
-class OcrConfirmationScreen extends ConsumerStatefulWidget {
-  const OcrConfirmationScreen({super.key});
+class QuestionSaveConfirmationScreen extends ConsumerStatefulWidget {
+  const QuestionSaveConfirmationScreen({super.key});
 
   @override
-  ConsumerState<OcrConfirmationScreen> createState() => _OcrConfirmationScreenState();
+  ConsumerState<QuestionSaveConfirmationScreen> createState() =>
+      _QuestionSaveConfirmationScreenState();
 }
 
-class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
+class _QuestionSaveConfirmationScreenState
+    extends ConsumerState<QuestionSaveConfirmationScreen> {
   late final TextEditingController _textController;
   String? _errorMessage;
 
@@ -31,7 +33,8 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     final current = ref.watch(currentQuestionProvider);
-    final hasImage = current?.imagePath != null && File(current!.imagePath).existsSync();
+    final hasImage =
+        current?.imagePath != null && File(current!.imagePath).existsSync();
 
     if (current == null) {
       return Scaffold(
@@ -93,11 +96,14 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
-                  child: const Center(child: Text('暂无图片', style: TextStyle(color: Colors.grey))),
+                  child: const Center(
+                      child:
+                          Text('暂无图片', style: TextStyle(color: Colors.grey))),
                 ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
@@ -106,7 +112,8 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
                 child: Row(
                   children: <Widget>[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEEF2FF),
                         borderRadius: BorderRadius.circular(16),
@@ -114,24 +121,33 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          const Icon(CupertinoIcons.book, size: 14, color: Color(0xFF4F46E5)),
+                          const Icon(CupertinoIcons.book,
+                              size: 14, color: Color(0xFF4F46E5)),
                           const SizedBox(width: 4),
                           Text(
                             current.subject.label,
-                            style: const TextStyle(fontSize: 13, color: Color(0xFF4F46E5), fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF4F46E5),
+                                fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
                     ),
                     const Spacer(),
-                    Text('保存前可编辑', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Text('保存前可编辑',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade500)),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 '确认题目内容',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               Text(
@@ -167,7 +183,8 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
                 const SizedBox(height: 10),
                 Text(
                   _errorMessage!,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
                 ),
               ],
               const SizedBox(height: 24),
@@ -189,9 +206,10 @@ class _OcrConfirmationScreenState extends ConsumerState<OcrConfirmationScreen> {
                   }
 
                   final updated = current.copyWith(
-                    extractedQuestionText: current.extractedQuestionText.isNotEmpty
-                        ? current.extractedQuestionText
-                        : text,
+                    extractedQuestionText:
+                        current.extractedQuestionText.isNotEmpty
+                            ? current.extractedQuestionText
+                            : text,
                     normalizedQuestionText: text,
                   );
                   ref.read(currentQuestionProvider.notifier).state = updated;

@@ -3,11 +3,13 @@ import 'package:smart_wrong_notebook/src/data/repositories/question_repository.d
 import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
+import 'package:smart_wrong_notebook/src/domain/models/review_log.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 import 'package:smart_wrong_notebook/src/domain/repositories/review_log_repository.dart';
 import 'package:smart_wrong_notebook/src/features/review/presentation/review_controller.dart';
 
-QuestionRecord _makeQuestion(String id, {MasteryLevel mastery = MasteryLevel.newQuestion, int reviewCount = 0}) {
+QuestionRecord _makeQuestion(String id,
+    {MasteryLevel mastery = MasteryLevel.newQuestion, int reviewCount = 0}) {
   final now = DateTime.now();
   return QuestionRecord(
     id: id,
@@ -63,7 +65,8 @@ void main() {
   });
 
   test('markReviewing increments reviewCount when already reviewing', () async {
-    await repo.saveDraft(_makeQuestion('q-1', mastery: MasteryLevel.reviewing, reviewCount: 3));
+    await repo.saveDraft(
+        _makeQuestion('q-1', mastery: MasteryLevel.reviewing, reviewCount: 3));
     final result = await controller.markReviewing('q-1');
 
     expect(result.masteryLevel, MasteryLevel.reviewing);
@@ -71,7 +74,8 @@ void main() {
   });
 
   test('resetToNew sets mastery back to newQuestion', () async {
-    await repo.saveDraft(_makeQuestion('q-1', mastery: MasteryLevel.mastered, reviewCount: 5));
+    await repo.saveDraft(
+        _makeQuestion('q-1', mastery: MasteryLevel.mastered, reviewCount: 5));
     final result = await controller.resetToNew('q-1');
 
     expect(result.masteryLevel, MasteryLevel.newQuestion);
@@ -83,7 +87,8 @@ void main() {
   });
 
   test('getDueQuestions excludes mastered questions', () async {
-    await repo.saveDraft(_makeQuestion('q-1', mastery: MasteryLevel.newQuestion));
+    await repo
+        .saveDraft(_makeQuestion('q-1', mastery: MasteryLevel.newQuestion));
     await repo.saveDraft(_makeQuestion('q-2', mastery: MasteryLevel.reviewing));
     await repo.saveDraft(_makeQuestion('q-3', mastery: MasteryLevel.mastered));
 
@@ -139,6 +144,30 @@ void main() {
     expect(logs.length, 2);
     expect(logs.first.result, 'reviewing');
     expect(logs.last.result, 'mastered');
+  });
+
+  test('review log repository clear removes all logs', () async {
+    await logRepo.insert(ReviewLog(
+      id: 'log-1',
+      questionRecordId: 'q-1',
+      reviewedAt: DateTime(2026),
+      result: 'reviewing',
+      masteryAfter: MasteryLevel.reviewing,
+    ));
+    await logRepo.insert(ReviewLog(
+      id: 'log-2',
+      questionRecordId: 'q-2',
+      reviewedAt: DateTime(2026),
+      result: 'mastered',
+      masteryAfter: MasteryLevel.mastered,
+    ));
+
+    expect(await logRepo.listAll(), hasLength(2));
+
+    await logRepo.clear();
+
+    expect(await logRepo.listAll(), isEmpty);
+    expect(await logRepo.getByQuestionId('q-1'), isEmpty);
   });
 
   test('controller without logRepository does not throw', () async {

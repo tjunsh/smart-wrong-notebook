@@ -18,30 +18,37 @@ import 'package:smart_wrong_notebook/src/domain/models/generated_exercise.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_split_session.dart';
+import 'package:smart_wrong_notebook/src/domain/models/review_log.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 
 // --- Repository providers (default implementations) ---
 
-final Provider<QuestionRepository> questionRepositoryProvider = Provider<QuestionRepository>((ref) {
+final Provider<QuestionRepository> questionRepositoryProvider =
+    Provider<QuestionRepository>((ref) {
   return SharedPrefsQuestionRepository();
 });
 
-final Provider<SettingsRepository> settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
+final Provider<SettingsRepository> settingsRepositoryProvider =
+    Provider<SettingsRepository>((ref) {
   return SharedPrefsSettingsRepository.instance;
 });
 
 // ReviewLogRepository - stored in SharedPreferences
-final Provider<ReviewLogRepository> reviewLogRepositoryProvider = Provider<ReviewLogRepository>((ref) {
+final Provider<ReviewLogRepository> reviewLogRepositoryProvider =
+    Provider<ReviewLogRepository>((ref) {
   return SharedPrefsReviewLogRepository();
 });
 
 // --- Service providers ---
 
-final Provider<AiAnalysisService> aiAnalysisServiceProvider = Provider<AiAnalysisService>((ref) {
-  return AiAnalysisService(settingsRepository: ref.read(settingsRepositoryProvider));
+final Provider<AiAnalysisService> aiAnalysisServiceProvider =
+    Provider<AiAnalysisService>((ref) {
+  return AiAnalysisService(
+      settingsRepository: ref.read(settingsRepositoryProvider));
 });
 
-final Provider<ImageStorageService> imageStorageServiceProvider = Provider<ImageStorageService>((ref) {
+final Provider<ImageStorageService> imageStorageServiceProvider =
+    Provider<ImageStorageService>((ref) {
   return ImageStorageService();
 });
 
@@ -49,29 +56,37 @@ final Provider<OcrService> ocrServiceProvider = Provider<OcrService>((ref) {
   return OcrService();
 });
 
-final Provider<QuestionSplitService> questionSplitServiceProvider = Provider<QuestionSplitService>((ref) {
-  return QuestionSplitService(aiAnalysisService: ref.read(aiAnalysisServiceProvider));
+final Provider<QuestionSplitService> questionSplitServiceProvider =
+    Provider<QuestionSplitService>((ref) {
+  return QuestionSplitService(
+      aiAnalysisService: ref.read(aiAnalysisServiceProvider));
 });
 
-final Provider<NotificationService> notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService(questionRepository: ref.read(questionRepositoryProvider));
+final Provider<NotificationService> notificationServiceProvider =
+    Provider<NotificationService>((ref) {
+  return NotificationService(
+      questionRepository: ref.read(questionRepositoryProvider));
 });
 
-final Provider<CaptureService> captureServiceProvider = Provider<CaptureService>((ref) {
+final Provider<CaptureService> captureServiceProvider =
+    Provider<CaptureService>((ref) {
   return CaptureService(storage: ref.read(imageStorageServiceProvider));
 });
 
 // --- Current question flow ---
 
-final StateProvider<QuestionRecord?> currentQuestionProvider = StateProvider<QuestionRecord?>((ref) => null);
+final StateProvider<QuestionRecord?> currentQuestionProvider =
+    StateProvider<QuestionRecord?>((ref) => null);
 
-final StateProvider<QuestionSplitSession?> currentQuestionSplitSessionProvider = StateProvider<QuestionSplitSession?>((ref) => null);
+final StateProvider<QuestionSplitSession?> currentQuestionSplitSessionProvider =
+    StateProvider<QuestionSplitSession?>((ref) => null);
 
 Future<QuestionSplitSession> buildQuestionSplitSession(
   QuestionRecord source, {
   QuestionSplitService splitter = const QuestionSplitService(),
 }) async {
-  final result = source.splitResult ?? await _resolveSplitResult(source, splitter: splitter);
+  final result = source.splitResult ??
+      await _resolveSplitResult(source, splitter: splitter);
 
   return QuestionSplitSession(
     source: source,
@@ -104,24 +119,31 @@ QuestionRecord buildSplitQuestionRecord({
 }) {
   final trimmedText = draft.text.trim();
   final now = DateTime.now();
-  final candidateSnapshot = source.candidateAnalyses.where((candidate) {
-    return candidate.order == sortOrder;
-  }).cast<CandidateAnalysisSnapshot?>().firstWhere(
+  final candidateSnapshot = source.candidateAnalyses
+      .where((candidate) {
+        return candidate.order == sortOrder;
+      })
+      .cast<CandidateAnalysisSnapshot?>()
+      .firstWhere(
         (candidate) => candidate != null,
         orElse: () => null,
       );
-  final analysisResult = candidateSnapshot?.analysisResult ?? source.analysisResult;
-  final savedExercises = (candidateSnapshot?.savedExercises ?? const <GeneratedExercise>[])
-      .asMap()
-      .entries
-      .map((entry) => entry.value.copyWith(
-            questionId: '${source.id}-$sortOrder',
-            order: entry.value.order ?? entry.key,
-          ))
-      .toList();
+  final analysisResult =
+      candidateSnapshot?.analysisResult ?? source.analysisResult;
+  final savedExercises =
+      (candidateSnapshot?.savedExercises ?? const <GeneratedExercise>[])
+          .asMap()
+          .entries
+          .map((entry) => entry.value.copyWith(
+                questionId: '${source.id}-$sortOrder',
+                order: entry.value.order ?? entry.key,
+              ))
+          .toList();
   final aiTags = candidateSnapshot?.aiTags ?? source.aiTags;
-  final aiKnowledgePoints = candidateSnapshot?.aiKnowledgePoints ?? source.aiKnowledgePoints;
-  final subject = candidateSnapshot?.subject ?? analysisResult?.subject ?? source.subject;
+  final aiKnowledgePoints =
+      candidateSnapshot?.aiKnowledgePoints ?? source.aiKnowledgePoints;
+  final subject =
+      candidateSnapshot?.subject ?? analysisResult?.subject ?? source.subject;
 
   return QuestionRecord(
     id: '${source.id}-$sortOrder',
@@ -160,9 +182,16 @@ void invalidateQuestionList(WidgetRef ref) {
 
 // --- All questions list ---
 
-final FutureProvider<List<QuestionRecord>> questionListProvider = FutureProvider<List<QuestionRecord>>((ref) async {
+final FutureProvider<List<QuestionRecord>> questionListProvider =
+    FutureProvider<List<QuestionRecord>>((ref) async {
   ref.watch(_listVersionProvider);
   return ref.read(questionRepositoryProvider).listAll();
+});
+
+final FutureProvider<List<ReviewLog>> reviewLogListProvider =
+    FutureProvider<List<ReviewLog>>((ref) async {
+  ref.watch(_listVersionProvider);
+  return ref.read(reviewLogRepositoryProvider).listAll();
 });
 
 class QuestionBatchGroup {
@@ -172,13 +201,16 @@ class QuestionBatchGroup {
   final List<QuestionRecord> questions;
 }
 
-final FutureProvider<Map<String, QuestionBatchGroup>> questionBatchGroupsProvider = FutureProvider<Map<String, QuestionBatchGroup>>((ref) async {
+final FutureProvider<Map<String, QuestionBatchGroup>>
+    questionBatchGroupsProvider =
+    FutureProvider<Map<String, QuestionBatchGroup>>((ref) async {
   ref.watch(_listVersionProvider);
   final all = await ref.read(questionRepositoryProvider).listAll();
   return buildQuestionBatchGroups(all);
 });
 
-Map<String, QuestionBatchGroup> buildQuestionBatchGroups(List<QuestionRecord> questions) {
+Map<String, QuestionBatchGroup> buildQuestionBatchGroups(
+    List<QuestionRecord> questions) {
   final grouped = <String, List<QuestionRecord>>{};
 
   for (final question in questions) {
@@ -191,12 +223,14 @@ Map<String, QuestionBatchGroup> buildQuestionBatchGroups(List<QuestionRecord> qu
   for (final entry in grouped.entries) {
     if (entry.value.length < 2) continue;
     final sorted = [...entry.value]..sort(_compareBatchQuestions);
-    result[entry.key] = QuestionBatchGroup(rootId: entry.key, questions: sorted);
+    result[entry.key] =
+        QuestionBatchGroup(rootId: entry.key, questions: sorted);
   }
   return result;
 }
 
-String? questionBatchRootId(QuestionRecord question) => _questionBatchRootId(question);
+String? questionBatchRootId(QuestionRecord question) =>
+    _questionBatchRootId(question);
 
 String? _questionBatchRootId(QuestionRecord question) {
   final rootId = question.rootQuestionId ?? question.parentQuestionId;
@@ -206,7 +240,9 @@ String? _questionBatchRootId(QuestionRecord question) {
 int _compareBatchQuestions(QuestionRecord a, QuestionRecord b) {
   final orderA = a.splitOrder;
   final orderB = b.splitOrder;
-  if (orderA != null && orderB != null && orderA != orderB) return orderA.compareTo(orderB);
+  if (orderA != null && orderB != null && orderA != orderB) {
+    return orderA.compareTo(orderB);
+  }
   if (orderA != null && orderB == null) return -1;
   if (orderA == null && orderB != null) return 1;
   final created = a.createdAt.compareTo(b.createdAt);
@@ -216,30 +252,38 @@ int _compareBatchQuestions(QuestionRecord a, QuestionRecord b) {
 
 // --- Questions due for review ---
 
-final FutureProvider<List<QuestionRecord>> dueReviewProvider = FutureProvider<List<QuestionRecord>>((ref) async {
+final FutureProvider<List<QuestionRecord>> dueReviewProvider =
+    FutureProvider<List<QuestionRecord>>((ref) async {
   ref.watch(_listVersionProvider);
   final all = await ref.read(questionRepositoryProvider).listAll();
-  return all.where((QuestionRecord q) =>
-    q.contentStatus == ContentStatus.ready &&
-    q.masteryLevel != MasteryLevel.mastered
-  ).toList();
+  return all
+      .where((QuestionRecord q) =>
+          q.contentStatus == ContentStatus.ready &&
+          q.masteryLevel != MasteryLevel.mastered)
+      .toList();
 });
 
 // --- Notebook filter state ---
 
-final StateProvider<Subject?> selectedSubjectFilterProvider = StateProvider<Subject?>((ref) => null);
+final StateProvider<Subject?> selectedSubjectFilterProvider =
+    StateProvider<Subject?>((ref) => null);
 
-final StateProvider<MasteryLevel?> selectedMasteryFilterProvider = StateProvider<MasteryLevel?>((ref) => null);
+final StateProvider<MasteryLevel?> selectedMasteryFilterProvider =
+    StateProvider<MasteryLevel?>((ref) => null);
 
-final StateProvider<String> searchQueryProvider = StateProvider<String>((ref) => '');
+final StateProvider<String> searchQueryProvider =
+    StateProvider<String>((ref) => '');
 
-final StateProvider<String?> selectedKnowledgePointFilterProvider = StateProvider<String?>((ref) => null);
+final StateProvider<String?> selectedKnowledgePointFilterProvider =
+    StateProvider<String?>((ref) => null);
 
 // 多选标签过滤
-final StateProvider<List<String>> selectedTagsFilterProvider = StateProvider<List<String>>((ref) => []);
+final StateProvider<List<String>> selectedTagsFilterProvider =
+    StateProvider<List<String>>((ref) => []);
 
 // --- All tags provider ---
-final FutureProvider<List<String>> allTagsProvider = FutureProvider<List<String>>((ref) async {
+final FutureProvider<List<String>> allTagsProvider =
+    FutureProvider<List<String>>((ref) async {
   ref.watch(_listVersionProvider);
   final all = await ref.read(questionRepositoryProvider).listAll();
   final tags = <String>{};
@@ -256,7 +300,8 @@ final FutureProvider<List<String>> allTagsProvider = FutureProvider<List<String>
 
 // --- Filtered notebook list ---
 
-final FutureProvider<List<QuestionRecord>> filteredQuestionListProvider = FutureProvider<List<QuestionRecord>>((ref) async {
+final FutureProvider<List<QuestionRecord>> filteredQuestionListProvider =
+    FutureProvider<List<QuestionRecord>>((ref) async {
   ref.watch(_listVersionProvider);
   final all = await ref.read(questionRepositoryProvider).listAll();
 
@@ -269,7 +314,10 @@ final FutureProvider<List<QuestionRecord>> filteredQuestionListProvider = Future
   return all.where((QuestionRecord q) {
     if (subject != null && q.subject != subject) return false;
     if (mastery != null && q.masteryLevel != mastery) return false;
-    if (query.isNotEmpty && !q.normalizedQuestionText.toLowerCase().contains(query)) return false;
+    if (query.isNotEmpty &&
+        !q.normalizedQuestionText.toLowerCase().contains(query)) {
+      return false;
+    }
     // AI 知识点过滤：匹配任意一个知识点
     if (knowledgePoint != null && knowledgePoint.isNotEmpty) {
       final kps = q.aiKnowledgePoints;

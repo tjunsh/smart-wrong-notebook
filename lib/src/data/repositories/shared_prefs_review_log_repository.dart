@@ -12,27 +12,31 @@ class SharedPrefsReviewLogRepository implements ReviewLogRepository {
     final raw = prefs.getString(_key);
     if (raw == null || raw.isEmpty) return [];
     final list = jsonDecode(raw) as List;
-    return list.map((e) => ReviewLog(
-      id: e['id'] as String,
-      questionRecordId: e['questionRecordId'] as String,
-      reviewedAt: DateTime.parse(e['reviewedAt'] as String),
-      result: e['result'] as String,
-      masteryAfter: MasteryLevel.values.firstWhere(
-        (m) => m.name == e['masteryAfter'],
-        orElse: () => MasteryLevel.reviewing,
-      ),
-    )).toList();
+    return list
+        .map((e) => ReviewLog(
+              id: e['id'] as String,
+              questionRecordId: e['questionRecordId'] as String,
+              reviewedAt: DateTime.parse(e['reviewedAt'] as String),
+              result: e['result'] as String,
+              masteryAfter: MasteryLevel.values.firstWhere(
+                (m) => m.name == e['masteryAfter'],
+                orElse: () => MasteryLevel.reviewing,
+              ),
+            ))
+        .toList();
   }
 
   Future<void> _saveAll(List<ReviewLog> logs) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = jsonEncode(logs.map((l) => {
-      'id': l.id,
-      'questionRecordId': l.questionRecordId,
-      'reviewedAt': l.reviewedAt.toIso8601String(),
-      'result': l.result,
-      'masteryAfter': l.masteryAfter.name,
-    }).toList());
+    final raw = jsonEncode(logs
+        .map((l) => {
+              'id': l.id,
+              'questionRecordId': l.questionRecordId,
+              'reviewedAt': l.reviewedAt.toIso8601String(),
+              'result': l.result,
+              'masteryAfter': l.masteryAfter.name,
+            })
+        .toList());
     await prefs.setString(_key, raw);
   }
 
@@ -51,4 +55,10 @@ class SharedPrefsReviewLogRepository implements ReviewLogRepository {
 
   @override
   Future<List<ReviewLog>> listAll() async => _loadAll();
+
+  @override
+  Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
 }

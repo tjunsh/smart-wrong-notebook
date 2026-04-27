@@ -14,7 +14,7 @@ import 'package:smart_wrong_notebook/src/features/settings/presentation/subject_
 import 'package:smart_wrong_notebook/src/features/settings/presentation/prompt_settings_screen.dart';
 import 'package:smart_wrong_notebook/src/features/settings/presentation/data_management_screen.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/question_correction_screen.dart';
-import 'package:smart_wrong_notebook/src/features/ocr/presentation/ocr_confirmation_screen.dart';
+import 'package:smart_wrong_notebook/src/features/ocr/presentation/question_save_confirmation_screen.dart';
 import 'package:smart_wrong_notebook/src/features/ocr/presentation/question_split_confirmation_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_loading_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_result_screen.dart';
@@ -25,9 +25,12 @@ GoRouter buildRouter(SettingsRepository settingsRepo) {
   return GoRouter(
     initialLocation: '/',
     routes: <RouteBase>[
-      GoRoute(path: '/onboarding', pageBuilder: (_, __) => _buildPage(const OnboardingScreen())),
+      GoRoute(
+          path: '/onboarding',
+          pageBuilder: (_, __) => _buildPage(const OnboardingScreen())),
       StatefulShellRoute.indexedStack(
-        builder: (BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) {
+        builder: (BuildContext context, GoRouterState state,
+            StatefulNavigationShell navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: <StatefulShellBranch>[
@@ -38,12 +41,15 @@ GoRouter buildRouter(SettingsRepository settingsRepo) {
           ),
           StatefulShellBranch(
             routes: <RouteBase>[
-              GoRoute(path: '/notebook', builder: (_, __) => const NotebookScreen()),
+              GoRoute(
+                  path: '/notebook',
+                  builder: (_, __) => const NotebookScreen()),
             ],
           ),
           StatefulShellBranch(
             routes: <RouteBase>[
-              GoRoute(path: '/review', builder: (_, __) => const ReviewScreen()),
+              GoRoute(
+                  path: '/review', builder: (_, __) => const ReviewScreen()),
             ],
           ),
           StatefulShellBranch(
@@ -52,24 +58,50 @@ GoRouter buildRouter(SettingsRepository settingsRepo) {
                 path: '/settings',
                 builder: (_, __) => const SettingsScreen(),
                 routes: <RouteBase>[
-                  GoRoute(path: 'provider', builder: (_, __) => const ProviderConfigScreen()),
-                  GoRoute(path: 'subjects', builder: (_, __) => const SubjectManagementScreen()),
-                  GoRoute(path: 'prompts', builder: (_, __) => const PromptSettingsScreen()),
-                  GoRoute(path: 'data', builder: (_, __) => const DataManagementScreen()),
+                  GoRoute(
+                      path: 'provider',
+                      builder: (_, __) => const ProviderConfigScreen()),
+                  GoRoute(
+                      path: 'subjects',
+                      builder: (_, __) => const SubjectManagementScreen()),
+                  GoRoute(
+                      path: 'prompts',
+                      builder: (_, __) => const PromptSettingsScreen()),
+                  GoRoute(
+                      path: 'data',
+                      builder: (_, __) => const DataManagementScreen()),
                 ],
               ),
             ],
           ),
         ],
       ),
-      GoRoute(path: '/capture/correction', pageBuilder: (_, __) => _buildPage(const QuestionCorrectionScreen())),
-      GoRoute(path: '/capture/ocr-confirmation', pageBuilder: (_, __) => _buildPage(const OcrConfirmationScreen())),
-      GoRoute(path: '/capture/split-confirmation', pageBuilder: (_, __) => _buildPage(const QuestionSplitConfirmationScreen())),
-      GoRoute(path: '/analysis/loading', pageBuilder: (_, __) => _buildPage(const AnalysisLoadingScreen())),
-      GoRoute(path: '/analysis/result', pageBuilder: (_, __) => _buildPage(const AnalysisResultScreen())),
-      GoRoute(path: '/exercise/practice', pageBuilder: (_, __) => _buildPage(const ExercisePracticeScreen())),
-      GoRoute(path: '/notebook/question/:id', pageBuilder: (_, __) => _buildPage(const QuestionDetailScreen())),
-      GoRoute(path: '/review/history', pageBuilder: (_, __) => _buildPage(const ReviewHistoryScreen())),
+      GoRoute(
+          path: '/capture/correction',
+          pageBuilder: (_, __) => _buildPage(const QuestionCorrectionScreen())),
+      GoRoute(
+          path: '/capture/save-confirmation',
+          pageBuilder: (_, __) =>
+              _buildPage(const QuestionSaveConfirmationScreen())),
+      GoRoute(
+          path: '/capture/split-confirmation',
+          pageBuilder: (_, __) =>
+              _buildPage(const QuestionSplitConfirmationScreen())),
+      GoRoute(
+          path: '/analysis/loading',
+          pageBuilder: (_, __) => _buildPage(const AnalysisLoadingScreen())),
+      GoRoute(
+          path: '/analysis/result',
+          pageBuilder: (_, __) => _buildPage(const AnalysisResultScreen())),
+      GoRoute(
+          path: '/exercise/practice',
+          pageBuilder: (_, __) => _buildPage(const ExercisePracticeScreen())),
+      GoRoute(
+          path: '/notebook/question/:id',
+          pageBuilder: (_, __) => _buildPage(const QuestionDetailScreen())),
+      GoRoute(
+          path: '/review/history',
+          pageBuilder: (_, __) => _buildPage(const ReviewHistoryScreen())),
     ],
   );
 }
@@ -82,7 +114,8 @@ CustomTransitionPage _buildPage(Widget child) {
         position: Tween<Offset>(
           begin: const Offset(1, 0),
           end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
       );
     },
   );
@@ -101,10 +134,15 @@ class ScaffoldWithNavBar extends StatelessWidget {
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (int index) => navigationShell.goBranch(index),
         destinations: const <NavigationDestination>[
-          NavigationDestination(icon: Icon(CupertinoIcons.house), label: AppStrings.homeTab),
-          NavigationDestination(icon: Icon(CupertinoIcons.book), label: AppStrings.notebookTab),
-          NavigationDestination(icon: Icon(CupertinoIcons.arrow_2_circlepath), label: AppStrings.reviewTab),
-          NavigationDestination(icon: Icon(CupertinoIcons.gear), label: AppStrings.settingsTab),
+          NavigationDestination(
+              icon: Icon(CupertinoIcons.house), label: AppStrings.homeTab),
+          NavigationDestination(
+              icon: Icon(CupertinoIcons.book), label: AppStrings.notebookTab),
+          NavigationDestination(
+              icon: Icon(CupertinoIcons.arrow_2_circlepath),
+              label: AppStrings.reviewTab),
+          NavigationDestination(
+              icon: Icon(CupertinoIcons.gear), label: AppStrings.settingsTab),
         ],
       ),
     );

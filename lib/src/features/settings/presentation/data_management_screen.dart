@@ -15,11 +15,14 @@ class DataManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final questionsAsync = ref.watch(questionListProvider);
+    final reviewLogsAsync = ref.watch(reviewLogListProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('数据管理'),
-        leading: IconButton(icon: const Icon(CupertinoIcons.chevron_left), onPressed: () => Navigator.of(context).pop()),
+        leading: IconButton(
+            icon: const Icon(CupertinoIcons.chevron_left),
+            onPressed: () => Navigator.of(context).pop()),
       ),
       body: questionsAsync.when(
         data: (questions) => ListView(
@@ -29,7 +32,24 @@ class DataManagementScreen extends ConsumerWidget {
               child: ListTile(
                 leading: const Icon(CupertinoIcons.tray),
                 title: const Text('题库总量'),
-                trailing: Text('${questions.length} 题', style: Theme.of(context).textTheme.titleMedium),
+                trailing: Text('${questions.length} 题',
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: ListTile(
+                leading: const Icon(CupertinoIcons.clock),
+                title: const Text('复习记录总量'),
+                trailing: reviewLogsAsync.when(
+                  data: (logs) => Text('${logs.length} 条',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  loading: () => const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
+                  error: (_, __) => const Text('加载失败'),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -49,15 +69,18 @@ class DataManagementScreen extends ConsumerWidget {
                 title: const Text('导出当前题库'),
                 subtitle: const Text('导出所有错题为 JSON 文件，可分享'),
                 trailing: const Icon(CupertinoIcons.chevron_right),
-                onTap: questions.isEmpty ? null : () => _exportQuestions(context, questions),
+                onTap: questions.isEmpty
+                    ? null
+                    : () => _exportQuestions(context, questions),
               ),
             ),
             const SizedBox(height: 8),
             Card(
               child: ListTile(
                 leading: const Icon(CupertinoIcons.trash, color: Colors.red),
-                title: const Text('清空所有数据', style: TextStyle(color: Colors.red)),
-                subtitle: const Text('删除所有错题记录，不可恢复'),
+                title:
+                    const Text('清空所有数据', style: TextStyle(color: Colors.red)),
+                subtitle: const Text('删除所有错题和复习记录，不可恢复'),
                 trailing: const Icon(CupertinoIcons.chevron_right),
                 onTap: () => _confirmClearAll(context, ref, questions.length),
               ),
@@ -70,7 +93,8 @@ class DataManagementScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _exportQuestions(BuildContext context, List<QuestionRecord> questions) async {
+  Future<void> _exportQuestions(
+      BuildContext context, List<QuestionRecord> questions) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final exportDir = Directory('${dir.path}/exports');
@@ -87,7 +111,8 @@ class DataManagementScreen extends ConsumerWidget {
       file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(list));
 
       if (!context.mounted) return;
-      await Share.shareXFiles([XFile(file.path)], text: '导出 ${questions.length} 道错题');
+      await Share.shareXFiles([XFile(file.path)],
+          text: '导出 ${questions.length} 道错题');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -101,7 +126,8 @@ class DataManagementScreen extends ConsumerWidget {
 
   Future<void> _importQuestions(BuildContext context, WidgetRef ref) async {
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+      final result = await FilePicker.platform
+          .pickFiles(type: FileType.custom, allowedExtensions: ['json']);
       if (result == null || result.files.isEmpty) return;
 
       final file = File(result.files.first.path!);
@@ -153,9 +179,10 @@ class DataManagementScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('确认清空'),
-        content: Text('确定要删除全部 $count 道错题吗？此操作不可恢复。'),
+        content: Text('确定要删除全部 $count 道错题及其复习记录吗？此操作不可恢复。'),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -174,6 +201,7 @@ class DataManagementScreen extends ConsumerWidget {
     for (final q in all) {
       await repo.delete(q.id);
     }
+    await ref.read(reviewLogRepositoryProvider).clear();
     invalidateQuestionList(ref);
     ref.read(currentQuestionProvider.notifier).state = null;
 

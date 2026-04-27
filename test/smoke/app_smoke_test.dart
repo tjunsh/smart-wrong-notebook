@@ -7,7 +7,7 @@ import 'package:smart_wrong_notebook/src/features/capture/presentation/capture_e
 import 'package:smart_wrong_notebook/src/features/home/presentation/home_screen.dart';
 import 'package:smart_wrong_notebook/src/features/notebook/presentation/notebook_screen.dart';
 import 'package:smart_wrong_notebook/src/features/onboarding/presentation/onboarding_screen.dart';
-import 'package:smart_wrong_notebook/src/features/ocr/presentation/ocr_confirmation_screen.dart';
+import 'package:smart_wrong_notebook/src/features/ocr/presentation/question_save_confirmation_screen.dart';
 import 'package:smart_wrong_notebook/src/features/review/presentation/review_screen.dart';
 import 'package:smart_wrong_notebook/src/features/settings/presentation/settings_screen.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/question_repository.dart';
@@ -19,7 +19,8 @@ import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
 final _inMemRepo = InMemoryQuestionRepository();
 
 final _repoOverride = questionRepositoryProvider.overrideWithValue(_inMemRepo);
-final _settingsOverride = settingsRepositoryProvider.overrideWithValue(_InMemSettingsRepo());
+final _settingsOverride =
+    settingsRepositoryProvider.overrideWithValue(_InMemSettingsRepo());
 
 class _InMemSettingsRepo implements SettingsRepository {
   @override
@@ -40,7 +41,8 @@ class _InMemSettingsRepo implements SettingsRepository {
 
 void main() {
   group('MVP smoke tests', () {
-    testWidgets('app boots to home screen with default content', (tester) async {
+    testWidgets('app boots to home screen with default content',
+        (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
         child: const MaterialApp(home: HomeScreen()),
@@ -51,7 +53,8 @@ void main() {
       expect(find.text('最近新增'), findsOneWidget);
     });
 
-    testWidgets('user can tap camera button and see capture sheet', (tester) async {
+    testWidgets('user can tap camera button and see capture sheet',
+        (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
         child: const MaterialApp(home: HomeScreen()),
@@ -99,7 +102,8 @@ void main() {
       expect(find.text('今日待复习'), findsOneWidget);
     });
 
-    testWidgets('capture entry sheet has camera and gallery options', (tester) async {
+    testWidgets('capture entry sheet has camera and gallery options',
+        (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
         child: const MaterialApp(
@@ -114,10 +118,13 @@ void main() {
       expect(find.byIcon(CupertinoIcons.photo), findsOneWidget);
     });
 
-    testWidgets('ocr confirmation screen shows editable extracted text', (tester) async {
-      final container = ProviderContainer(overrides: [_repoOverride, _settingsOverride]);
+    testWidgets('save confirmation screen shows editable extracted text',
+        (tester) async {
+      final container =
+          ProviderContainer(overrides: [_repoOverride, _settingsOverride]);
       addTearDown(container.dispose);
-      container.read(currentQuestionProvider.notifier).state = QuestionRecord.draft(
+      container.read(currentQuestionProvider.notifier).state =
+          QuestionRecord.draft(
         id: 'q-1',
         imagePath: '',
         subject: Subject.math,
@@ -126,7 +133,7 @@ void main() {
 
       await tester.pumpWidget(UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: OcrConfirmationScreen()),
+        child: const MaterialApp(home: QuestionSaveConfirmationScreen()),
       ));
       await tester.pumpAndSettle();
 
@@ -136,10 +143,13 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
     });
 
-    testWidgets('ocr confirmation screen blocks empty text before saving', (tester) async {
-      final container = ProviderContainer(overrides: [_repoOverride, _settingsOverride]);
+    testWidgets('save confirmation screen blocks empty text before saving',
+        (tester) async {
+      final container =
+          ProviderContainer(overrides: [_repoOverride, _settingsOverride]);
       addTearDown(container.dispose);
-      container.read(currentQuestionProvider.notifier).state = QuestionRecord.draft(
+      container.read(currentQuestionProvider.notifier).state =
+          QuestionRecord.draft(
         id: 'q-empty',
         imagePath: '',
         subject: Subject.math,
@@ -148,7 +158,7 @@ void main() {
 
       await tester.pumpWidget(UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: OcrConfirmationScreen()),
+        child: const MaterialApp(home: QuestionSaveConfirmationScreen()),
       ));
       await tester.pumpAndSettle();
 
@@ -157,10 +167,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('请先补充题目内容，再保存到错题本'), findsWidgets);
-      expect(find.byType(OcrConfirmationScreen), findsOneWidget);
+      expect(find.byType(QuestionSaveConfirmationScreen), findsOneWidget);
     });
 
-    testWidgets('onboarding screen shows three pages with skip and next', (tester) async {
+    testWidgets('onboarding screen shows three pages with skip and next',
+        (tester) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [_repoOverride, _settingsOverride],
         child: const MaterialApp(home: OnboardingScreen()),

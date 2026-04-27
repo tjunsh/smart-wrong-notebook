@@ -4,6 +4,7 @@ abstract class ReviewLogRepository {
   Future<void> insert(ReviewLog log);
   Future<List<ReviewLog>> getByQuestionId(String questionId);
   Future<List<ReviewLog>> listAll();
+  Future<void> clear();
 }
 
 class InMemoryReviewLogRepository implements ReviewLogRepository {
@@ -18,4 +19,7 @@ class InMemoryReviewLogRepository implements ReviewLogRepository {
 
   @override
   Future<List<ReviewLog>> listAll() async => List.unmodifiable(_items);
+
+  @override
+  Future<void> clear() async => _items.clear();
 }

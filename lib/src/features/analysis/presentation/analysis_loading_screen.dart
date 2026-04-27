@@ -12,7 +12,8 @@ class AnalysisLoadingScreen extends ConsumerStatefulWidget {
   const AnalysisLoadingScreen({super.key});
 
   @override
-  ConsumerState<AnalysisLoadingScreen> createState() => _AnalysisLoadingScreenState();
+  ConsumerState<AnalysisLoadingScreen> createState() =>
+      _AnalysisLoadingScreenState();
 }
 
 class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
@@ -21,7 +22,7 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
   int _step = 0;
   Timer? _stepTimer;
 
-  final _steps = const ['正在提取题目...', '正在确认内容...', '正在学习分析...', '即将完成...'];
+  final _steps = const ['正在识别题目...', '正在理解题意...', '正在生成解析...', '即将完成...'];
 
   @override
   void initState() {
@@ -65,9 +66,12 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
     String debugInfo = '配置状态:\n';
     debugInfo += '- 配置对象: ${config != null ? "存在" : "为空"}\n';
     if (config != null) {
-      debugInfo += '- baseUrl: ${config.baseUrl.isNotEmpty ? config.baseUrl : "(空)"}\n';
-      debugInfo += '- model: ${config.model.isNotEmpty ? config.model : "(空)"}\n';
-      debugInfo += '- apiKey: ${config.apiKey.isNotEmpty ? "[已设置(${config.apiKey.length}字符)]" : "(空)"}\n';
+      debugInfo +=
+          '- baseUrl: ${config.baseUrl.isNotEmpty ? config.baseUrl : "(空)"}\n';
+      debugInfo +=
+          '- model: ${config.model.isNotEmpty ? config.model : "(空)"}\n';
+      debugInfo +=
+          '- apiKey: ${config.apiKey.isNotEmpty ? "[已设置(${config.apiKey.length}字符)]" : "(空)"}\n';
     } else {
       debugInfo += '\n请到设置中配置 AI 服务';
     }
@@ -95,7 +99,8 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
         ref.read(currentQuestionProvider.notifier).state = working;
       }
 
-      final candidateSnapshots = working.splitResult != null && working.splitResult!.hasMultipleCandidates
+      final candidateSnapshots = working.splitResult != null &&
+              working.splitResult!.hasMultipleCandidates
           ? await service.analyzeSplitCandidates(
               questionId: working.id,
               subjectName: working.subject.name,
@@ -167,7 +172,7 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
         title: const Text('AI 解析'),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.chevron_left),
-          onPressed: () => context.go('/capture/ocr-confirmation'),
+          onPressed: () => context.go('/capture/correction'),
         ),
       ),
       body: _errorMessage != null
@@ -184,7 +189,8 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
-              width: 64, height: 64,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF7ED),
                 borderRadius: BorderRadius.circular(32),
@@ -212,9 +218,13 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text('调试信息:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  const Text('调试信息:',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   const SizedBox(height: 8),
-                  Text(_debugInfo ?? '', style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                  Text(_debugInfo ?? '',
+                      style: const TextStyle(
+                          fontSize: 11, fontFamily: 'monospace')),
                 ],
               ),
             ),
@@ -248,7 +258,8 @@ class _LoadingView extends StatefulWidget {
   State<_LoadingView> createState() => _LoadingViewState();
 }
 
-class _LoadingViewState extends State<_LoadingView> with SingleTickerProviderStateMixin {
+class _LoadingViewState extends State<_LoadingView>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -275,7 +286,8 @@ class _LoadingViewState extends State<_LoadingView> with SingleTickerProviderSta
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
-              width: 88, height: 88,
+              width: 88,
+              height: 88,
               decoration: BoxDecoration(
                 color: const Color(0xFFEEF2FF),
                 borderRadius: BorderRadius.circular(44),
@@ -284,7 +296,8 @@ class _LoadingViewState extends State<_LoadingView> with SingleTickerProviderSta
                 animation: _controller,
                 builder: (_, __) => Transform.rotate(
                   angle: _controller.value * 2 * 3.14159,
-                  child: const Icon(CupertinoIcons.smiley, size: 44, color: Color(0xFF6366F1)),
+                  child: const Icon(CupertinoIcons.smiley,
+                      size: 44, color: Color(0xFF6366F1)),
                 ),
               ),
             ),

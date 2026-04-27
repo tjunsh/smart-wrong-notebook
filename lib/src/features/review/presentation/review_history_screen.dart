@@ -28,7 +28,8 @@ class ReviewHistoryScreen extends ConsumerWidget {
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: entries.length,
-                itemBuilder: (_, index) => _buildEntry(context, ref, entries[index]),
+                itemBuilder: (_, index) =>
+                    _buildEntry(context, ref, entries[index]),
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败: $e')),
@@ -43,9 +44,12 @@ class ReviewHistoryScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: (isMastered ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+          backgroundColor: (isMastered ? Colors.green : Colors.orange)
+              .withValues(alpha: 0.1),
           child: Icon(
-            isMastered ? CupertinoIcons.checkmark_circle : CupertinoIcons.arrow_2_circlepath,
+            isMastered
+                ? CupertinoIcons.checkmark_circle
+                : CupertinoIcons.arrow_2_circlepath,
             color: isMastered ? Colors.green : Colors.orange,
             size: 18,
           ),
@@ -61,7 +65,8 @@ class ReviewHistoryScreen extends ConsumerWidget {
         ),
         trailing: Chip(
           label: Text(_masteryLabel(entry.log.masteryAfter)),
-          backgroundColor: (isMastered ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+          backgroundColor: (isMastered ? Colors.green : Colors.orange)
+              .withValues(alpha: 0.1),
           labelStyle: TextStyle(
             fontSize: 11,
             color: isMastered ? Colors.green : Colors.orange,
@@ -70,7 +75,8 @@ class ReviewHistoryScreen extends ConsumerWidget {
         ),
         onTap: entry.question != null
             ? () {
-                ref.read(currentQuestionProvider.notifier).state = entry.question;
+                ref.read(currentQuestionProvider.notifier).state =
+                    entry.question;
                 context.go('/notebook/question/${entry.question!.id}');
               }
             : null,
@@ -80,25 +86,34 @@ class ReviewHistoryScreen extends ConsumerWidget {
 
   String _resultLabel(String result) {
     switch (result) {
-      case 'mastered': return '已掌握';
-      case 'reviewing': return '复习中';
-      case 'reset': return '重置';
-      default: return result;
+      case 'mastered':
+        return '已掌握';
+      case 'reviewing':
+        return '复习中';
+      case 'reset':
+        return '重置';
+      default:
+        return result;
     }
   }
 
   String _masteryLabel(MasteryLevel level) {
     switch (level) {
-      case MasteryLevel.newQuestion: return '未复习';
-      case MasteryLevel.reviewing: return '复习中';
-      case MasteryLevel.mastered: return '已掌握';
+      case MasteryLevel.newQuestion:
+        return '未复习';
+      case MasteryLevel.reviewing:
+        return '复习中';
+      case MasteryLevel.mastered:
+        return '已掌握';
     }
   }
 
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inDays == 0) return '今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    if (diff.inDays == 0) {
+      return '今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
     if (diff.inDays == 1) return '昨天';
     return '${dt.month}/${dt.day}';
   }
@@ -138,12 +153,15 @@ final FutureProvider<List<_ReviewEntry>> _reviewLogsWithQuestionsProvider =
     FutureProvider<List<_ReviewEntry>>((ref) async {
   final logRepo = ref.watch(reviewLogRepositoryProvider);
   final questionRepo = ref.watch(questionRepositoryProvider);
-  final logs = await logRepo.listAll();
+  final logs = [...await logRepo.listAll()];
   final questions = await questionRepo.listAll();
   final questionMap = <String, QuestionRecord>{};
   for (final q in questions) {
     questionMap[q.id] = q;
   }
   logs.sort((a, b) => b.reviewedAt.compareTo(a.reviewedAt));
-  return logs.map((log) => _ReviewEntry(log: log, question: questionMap[log.questionRecordId])).toList();
+  return logs
+      .map((log) =>
+          _ReviewEntry(log: log, question: questionMap[log.questionRecordId]))
+      .toList();
 });
