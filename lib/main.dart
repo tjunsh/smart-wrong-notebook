@@ -20,6 +20,7 @@ import 'package:smart_wrong_notebook/src/features/settings/presentation/data_man
 import 'package:smart_wrong_notebook/src/features/capture/presentation/question_correction_screen.dart';
 import 'package:smart_wrong_notebook/src/features/capture/presentation/image_crop_screen.dart';
 import 'package:smart_wrong_notebook/src/features/ocr/presentation/question_save_confirmation_screen.dart';
+import 'package:smart_wrong_notebook/src/features/ocr/presentation/question_split_confirmation_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_loading_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/analysis_result_screen.dart';
 import 'package:smart_wrong_notebook/src/features/analysis/presentation/exercise_practice_screen.dart';
@@ -86,6 +87,9 @@ void main() async {
       GoRoute(
           path: '/capture/save-confirmation',
           builder: (context, state) => const QuestionSaveConfirmationScreen()),
+      GoRoute(
+          path: '/capture/split-confirmation',
+          builder: (context, state) => const QuestionSplitConfirmationScreen()),
       GoRoute(
           path: '/analysis/loading',
           builder: (context, state) => const AnalysisLoadingScreen()),

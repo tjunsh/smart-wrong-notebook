@@ -6,6 +6,7 @@ import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/domain/models/review_log.dart';
+import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
 
 class ReviewHistoryScreen extends ConsumerWidget {
   const ReviewHistoryScreen({super.key});
@@ -54,11 +55,19 @@ class ReviewHistoryScreen extends ConsumerWidget {
             size: 18,
           ),
         ),
-        title: Text(
-          entry.question?.correctedText ?? '已删除',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: entry.question == null
+            ? const Text(
+                '已删除',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              )
+            : MathContentView(
+                entry.question!.correctedText,
+                contentFormat: entry.question!.contentFormat,
+                mode: MathContentViewMode.compact,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
         subtitle: Text(
           '${_formatDate(entry.log.reviewedAt)} · ${_resultLabel(entry.log.result)}',
           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),

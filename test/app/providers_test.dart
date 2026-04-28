@@ -32,6 +32,37 @@ void main() {
       ]);
     });
 
+    test('keeps English cloze passage as one composite question', () async {
+      const text = '''1. Saving for a Rainy Day
+In China, saving money has always been considered a traditional virtue. Chinese people _____ 1 _____ the habit of putting money aside.
+Some young people save income, _____ 4 _____ spend most of it on travel.
+1. A. keep B. kept C. have kept
+2. A. saved B. was saved C. has saved
+3. A. to interest B. interesting C. interested
+4. A. others B. the other C. another
+5. A. find B. finding C. to find''';
+
+      final result = await splitter.split(text);
+
+      expect(result.strategy, QuestionSplitStrategy.fallback);
+      expect(result.candidates, hasLength(1));
+      expect(result.candidates.single.text, text);
+    });
+
+    test('keeps Chinese classical worksheet as one composite question', () async {
+      const text = '''《桃花源记》翻译卷
+一、文常积累
+本文作者______，名______，字______。
+二、字词释义
+晋太元中，武陵人捕鱼为业。缘（______）溪行，忘路之远近。忽逢桃花林，夹岸数百步，中无杂树，芳草鲜美（______），落英（______）缤纷（______）。''';
+
+      final result = await splitter.split(text);
+
+      expect(result.strategy, QuestionSplitStrategy.fallback);
+      expect(result.candidates, hasLength(1));
+      expect(result.candidates.single.text, text);
+    });
+
     test('keeps single question as one candidate when no split markers', () async {
       final result = await splitter.split('已知 x^2+1=5，求 x 的值');
 

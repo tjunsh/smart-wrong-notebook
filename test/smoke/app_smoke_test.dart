@@ -139,7 +139,7 @@ void main() {
 
       expect(find.text('确认题目内容'), findsOneWidget);
       expect(find.text('确认并保存到错题本'), findsOneWidget);
-      expect(find.text('已知 2x+1=5，求 x 的值'), findsOneWidget);
+      expect(find.text('已知 2x+1=5，求 x 的值'), findsWidgets);
       expect(find.byType(TextField), findsOneWidget);
     });
 

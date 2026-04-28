@@ -373,10 +373,13 @@ class _ReviewCard extends StatelessWidget {
                                     color: const Color(0xFFFFF7ED),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Text(tag,
-                                      style: const TextStyle(
-                                          fontSize: 10,
-                                          color: Color(0xFFD97706))),
+                                  child: MathContentView(
+                                    tag,
+                                    mode: MathContentViewMode.compact,
+                                    style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Color(0xFFD97706)),
+                                  ),
                                 )),
                           ],
                         ),

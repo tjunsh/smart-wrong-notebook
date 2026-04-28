@@ -5,26 +5,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
+import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_split_session.dart';
 import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
+
+const _mathPreviewFormat = QuestionContentFormat.latexMixed;
 
 class QuestionSplitConfirmationScreen extends ConsumerStatefulWidget {
   const QuestionSplitConfirmationScreen({super.key});
 
   @override
-  ConsumerState<QuestionSplitConfirmationScreen> createState() => _QuestionSplitConfirmationScreenState();
+  ConsumerState<QuestionSplitConfirmationScreen> createState() =>
+      _QuestionSplitConfirmationScreenState();
 }
 
-class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitConfirmationScreen> {
+class _QuestionSplitConfirmationScreenState
+    extends ConsumerState<QuestionSplitConfirmationScreen> {
   int _activeIndex = 0;
   String? _errorMessage;
+  bool _isSaving = false;
 
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(currentQuestionSplitSessionProvider);
     final source = session?.source;
     final drafts = session?.drafts ?? const <QuestionSplitDraft>[];
-    final hasImage = source != null && source.imagePath.isNotEmpty && File(source.imagePath).existsSync();
+    final hasImage = source != null &&
+        source.imagePath.isNotEmpty &&
+        File(source.imagePath).existsSync();
 
     if (session == null || source == null) {
       return Scaffold(
@@ -33,7 +41,8 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
       );
     }
 
-    final safeIndex = drafts.isEmpty ? 0 : _activeIndex.clamp(0, drafts.length - 1);
+    final safeIndex =
+        drafts.isEmpty ? 0 : _activeIndex.clamp(0, drafts.length - 1);
     final activeDraft = drafts.isEmpty ? null : drafts[safeIndex];
 
     return Scaffold(
@@ -67,18 +76,22 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                           color: const Color(0xFFEEF2FF),
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Icon(CupertinoIcons.square_split_2x2, size: 18, color: Color(0xFF4F46E5)),
+                        child: const Icon(CupertinoIcons.square_split_2x2,
+                            size: 18, color: Color(0xFF4F46E5)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            const Text('逐题确认后保存', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                            const Text('逐题确认后保存',
+                                style: TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             Text(
                               '保持当前分析结果页体验，保存前按题整理，方便后续检索、复习和继续练习。',
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey.shade600),
                             ),
                           ],
                         ),
@@ -96,7 +109,8 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                         textColor: const Color(0xFF4F46E5),
                       ),
                       _SummaryChip(
-                        label: '已选 ${drafts.where((draft) => draft.selected).length} 题',
+                        label:
+                            '已选 ${drafts.where((draft) => draft.selected).length} 题',
                         bgColor: const Color(0xFFF0FDF4),
                         textColor: const Color(0xFF16A34A),
                       ),
@@ -142,9 +156,13 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text('题目列表', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  const Text('题目列表',
+                      style:
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
-                  Text('可取消不需要保存的题目，点击卡片切换当前编辑项。', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  Text('可取消不需要保存的题目，点击卡片切换当前编辑项。',
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   const SizedBox(height: 12),
                   ...drafts.asMap().entries.map((entry) {
                     final index = entry.key;
@@ -158,10 +176,14 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isActive ? const Color(0xFFEEF2FF) : Colors.white,
+                            color: isActive
+                                ? const Color(0xFFEEF2FF)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isActive ? const Color(0xFFC7D2FE) : Colors.grey.shade200,
+                              color: isActive
+                                  ? const Color(0xFFC7D2FE)
+                                  : Colors.grey.shade200,
                             ),
                           ),
                           child: Row(
@@ -171,8 +193,10 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                                 scale: 1.05,
                                 child: Checkbox(
                                   value: draft.selected,
-                                  onChanged: (value) => _updateDraft(index, draft.copyWith(selected: value ?? false)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                  onChanged: (value) => _updateDraft(index,
+                                      draft.copyWith(selected: value ?? false)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4)),
                                 ),
                               ),
                               Expanded(
@@ -185,8 +209,11 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                                           width: 24,
                                           height: 24,
                                           decoration: BoxDecoration(
-                                            color: isActive ? const Color(0xFF6366F1) : Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: isActive
+                                                ? const Color(0xFF6366F1)
+                                                : Colors.grey.shade100,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Center(
                                             child: Text(
@@ -194,7 +221,9 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
-                                                color: isActive ? Colors.white : Colors.grey.shade600,
+                                                color: isActive
+                                                    ? Colors.white
+                                                    : Colors.grey.shade600,
                                               ),
                                             ),
                                           ),
@@ -202,14 +231,18 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: MathContentView(
-                                            draft.text.trim().isEmpty ? '待补充题目内容' : draft.text,
-                                            contentFormat: draft.contentFormat,
+                                            draft.text.trim().isEmpty
+                                                ? '待补充题目内容'
+                                                : draft.text,
+                                            contentFormat: _mathPreviewFormat,
                                             mode: MathContentViewMode.compact,
                                             maxLines: 1,
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
-                                              color: draft.selected ? const Color(0xFF111827) : Colors.grey.shade500,
+                                              color: draft.selected
+                                                  ? const Color(0xFF111827)
+                                                  : Colors.grey.shade500,
                                             ),
                                           ),
                                         ),
@@ -219,7 +252,8 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Icon(CupertinoIcons.chevron_right, size: 18, color: Colors.grey.shade300),
+                              Icon(CupertinoIcons.chevron_right,
+                                  size: 18, color: Colors.grey.shade300),
                             ],
                           ),
                         ),
@@ -243,20 +277,27 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        const Text('当前题目内容', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                        const Text('当前题目内容',
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w600)),
                         const Spacer(),
-                        Text('第 ${safeIndex + 1} 题', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Text('第 ${safeIndex + 1} 题',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey.shade500)),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('支持轻量修改，保存时会按当前内容逐题落库。', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text('支持轻量修改，保存时会按当前内容逐题落库。',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade600)),
                     const SizedBox(height: 12),
                     TextFormField(
                       key: ValueKey(activeDraft.id),
-                      initialValue: activeDraft.text,
+                      initialValue: _displayEditableText(activeDraft.text),
                       maxLines: 8,
                       minLines: 6,
-                      onChanged: (value) => _updateDraft(safeIndex, activeDraft.copyWith(text: value)),
+                      onChanged: (value) => _updateDraft(
+                          safeIndex, activeDraft.copyWith(text: value)),
                       decoration: InputDecoration(
                         hintText: '请输入题目内容',
                         filled: true,
@@ -270,6 +311,11 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                           borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    _FormulaPreviewCard(
+                      content: activeDraft.text,
+                      contentFormat: activeDraft.contentFormat,
                     ),
                   ],
                 ),
@@ -286,12 +332,14 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const Icon(CupertinoIcons.exclamationmark_triangle, size: 18, color: Color(0xFFDC2626)),
+                    const Icon(CupertinoIcons.exclamationmark_triangle,
+                        size: 18, color: Color(0xFFDC2626)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFFB91C1C)),
                       ),
                     ),
                   ],
@@ -303,14 +351,22 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
               onPressed: () => context.go('/analysis/result'),
               icon: const Icon(CupertinoIcons.chevron_left, size: 18),
               label: const Text('返回结果页'),
-              style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+              style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48)),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
-              onPressed: _saveSelectedQuestions,
-              icon: const Icon(CupertinoIcons.checkmark_alt, size: 18),
-              label: const Text('确认并保存到错题本'),
-              style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+              onPressed: _isSaving ? null : _saveSelectedQuestions,
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(CupertinoIcons.checkmark_alt, size: 18),
+              label: Text(_isSaving ? '正在保存...' : '确认并保存到错题本'),
+              style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48)),
             ),
           ],
         ),
@@ -323,19 +379,37 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
     if (session == null) return;
 
     final nextDrafts = [...session.drafts];
-    nextDrafts[index] = updatedDraft;
-    ref.read(currentQuestionSplitSessionProvider.notifier).state = session.copyWith(drafts: nextDrafts);
+    nextDrafts[index] =
+        updatedDraft.copyWith(text: _normalizeEditableText(updatedDraft.text));
+    ref.read(currentQuestionSplitSessionProvider.notifier).state =
+        session.copyWith(drafts: nextDrafts);
 
     if (_errorMessage != null) {
       setState(() => _errorMessage = null);
     }
   }
 
+  String _displayEditableText(String text) => text
+      .replaceAll(r'\\(', r'\(')
+      .replaceAll(r'\\)', r'\)')
+      .replaceAll(r'\\[', r'\[')
+      .replaceAll(r'\\]', r'\]');
+
+  String _normalizeEditableText(String text) => text
+      .replaceAll(r'\\(', r'\(')
+      .replaceAll(r'\\)', r'\)')
+      .replaceAll(r'\\[', r'\[')
+      .replaceAll(r'\\]', r'\]');
+
   Future<void> _saveSelectedQuestions() async {
     final session = ref.read(currentQuestionSplitSessionProvider);
-    if (session == null) return;
+    if (session == null || _isSaving) return;
 
-    final selectedDrafts = session.drafts.where((draft) => draft.selected).toList();
+    final selectedDrafts = session.drafts
+        .where((draft) => draft.selected)
+        .map(
+            (draft) => draft.copyWith(text: _normalizeEditableText(draft.text)))
+        .toList();
     if (selectedDrafts.isEmpty) {
       setState(() => _errorMessage = '请至少选择一道题后再保存');
       return;
@@ -346,28 +420,41 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
       return;
     }
 
-    final records = selectedDrafts.asMap().entries.map((entry) {
-      return buildSplitQuestionRecord(
-        source: session.source,
-        draft: entry.value,
-        sortOrder: entry.key + 1,
-      );
-    }).toList();
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
 
-    final messenger = ScaffoldMessenger.of(context);
-    final router = GoRouter.of(context);
-    await ref.read(questionRepositoryProvider).saveDrafts(records);
-    invalidateQuestionList(ref);
-    ref.read(currentQuestionProvider.notifier).state = null;
-    ref.read(currentQuestionSplitSessionProvider.notifier).state = null;
-    if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('已保存 ${records.length} 道题到错题本'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    router.go('/notebook');
+    try {
+      final records = selectedDrafts.asMap().entries.map((entry) {
+        return buildSplitQuestionRecord(
+          source: session.source,
+          draft: entry.value,
+          sortOrder: entry.key + 1,
+        );
+      }).toList();
+
+      final messenger = ScaffoldMessenger.of(context);
+      final router = GoRouter.of(context);
+      await ref.read(questionRepositoryProvider).saveDrafts(records);
+      invalidateQuestionList(ref);
+      ref.read(currentQuestionProvider.notifier).state = null;
+      ref.read(currentQuestionSplitSessionProvider.notifier).state = null;
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('已保存 ${records.length} 道题到错题本'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      router.go('/notebook');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+        _errorMessage = '保存失败：$e';
+      });
+    }
   }
 
   void _showFullImage(BuildContext context, String imagePath) {
@@ -386,6 +473,49 @@ class _QuestionSplitConfirmationScreenState extends ConsumerState<QuestionSplitC
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FormulaPreviewCard extends StatelessWidget {
+  const _FormulaPreviewCard({required this.content, this.contentFormat});
+
+  final String content;
+  final QuestionContentFormat? contentFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = content.trim();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            '公式预览',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          trimmed.isEmpty
+              ? Text('暂无可预览内容',
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500))
+              : MathContentView(
+                  trimmed,
+                  contentFormat: contentFormat,
+                  style: const TextStyle(fontSize: 14),
+                ),
+        ],
       ),
     );
   }
@@ -412,7 +542,8 @@ class _SummaryChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 12, color: textColor, fontWeight: FontWeight.w500),
+        style: TextStyle(
+            fontSize: 12, color: textColor, fontWeight: FontWeight.w500),
       ),
     );
   }

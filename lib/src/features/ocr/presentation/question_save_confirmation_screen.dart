@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
+import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
 
 class QuestionSaveConfirmationScreen extends ConsumerStatefulWidget {
   const QuestionSaveConfirmationScreen({super.key});
@@ -160,9 +161,9 @@ class _QuestionSaveConfirmationScreenState
                 maxLines: 10,
                 minLines: 8,
                 onChanged: (_) {
-                  if (_errorMessage != null) {
-                    setState(() => _errorMessage = null);
-                  }
+                  setState(() {
+                    _errorMessage = null;
+                  });
                 },
                 decoration: InputDecoration(
                   hintText: '如果识别结果为空，可以手动补充题目内容',
@@ -179,6 +180,8 @@ class _QuestionSaveConfirmationScreenState
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              _FormulaPreviewCard(content: _textController.text),
               if (_errorMessage != null) ...<Widget>[
                 const SizedBox(height: 10),
                 Text(
@@ -256,6 +259,44 @@ class _QuestionSaveConfirmationScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FormulaPreviewCard extends StatelessWidget {
+  const _FormulaPreviewCard({required this.content});
+
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = content.trim();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            '公式预览',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          trimmed.isEmpty
+              ? Text('暂无可预览内容',
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500))
+              : MathContentView(trimmed, style: const TextStyle(fontSize: 14)),
+        ],
       ),
     );
   }

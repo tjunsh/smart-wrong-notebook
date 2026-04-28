@@ -26,6 +26,14 @@ class QuestionSplitService {
       );
     }
 
+    if (_isCompositeLanguageWorksheet(normalized)) {
+      return QuestionSplitResult(
+        sourceText: normalized,
+        candidates: _buildCandidates(<String>[normalized], QuestionSplitStrategy.fallback),
+        strategy: QuestionSplitStrategy.fallback,
+      );
+    }
+
     final numberedSegments = _splitByNumberedQuestions(normalized);
     if (numberedSegments.length >= 2) {
       return QuestionSplitResult(
@@ -64,6 +72,32 @@ class QuestionSplitService {
         strategy: strategy,
       );
     }).toList();
+  }
+
+  bool _isCompositeLanguageWorksheet(String text) {
+    final blankCount = RegExp(r'_{2,}|＿{2,}|\(\s*\)|（\s*）').allMatches(text).length;
+    final optionRows = RegExp(r'(^|\n)\s*\d+[\.、．)]\s*[A-C][\.、．)]\s+', multiLine: true)
+        .allMatches(text)
+        .length;
+    final hasEnglishPassage = RegExp(r'\b(the|that|which|while|however|because|people|money|family|should|china|saving|some|they|was|for|with|and|of|to)\b', caseSensitive: false)
+        .allMatches(text)
+        .length >=
+        8;
+    final hasChineseWorksheetMarker = RegExp(r'文常积累|字词释义|翻译卷|课文|文言文|释义|翻译').hasMatch(text);
+    final hasClassicalChinese = RegExp(r'之|其|乃|遂|为|问所从来|落英|缤纷|阡陌|桃花源记').allMatches(text).length >= 4;
+    final numberedBlankCount = RegExp(r'(^|[^\d])(?:[1-9]|10)\s*[\.、．)]?\s*[A-C][\.、．)]', multiLine: true)
+        .allMatches(text)
+        .length;
+
+    if (hasEnglishPassage && (optionRows >= 3 || numberedBlankCount >= 5)) {
+      return true;
+    }
+
+    if (hasChineseWorksheetMarker || hasClassicalChinese) {
+      return true;
+    }
+
+    return blankCount >= 5 && (hasChineseWorksheetMarker || hasClassicalChinese);
   }
 
   List<String> _splitByNumberedQuestions(String text) {

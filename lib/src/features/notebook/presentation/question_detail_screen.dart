@@ -135,7 +135,7 @@ class QuestionDetailScreen extends ConsumerWidget {
                     spacing: 6,
                     runSpacing: 4,
                     children: current.aiKnowledgePoints
-                        .map((kp) => _TagChip(
+                        .map((kp) => _MathTagChip(
                               label: kp,
                               bgColor: const Color(0xFFFFF7ED),
                               textColor: const Color(0xFFD97706),
@@ -368,13 +368,16 @@ class QuestionDetailScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  if (current.imagePath.isNotEmpty) const SizedBox(height: 10),
-                  MathContentView(
-                    current.correctedText,
-                    contentFormat: current.contentFormat,
-                    style:
-                        const TextStyle(fontSize: 14, color: Color(0xFF3730A3)),
-                  ),
+                  if (batchGroup == null) ...<Widget>[
+                    if (current.imagePath.isNotEmpty)
+                      const SizedBox(height: 10),
+                    MathContentView(
+                      current.correctedText,
+                      contentFormat: current.contentFormat,
+                      style: const TextStyle(
+                          fontSize: 14, color: Color(0xFF3730A3)),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -441,9 +444,11 @@ class QuestionDetailScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFFC7D2FE)),
                           ),
-                          child: Text(p,
-                              style: const TextStyle(
-                                  fontSize: 12, color: Color(0xFF4F46E5))),
+                          child: MathContentView(
+                            p,
+                            style: const TextStyle(
+                                fontSize: 12, color: Color(0xFF4F46E5)),
+                          ),
                         ))
                     .toList(),
               ),
@@ -859,6 +864,31 @@ class _TagChip extends StatelessWidget {
       child: Text(label,
           style: TextStyle(
               fontSize: 12, color: textColor, fontWeight: FontWeight.w500)),
+    );
+  }
+}
+
+class _MathTagChip extends StatelessWidget {
+  const _MathTagChip(
+      {required this.label, required this.bgColor, required this.textColor});
+
+  final String label;
+  final Color bgColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: MathContentView(
+        label,
+        style: TextStyle(
+            fontSize: 12, color: textColor, fontWeight: FontWeight.w500),
+      ),
     );
   }
 }

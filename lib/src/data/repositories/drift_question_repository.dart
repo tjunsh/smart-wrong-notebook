@@ -63,7 +63,10 @@ class DriftQuestionRepository implements QuestionRepository {
         batch.insertAll(
           _db.generatedExercises,
           record.savedExercises.map((exercise) {
-            final normalized = exercise.copyWith(questionId: record.id);
+            final normalized = exercise.copyWith(
+              id: '${record.id}-exercise-${(exercise.order ?? 0) + 1}',
+              questionId: record.id,
+            );
             return db.GeneratedExercisesCompanion.insert(
               id: normalized.id,
               questionId: normalized.questionId,

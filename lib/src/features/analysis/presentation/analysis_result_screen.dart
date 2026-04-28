@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
+import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
 
 class AnalysisResultScreen extends ConsumerStatefulWidget {
@@ -240,8 +241,9 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                               color: Colors.grey.shade700),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        MathContentView(
                           activeCandidate?.text ?? '',
+                          contentFormat: QuestionContentFormat.latexMixed,
                           style: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFF374151),
@@ -254,12 +256,15 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          MathContentView(
-            displayQuestionText,
-            contentFormat: record.contentFormat,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
+          if (!(record.splitResult?.hasMultipleCandidates ??
+              false)) ...<Widget>[
+            const SizedBox(height: 12),
+            MathContentView(
+              displayQuestionText,
+              contentFormat: record.contentFormat,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ],
           if (displayResult == null) ...<Widget>[
             const SizedBox(height: 40),
             Center(
@@ -327,14 +332,16 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                         ),
                       ),
                     ),
-                  if (File(record.imagePath).existsSync())
-                    const SizedBox(height: 10),
-                  MathContentView(
-                    displayQuestionText,
-                    contentFormat: record.contentFormat,
-                    style:
-                        const TextStyle(fontSize: 14, color: Color(0xFF3730A3)),
-                  ),
+                  if (!hasMultipleCandidates) ...<Widget>[
+                    if (File(record.imagePath).existsSync())
+                      const SizedBox(height: 10),
+                    MathContentView(
+                      displayQuestionText,
+                      contentFormat: record.contentFormat,
+                      style: const TextStyle(
+                          fontSize: 14, color: Color(0xFF3730A3)),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -395,7 +402,7 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
+                    MathContentView(
                       candidateInsight,
                       style: const TextStyle(
                           fontSize: 13, color: Color(0xFF134E4A), height: 1.5),
@@ -435,9 +442,11 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFFC7D2FE)),
                           ),
-                          child: Text(p,
-                              style: const TextStyle(
-                                  fontSize: 12, color: Color(0xFF4F46E5))),
+                          child: MathContentView(
+                            p,
+                            style: const TextStyle(
+                                fontSize: 12, color: Color(0xFF4F46E5)),
+                          ),
                         ))
                     .toList(),
               ),

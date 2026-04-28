@@ -75,6 +75,7 @@ class GeneratedExercise {
   final String? userAnswer;
 
   GeneratedExercise copyWith({
+    String? id,
     String? questionId,
     ExerciseGenerationMode? generationMode,
     int? order,
@@ -83,7 +84,7 @@ class GeneratedExercise {
     String? userAnswer,
   }) {
     return GeneratedExercise(
-      id: id,
+      id: id ?? this.id,
       questionId: questionId ?? this.questionId,
       generationMode: generationMode ?? this.generationMode,
       difficulty: difficulty,

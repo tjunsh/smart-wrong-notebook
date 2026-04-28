@@ -134,11 +134,14 @@ QuestionRecord buildSplitQuestionRecord({
       (candidateSnapshot?.savedExercises ?? const <GeneratedExercise>[])
           .asMap()
           .entries
-          .map((entry) => entry.value.copyWith(
-                questionId: '${source.id}-$sortOrder',
-                order: entry.value.order ?? entry.key,
-              ))
-          .toList();
+          .map((entry) {
+    final order = entry.value.order ?? entry.key;
+    return entry.value.copyWith(
+      id: '${source.id}-$sortOrder-exercise-${order + 1}',
+      questionId: '${source.id}-$sortOrder',
+      order: order,
+    );
+  }).toList();
   final aiTags = candidateSnapshot?.aiTags ?? source.aiTags;
   final aiKnowledgePoints =
       candidateSnapshot?.aiKnowledgePoints ?? source.aiKnowledgePoints;

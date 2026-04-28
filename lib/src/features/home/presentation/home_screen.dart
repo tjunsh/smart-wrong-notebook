@@ -246,7 +246,11 @@ class _RecentQuestionCard extends StatelessWidget {
                         color: isAiTag ? const Color(0xFFFFF7ED) : const Color(0xFFEEF2FF),
                         borderRadius: BorderRadius.circular(2),
                       ),
-                      child: Text(tag, style: TextStyle(fontSize: 10, color: isAiTag ? const Color(0xFFD97706) : const Color(0xFF4F46E5))),
+                      child: MathContentView(
+                        tag,
+                        mode: MathContentViewMode.compact,
+                        style: TextStyle(fontSize: 10, color: isAiTag ? const Color(0xFFD97706) : const Color(0xFF4F46E5)),
+                      ),
                     );
                   }),
                 ],

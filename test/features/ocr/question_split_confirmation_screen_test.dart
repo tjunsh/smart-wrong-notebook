@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smart_wrong_notebook/src/app/providers.dart';
 import 'package:smart_wrong_notebook/src/data/repositories/question_repository.dart';
 import 'package:smart_wrong_notebook/src/domain/models/analysis_result.dart';
@@ -9,6 +10,7 @@ import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_split_result.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_split_session.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
+import 'package:smart_wrong_notebook/src/features/notebook/presentation/notebook_screen.dart';
 import 'package:smart_wrong_notebook/src/features/ocr/presentation/question_split_confirmation_screen.dart';
 
 void main() {
@@ -37,7 +39,7 @@ void main() {
         CandidateAnalysisSnapshot(
           candidateId: 'candidate-0',
           order: 1,
-          questionText: '第一题：已知 x+1=3，求 x',
+          questionText: r'第一题：已知 \(x+1=3\)，求 \(x\)',
           analysisResult: const AnalysisResult(
             finalAnswer: 'x=2',
             steps: <String>['移项'],
@@ -69,14 +71,33 @@ void main() {
       source: source,
       strategy: QuestionSplitStrategy.fallback,
       drafts: const <QuestionSplitDraft>[
-        QuestionSplitDraft(id: 'd-1', text: '第一题：已知 x+1=3，求 x', selected: true),
+        QuestionSplitDraft(id: 'd-1', text: r'第一题：已知 \\(x+1=3\\)，求 \\(x\\)', selected: true),
         QuestionSplitDraft(id: 'd-2', text: '第二题：求 y=2x 的值', selected: false),
       ],
     );
 
+    final router = GoRouter(
+      initialLocation: '/capture/split-confirmation',
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/capture/split-confirmation',
+          builder: (_, __) => const QuestionSplitConfirmationScreen(),
+        ),
+        GoRoute(
+          path: '/notebook',
+          builder: (_, __) => const NotebookScreen(),
+        ),
+        GoRoute(
+          path: '/analysis/result',
+          builder: (_, __) => const Scaffold(body: Text('analysis result')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(home: QuestionSplitConfirmationScreen()),
+      child: MaterialApp.router(routerConfig: router),
     ));
     await tester.pumpAndSettle();
 
@@ -84,18 +105,16 @@ void main() {
     expect(find.text('题目列表'), findsOneWidget);
     expect(find.text('当前题目内容'), findsOneWidget);
 
-    container.read(questionRepositoryProvider).saveDrafts([
-      buildSplitQuestionRecord(
-        source: source,
-        draft: const QuestionSplitDraft(id: 'd-1', text: '第一题：已知 x+1=3，求 x', selected: true),
-        sortOrder: 1,
-      ),
-    ]);
-    container.read(currentQuestionSplitSessionProvider.notifier).state = null;
+    await tester.drag(find.byType(ListView), const Offset(0, -900));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('确认并保存到错题本'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('保存失败'), findsNothing);
 
     final saved = await repository.listAll();
     expect(saved.length, 1);
-    expect(saved.first.correctedText, '第一题：已知 x+1=3，求 x');
+    expect(saved.first.correctedText, r'第一题：已知 \(x+1=3\)，求 \(x\)');
+    expect(saved.first.correctedText, isNot(contains(r'\\(')));
     expect(saved.first.analysisResult?.finalAnswer, 'x=2');
     expect(saved.first.aiTags, <String>['一次方程']);
     expect(saved.first.aiKnowledgePoints, <String>['移项法则']);
