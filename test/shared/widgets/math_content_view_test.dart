@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_wrong_notebook/src/shared/widgets/math_content_view.dart';
+import 'package:smart_wrong_notebook/src/shared/widgets/katex_math_view.dart';
 
 void main() {
+  setUpAll(() {
+    KatexMathView.enabled = false;
+  });
+
   testWidgets('renders plain text without markdown fallback issues',
       (tester) async {
     await tester.pumpWidget(
@@ -366,5 +371,38 @@ void main() {
 
     expect(find.textContaining('已知'), findsOneWidget);
     expect(find.textContaining('求值'), findsOneWidget);
+  });
+
+  testWidgets('renders equations with extra square brackets around cases',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            r'解是[\\begin{cases} x=3 \\ y=2 \\end{cases}]。'),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    expect(find.textContaining('begin{cases}'), findsNothing);
+    expect(find.textContaining('end{cases}'), findsNothing);
+    expect(find.textContaining(r'\['), findsNothing);
+  });
+
+  testWidgets('renders double-bracket equation systems', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            r'方程组[[\begin{cases} x+y=5 \\ x-y=1 \end{cases}]]的解是'),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    expect(find.textContaining('[['), findsNothing);
+    expect(find.textContaining(']]'), findsNothing);
+    expect(find.textContaining('方程组'), findsOneWidget);
   });
 }

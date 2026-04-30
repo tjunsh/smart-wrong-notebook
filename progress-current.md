@@ -1,24 +1,51 @@
-# Progress — AI错题本
+# 2026-04-30 工作进度
 
 ## Done
-- LaTeX 渲染两大 bug 已修复并通过测试验证（v43 已打包）：
-  - **方程组**：根因是 `_supportedLatexCommands` 缺少 `begin`/`end`，导致 `_normalizeMathExpression` 把 `\begin{cases}` 的反斜杠剥掉。已修复。
-  - **三角形**：根因是 `_normalizeDisplayText` 中 raw string `r'\\triangle'` 产生双反斜杠，以及 `tri∠` 替换只 lookahead 不消费 `∠`。已修复。
-  - 方程组正则已放宽，支持带系数方程（`2x + 3y = 8`）和换行分隔。
-  - 拆题预览 MathContentView 已加 `contentFormat: latexMixed`。
-  - 新增 4 个 widget test 覆盖上述场景。
-- 多题分析性能优化已完成：
-  - `analyzeSplitCandidates` 从串行改为 `Future.wait` 并行，3 道题分析时间从 ~45-90s 降到 ~15-30s。
-  - 删除 `extractQuestionStructure` 中冗余的 `_normalizeExtractedQuestionText` 二次调用和废弃的 `_normalizeSplitResult` 方法。
-  - Loading 页面多题场景显示 "正在并行分析 N 道题..." / "已完成 X/N 题分析..." 实时进度。
-- 全量 118 个测试通过。
-- 已产出 APK：`ai-wrong-notebook-v43-20260428-2033.apk`。
+
+### 1. 四层 LaTeX 渲染体系
+- Layer 0: System Prompt 补强 ✅
+- Layer 1: flutter_math_fork ✅
+- Layer 2: KaTeX WebView（已创建，暂时禁用性能问题）
+- Layer 3: 纯文本 fallback ✅
+
+### 2. Prompt 补强（ai_analysis_service.dart）
+- 明确 \pi、希腊字母、禁止方括号定界符
+- JSON 转义规则完善
+- generatedExercises 字段约束
+
+### 3. LaTeX 规范化修复
+- `_normalizeDoubleBackslashLatex`: 20+ LaTeX 命令 \\\\ → \
+- `_supportedLatexCommands`: 新增 `cases`, `aligned`
+- `_normalizeMathExpression`: 保留 begin/end/cases/aligned 不剥离
+- `_normalizeMathDelimiters`: 处理方括号包裹的方程组
+
+### 4. KaTeX WebView 基础设施
+- katex_math_view.dart 已创建
+- assets/katex/ 资源文件已下载
+- WebView 复用控制器缓存已实现
 
 ## Blockers
-- v43 真机测试时 AI 解析连续失败（"AI 服务请求失败"），API 端点 `vbcode.io/v1` 可达但返回错误。用户确认之前偶尔也会失败，本次连续失败可能是服务端问题。需要真机重试确认是否恢复。
-- LaTeX 修复和并行优化的代码改动尚未 commit（工作区有 26 个文件改动）。
+
+### 1. 方程组渲染问题
+- JSON 格式：`[\\begin{cases} x+y=5 \\ x-y=1 \\ \\end{cases}]`
+- 方括号包裹 + 双反斜杠，需进一步调试
+
+### 2. 三角形渲染问题
+- `\triangle` 可能渲染失败
+
+### 3. 举一反三退化
+- 圆锥体积/立体几何题 → 一元一次方程
+- 需在 `_defaultGeneratedExercises` 中添加几何专用题
+
+### 4. KaTeX WebView 性能
+- 滑动卡顿，暂时禁用
+- 需优化后启用
+
+## 测试状态
+- 25 tests passed ✅
+- APK: ai-wrong-notebook-v50-20260430-1205.apk
 
 ## Next First Step
-- 真机安装 v43 重试 AI 解析，确认 API 是否恢复正常。
-- 如果 API 恢复，验证方程组和三角形的 LaTeX 渲染是否正确。
-- 确认无误后做 WIP commit，文件范围需用户确认。
+- 真机测试方程组和三角形渲染
+- 调试 `[\begin{cases}...]` 格式处理
+- 添加几何专用举一反三题

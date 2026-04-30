@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
+import 'package:smart_wrong_notebook/src/shared/widgets/katex_math_view.dart';
 
 enum MathContentViewMode { full, compact }
 
@@ -101,16 +102,22 @@ class MathContentView extends StatelessWidget {
         normalized.trim(),
         mathStyle: mathStyle,
         textStyle: effectiveStyle,
-        onErrorFallback: (_) =>
-            Text(_readableMathText(normalized), style: effectiveStyle),
+        onErrorFallback: (_) => _tryKatex(normalized, effectiveStyle),
       );
     } catch (_) {
-      return Text(_readableMathText(normalized), style: effectiveStyle);
+      return _tryKatex(normalized, effectiveStyle);
     }
   }
 
+  Widget _tryKatex(String value, TextStyle effectiveStyle) {
+    if (KatexMathView.enabled) {
+      return KatexMathView(value, onHeight: (h) {});
+    }
+    return Text(_readableMathText(value), style: effectiveStyle);
+  }
+
   String _normalizeDisplayText(String value) {
-    return _normalizeBrokenEquationSystem(value)
+    return _normalizeBrokenEquationSystem(_normalizeDoubleBackslashLatex(value))
         .replaceAll(RegExp(r'(?<![A-Za-z\\])tri\\angle\s*'), r'\triangle ')
         .replaceAll(RegExp(r'(?<![A-Za-z\\])tri∠'), r'\triangle ')
         .replaceAll(RegExp(r'(?<![A-Za-z\\])tri(?=\\angle|/)'), r'\triangle')
@@ -121,6 +128,43 @@ class MathContentView extends StatelessWidget {
           RegExp(r'\\?mathrm([A-Za-zΩ]+)(\^-?\d+)?'),
           (match) => '\\mathrm{${match.group(1)}}${match.group(2) ?? ''}',
         );
+  }
+
+  String _normalizeDoubleBackslashLatex(String value) {
+    return value
+        .replaceAllMapped(
+          RegExp(r'\\\\([a-zA-Z]+)'),
+          (match) => '\\${match.group(1)}',
+        )
+        .replaceAllMapped(
+          RegExp(r'\\\\(.)'),
+          (match) => '\\${match.group(1)}',
+        )
+        // 具体的 LaTeX 命令（覆盖通用规则处理不到的复杂情况）
+        .replaceAll(RegExp(r'\\\\times\b'), r'\times')
+        .replaceAll(RegExp(r'\\\\cdot\b'), r'\cdot')
+        .replaceAll(RegExp(r'\\\\pi\b'), r'\pi')
+        .replaceAll(RegExp(r'\\\\alpha\b'), r'\alpha')
+        .replaceAll(RegExp(r'\\\\beta\b'), r'\beta')
+        .replaceAll(RegExp(r'\\\\gamma\b'), r'\gamma')
+        .replaceAll(RegExp(r'\\\\theta\b'), r'\theta')
+        .replaceAll(RegExp(r'\\\\Delta\b'), r'\Delta')
+        .replaceAll(RegExp(r'\\\\sqrt\b'), r'\sqrt')
+        .replaceAll(RegExp(r'\\\\angle\b'), r'\angle')
+        .replaceAll(RegExp(r'\\\\triangle\b'), r'\triangle')
+        .replaceAll(RegExp(r'\\\\circ\b'), r'\circ')
+        .replaceAll(RegExp(r'\\\\sin\b'), r'\sin')
+        .replaceAll(RegExp(r'\\\\cos\b'), r'\cos')
+        .replaceAll(RegExp(r'\\\\tan\b'), r'\tan')
+        .replaceAll(RegExp(r'\\\\log\b'), r'\log')
+        .replaceAll(RegExp(r'\\\\ln\b'), r'\ln')
+        .replaceAll(RegExp(r'\\\\div\b'), r'\div')
+        .replaceAll(RegExp(r'\\\\pm\b'), r'\pm')
+        .replaceAll(RegExp(r'\\\\leq\b'), r'\leq')
+        .replaceAll(RegExp(r'\\\\geq\b'), r'\geq')
+        .replaceAll(RegExp(r'\\\\neq\b'), r'\neq')
+        .replaceAll(RegExp(r'\\\\approx\b'), r'\approx')
+        .replaceAll(RegExp(r'\\\\,'), r'\,');
   }
 
   String _normalizeBrokenEquationSystem(String value) {
@@ -149,9 +193,16 @@ class MathContentView extends StatelessWidget {
 
     return multilineNormalized.replaceAllMapped(
       RegExp(r'\\([a-zA-Z]+)\b'),
-      (match) => _supportedLatexCommands.contains(match.group(1))
-          ? match.group(0)!
-          : match.group(1)!,
+      (match) {
+        final cmd = match.group(1)!;
+        // 这些命令需要保留 \ 前缀，不能单独处理
+        if (['begin', 'end', 'cases', 'aligned'].contains(cmd)) {
+          return match.group(0)!;
+        }
+        return _supportedLatexCommands.contains(cmd)
+            ? match.group(0)!
+            : cmd;
+      },
     );
   }
 
@@ -303,24 +354,60 @@ class MathContentView extends StatelessWidget {
   }
 
   String _normalizeMathDelimiters(String value) {
-    return value
+    // 1. 先处理方括号包裹的 cases 环境（最优先，因为后续转换会破坏格式）
+    // 例如: [\begin{cases} x+y=5 \\ x-y=1 \end{cases}] → $$\begin{cases} x+y=5 \\ x-y=1 \end{cases}$$
+    var result = value.replaceAllMapped(
+      RegExp(r'\[\\?\begin\{(?:cases|aligned)\}[\s\S]*?\\?\end\{(?:cases|aligned)\}\]'),
+      (match) {
+        final inner = match.group(0)!;
+        // 去掉首尾的方括号，保留 LaTeX 内容
+        final stripped = inner.substring(1, inner.length - 1);
+        return '\$\$$stripped\$\$';
+      },
+    );
+
+    // 2. 处理方括号包裹的普通 LaTeX（如 [x^2] → $x^2$）
+    result = result.replaceAllMapped(
+      RegExp(r'\[([^\[\]]+)\]'),
+      (match) {
+        final content = match.group(1)!;
+        if (content.contains(r'\') || content.contains('^') || content.contains(r'\frac') || content.contains(r'\times') || content.contains(r'\begin')) {
+          return '\$$content\$';
+        }
+        return match.group(0)!;
+      },
+    );
+
+    // 3. 处理带反斜杠的转义括号
+    result = result
         .replaceAll(r'\\(', r'$')
         .replaceAll(r'\\)', r'$')
-        .replaceAll(r'\(', r'$')
-        .replaceAll(r'\)', r'$')
         .replaceAll(r'\\[', r'$$')
-        .replaceAll(r'\\]', r'$$')
+        .replaceAll(r'\\]', r'$$');
+
+    // 4. 处理普通圆括号
+    result = result
+        .replaceAll(r'\(', r'$')
+        .replaceAll(r'\)', r'$');
+
+    // 5. 处理普通方括号
+    result = result
         .replaceAll(r'\[', r'$$')
-        .replaceAll(r'\]', r'$$')
-        .replaceAllMapped(
-          RegExp(
-              r'(?<!\\)(?:begin\{(cases|aligned)\}[\s\S]*?end\{(?:cases|aligned)\})'),
-          (match) => '\$\$${match.group(0)}\$\$',
-        )
-        .replaceAllMapped(
-          RegExp(r'(?<![A-Za-z\\])tri\\angle\s*|(?<![A-Za-z\\])tri∠'),
-          (_) => r'\triangle ',
-        );
+        .replaceAll(r'\]', r'$$');
+
+    // 6. 处理裸 cases 环境
+    result = result.replaceAllMapped(
+      RegExp(r'(?<!\\)(?:begin\{(?:cases|aligned)\}[\s\S]*?end\{(?:cases|aligned)\})'),
+      (match) => '\$\$${match.group(0)}\$\$',
+    );
+
+    // 7. 处理 triangle 简写
+    result = result.replaceAllMapped(
+      RegExp(r'(?<![A-Za-z\\])tri\\angle\s*|(?<![A-Za-z\\])tri∠'),
+      (_) => r'\triangle ',
+    );
+
+    return result;
   }
 
   bool _hasLatexCommand(String value) {
@@ -380,6 +467,8 @@ const _supportedLatexCommands = <String>{
   'theta',
   'Delta',
   'mathrm',
+  'cases',
+  'aligned',
 };
 
 class _MathBlock {

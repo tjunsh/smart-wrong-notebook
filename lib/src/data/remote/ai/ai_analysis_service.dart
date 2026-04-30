@@ -722,6 +722,19 @@ class AiAnalysisService {
 - 如果内容包含 LaTeX，必须先生成合法 JSON：所有 LaTeX 反斜杠都写成 JSON 转义形式，例如 \\frac、\\times、\\(x\\)、\\[x\\]
 - 方程组或多行公式必须使用 KaTeX 兼容的 aligned 或 cases 环境，例如 \\begin{cases} x+y=5 \\\\ x-y=1 \\end{cases}，不要使用 \\newline
 - 不要在 JSON 字符串内部直接换行；换行必须写成 \\n
+- 【LaTeX 格式强制规范——必须严格遵守】
+  1. 所有数学公式必须使用标准 LaTeX 定界符包裹：行内公式用 \(公式\)，独立公式用 \[公式\]。禁止使用方括号 [(...) 或 [...] 作为 LaTeX 定界符。
+  2. LaTeX 命令必须使用完整的反斜杠前缀，禁止省略反斜杠：
+     - 正确命令：\frac、\angle、\triangle、\circ、\times、\cdot、\pm、\sqrt、\pi、\alpha、\beta、\gamma、\theta、\Delta、\leq、\geq、\neq、\approx、\sin、\cos、\tan、\log、\ln、\mathrm
+     - 错误写法：frac、angle、triangle、circ、times、cdot、pm、sqrt、pi、alpha
+     - 注意：乘号用 \times，除法用 \frac，分数用 \frac{a}{b}，圆周率用 \pi
+  3. 角度/度数统一用 ^\circ，圆周率统一用 \pi
+  4. 上标用 ^{n} 格式，禁止裸 ^n
+  5. 物理单位用 \mathrm{}：\mathrm{kg}、\mathrm{m}、\mathrm{N}、\mathrm{Pa}、\mathrm{J}、\mathrm{W}、\mathrm{V}、\mathrm{A}、\mathrm{\Omega}
+  6. generatedExercises 中的 question、options、explanation 字段同样必须遵守上述所有 LaTeX 格式规则
+  7. JSON 转义规则：反斜杠双写，\ → \\，\\ → \\\\。换行用 \\n。cases 环境行分隔符 \\ → \\\\
+     - 示例：\\(x^2=4\)\\n  所以 x=\\pm 2  // JSON 中 \\n = 换行，\\pi = \pi，\\pm = \pm
+     - 示例：\[\\begin{cases} x+y=5 \\\\ x-y=1 \\end{cases}\]  // \\\\ 在 JSON 中表示 LaTeX 换行符 \\
 返回格式必须严格如下（不要包含 markdown 代码块标记，使用纯 JSON）：
 {
   "subject": "自动判断的科目名称",
@@ -754,6 +767,18 @@ class AiAnalysisService {
 - 如果内容包含 LaTeX，必须先生成合法 JSON：所有 LaTeX 反斜杠都写成 JSON 转义形式，例如 \\frac、\\times、\\(x\\)、\\[x\\]
 - 方程组或多行公式必须使用 KaTeX 兼容的 aligned 或 cases 环境，例如 \\begin{cases} x+y=5 \\\\ x-y=1 \\end{cases}，不要使用 \\newline
 - 不要在 JSON 字符串内部直接换行；换行必须写成 \\n
+- 【LaTeX 格式强制规范——必须严格遵守】
+  1. 所有数学公式必须使用标准 LaTeX 定界符包裹：行内公式用 \(公式\)，独立公式用 \[公式\]。禁止使用方括号 [(...) 或 [...] 作为 LaTeX 定界符。
+  2. LaTeX 命令必须使用完整的反斜杠前缀，禁止省略反斜杠：
+     - 正确命令：\frac、\angle、\triangle、\circ、\times、\cdot、\pm、\sqrt、\pi、\alpha、\beta、\gamma、\theta、\Delta、\leq、\geq、\neq、\approx、\sin、\cos、\tan、\log、\ln、\mathrm
+     - 错误写法：frac、angle、triangle、circ、times、cdot、pm、sqrt、pi、alpha
+     - 注意：乘号用 \times，除法用 \frac，分数用 \frac{a}{b}，圆周率用 \pi
+  3. 角度/度数统一用 ^\circ，圆周率统一用 \pi
+  4. 上标用 ^{n} 格式，禁止裸 ^n
+  5. 物理单位用 \mathrm{}：\mathrm{kg}、\mathrm{m}、\mathrm{N}、\mathrm{Pa}、\mathrm{J}、\mathrm{W}、\mathrm{V}、\mathrm{A}、\mathrm{\Omega}
+  6. JSON 转义规则：反斜杠双写，\ → \\，\\ → \\\\。换行用 \\n。cases 环境行分隔符 \\ → \\\\
+     - 示例：\\(x^2=4\)\\n  所以 x=\\pm 2  // JSON 中 \\n = 换行，\\pi = \pi，\\pm = \pm
+     - 示例：\[\\begin{cases} x+y=5 \\\\ x-y=1 \\end{cases}\]  // \\\\ 在 JSON 中表示 LaTeX 换行符 \\
 返回格式必须严格如下（不要包含 markdown 代码块标记，使用纯 JSON）：
 {
   "subject": "自动判断的科目名称",
