@@ -405,4 +405,89 @@ void main() {
     expect(find.textContaining(']]'), findsNothing);
     expect(find.textContaining('方程组'), findsOneWidget);
   });
+
+  testWidgets('cases environment with lone backslash-space gets line breaks',
+      (tester) async {
+    // AI outputs single backslash+space instead of double backslash for line breaks
+    // JSON: "\\begin{cases} x+y=5 \\ x-y=1 \\ \\ \\end{cases}"
+    // After JSON decode: \begin{cases} x+y=5 \ x-y=1 \ \ \end{cases}
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            '\\\$\\\$\\begin{cases} x+y=5 \\ x-y=1 \\ \\ \\end{cases}\\\$\\\$',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    expect(find.textContaining('begin{cases}'), findsNothing);
+  });
+
+  testWidgets('triangle is not corrupted by naked angle regex',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MathContentView(r'在 $\triangle ABC$ 中，$\angle B=70^\circ$'),
+        ),
+      ),
+    );
+
+    // \triangle should NOT become \tri\angle
+    expect(find.textContaining(r'\tri'), findsNothing);
+    expect(find.textContaining('Parser Error'), findsNothing);
+  });
+
+  testWidgets('Greek letters are preserved in formulas', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            r'密度 $\rho$，效率 $\eta$，角速度 $\omega$，电阻 $\Omega$',
+          ),
+        ),
+      ),
+    );
+
+    // Greek letters should not be stripped to plain text
+    expect(find.textContaining('rho'), findsNothing);
+    expect(find.textContaining('eta'), findsNothing);
+    expect(find.textContaining('omega'), findsNothing);
+  });
+
+  testWidgets('text command is preserved inside formulas', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            r'底角公式 $\frac{180^\circ-\text{顶角}}{2}$',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    // \text should not be stripped
+    expect(find.textContaining('text{'), findsNothing);
+  });
+
+  testWidgets('bracket-wrapped cases with backslash-begin renders correctly',
+      (tester) async {
+    // This tests the _reBracketCases regex fix (\b word boundary bug)
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            r'解方程组：$[\begin{cases} x+y=5 \\ x-y=1 \end{cases}]$',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    expect(find.textContaining('['), findsNothing);
+    expect(find.textContaining(']'), findsNothing);
+  });
 }

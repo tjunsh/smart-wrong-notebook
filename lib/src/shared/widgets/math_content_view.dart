@@ -134,10 +134,13 @@ class MathContentView extends StatelessWidget {
   static final _reParenBracket =
       RegExp(r'\(\[([^\[\]]*(?:\\[a-zA-Z]+|\\begin\{)[^\[\]]*)\]\)');
   static final _reBracketCases = RegExp(
-      r'\[\\?\begin\{(?:cases|aligned)\}[\s\S]*?\\?\end\{(?:cases|aligned)\}\]');
+      r'\[\\?begin\{(?:cases|aligned)\}[\s\S]*?\\?end\{(?:cases|aligned)\}\]');
   static final _reBracketLatex = RegExp(r'\[([^\[\]]+)\]');
   static final _reNakedCases = RegExp(
       r'(?<![\$\\])begin\{(?:cases|aligned)\}[\s\S]*?end\{(?:cases|aligned)\}');
+  static final _reCasesBody = RegExp(
+      r'(\\begin\{(?:cases|aligned)\})([\s\S]*?)(\\end\{(?:cases|aligned)\})');
+  static final _reLoneBackslashSpace = RegExp(r'(?<!\\)\\ ');
 
   String _normalize(String v) {
     // Step 1: fix double-escaped backslashes from AI output
@@ -185,6 +188,12 @@ class MathContentView extends StatelessWidget {
         .replaceAll(r'\]', r'$$');
     r = r.replaceAllMapped(_reNakedCases, (m) => '\$\$${m.group(0)}\$\$');
 
+    // Step 5: fix lone backslash-space → \\ inside cases/aligned
+    r = r.replaceAllMapped(_reCasesBody, (m) {
+      final body = m.group(2)!.replaceAll(_reLoneBackslashSpace, r'\\ ');
+      return '${m.group(1)}$body${m.group(3)}';
+    });
+
     return r;
   }
 
@@ -192,9 +201,9 @@ class MathContentView extends StatelessWidget {
 
   static final _reNakedBegin = RegExp(r'(?<!\\)begin\{(cases|aligned)\}');
   static final _reNakedEnd = RegExp(r'(?<!\\)end\{(cases|aligned)\}');
-  static final _reNakedAngle = RegExp(r'(?<!\\)angle\b');
-  static final _reNakedCirc = RegExp(r'(?<!\\)circ\b');
-  static final _reNakedPm = RegExp(r'(?<!\\)pm(?=\b|[0-9])');
+  static final _reNakedAngle = RegExp(r'(?<![A-Za-z\\])angle\b');
+  static final _reNakedCirc = RegExp(r'(?<![A-Za-z\\])circ\b');
+  static final _reNakedPm = RegExp(r'(?<![A-Za-z\\])pm(?=\b|[0-9])');
   static final _reLeadingBrace = RegExp(r'^\\\{\s*');
   static final _reUnsupported = RegExp(r'\\([a-zA-Z]+)(?=\b|[0-9])');
   static const _envCmds = {'begin', 'end', 'cases', 'aligned'};
@@ -300,8 +309,26 @@ class MathContentView extends StatelessWidget {
   static final _reSpaces = RegExp(r'[ \t]+');
 
   static const _symbols = {
-    'angle': '∠', 'triangle': '△', 'circ': '°', 'pm': '±',
-    'times': '×', 'div': '÷',
+    'angle': '∠', 'triangle': '△', 'circ': '°', 'pm': '±', 'mp': '∓',
+    'times': '×', 'div': '÷', 'cdot': '·', 'leq': '≤', 'geq': '≥',
+    'neq': '≠', 'approx': '≈', 'equiv': '≡', 'sim': '∼',
+    'infty': '∞', 'perp': '⊥', 'parallel': '∥',
+    'rightarrow': '→', 'leftarrow': '←',
+    'Rightarrow': '⇒', 'Leftarrow': '⇐',
+    'alpha': 'α', 'beta': 'β', 'gamma': 'γ', 'delta': 'δ',
+    'epsilon': 'ε', 'varepsilon': 'ε', 'zeta': 'ζ', 'eta': 'η',
+    'theta': 'θ', 'vartheta': 'ϑ', 'iota': 'ι', 'kappa': 'κ',
+    'lambda': 'λ', 'mu': 'μ', 'nu': 'ν', 'xi': 'ξ',
+    'pi': 'π', 'rho': 'ρ', 'varrho': 'ϱ',
+    'sigma': 'σ', 'tau': 'τ', 'upsilon': 'υ',
+    'phi': 'φ', 'varphi': 'ϕ', 'chi': 'χ', 'psi': 'ψ', 'omega': 'ω',
+    'Gamma': 'Γ', 'Delta': 'Δ', 'Theta': 'Θ', 'Lambda': 'Λ',
+    'Xi': 'Ξ', 'Pi': 'Π', 'Sigma': 'Σ', 'Upsilon': 'Υ',
+    'Phi': 'Φ', 'Psi': 'Ψ', 'Omega': 'Ω',
+    'partial': '∂', 'nabla': '∇', 'propto': '∝',
+    'forall': '∀', 'exists': '∃', 'emptyset': '∅',
+    'in': '∈', 'notin': '∉', 'subset': '⊂', 'supset': '⊃',
+    'cup': '∪', 'cap': '∩',
   };
 
   String _toReadable(String v) {
@@ -343,11 +370,27 @@ class MathContentView extends StatelessWidget {
 
 const _supported = <String>{
   'begin', 'end', 'frac', 'sqrt', 'angle', 'triangle', 'circ', 'degree',
-  'times', 'div', 'cdot', 'pm', 'leq', 'geq', 'neq', 'approx',
-  'left', 'right', 'sin', 'cos', 'tan', 'log', 'ln',
-  'pi', 'rho', 'lambda', 'mu', 'sigma', 'omega', 'alpha', 'beta',
-  'gamma', 'theta', 'Delta', 'mathrm', 'cases', 'aligned',
+  'times', 'div', 'cdot', 'pm', 'mp', 'leq', 'geq', 'neq', 'approx',
+  'left', 'right', 'sin', 'cos', 'tan', 'log', 'ln', 'sec', 'csc', 'cot',
+  // Greek lowercase
+  'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'varepsilon',
+  'zeta', 'eta', 'theta', 'vartheta', 'iota', 'kappa',
+  'lambda', 'mu', 'nu', 'xi', 'pi', 'varpi',
+  'rho', 'varrho', 'sigma', 'varsigma', 'tau', 'upsilon',
+  'phi', 'varphi', 'chi', 'psi', 'omega',
+  // Greek uppercase
+  'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi',
+  'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega',
+  'mathrm', 'cases', 'aligned',
   'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow',
+  'text', 'textrm', 'textbf', 'textit', 'textup', 'textsf', 'texttt',
+  'operatorname', 'overline', 'underline', 'hat', 'bar', 'vec',
+  'dot', 'ddot', 'tilde', 'infty', 'sum', 'prod', 'int', 'lim',
+  'to', 'gets', 'iff', 'implies', 'therefore', 'because',
+  'forall', 'exists', 'in', 'notin', 'subset', 'supset',
+  'cup', 'cap', 'setminus', 'emptyset', 'perp', 'parallel',
+  'not', 'neg', 'land', 'lor', 'oplus', 'otimes',
+  'partial', 'nabla', 'propto', 'equiv', 'sim', 'simeq',
 };
 
 class _Span {
