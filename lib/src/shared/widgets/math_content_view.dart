@@ -140,6 +140,8 @@ class MathContentView extends StatelessWidget {
   static final _reBracketLatex = RegExp(r'\[([^\[\]]+)\]');
   static final _reNakedCases = RegExp(
       r'(?<![\$\\])begin\{(?:cases|aligned)\}[\s\S]*?end\{(?:cases|aligned)\}');
+  static final _reInlineCases = RegExp(
+      r'(?<!\$)\$\\begin\{(?:cases|aligned)\}[\s\S]*?\\end\{(?:cases|aligned)\}\$(?!\$)');
   static final _reCasesBody = RegExp(
       r'(\\begin\{(?:cases|aligned)\})([\s\S]*?)(\\end\{(?:cases|aligned)\})');
   static final _reLoneBackslashSpace = RegExp(r'(?<!\\)\\ ');
@@ -184,11 +186,6 @@ class MathContentView extends StatelessWidget {
       final inner = m.group(0)!;
       return '\$\$${inner.substring(1, inner.length - 1)}\$\$';
     });
-    r = r.replaceAllMapped(_reBracketLatex, (m) {
-      final c = m.group(1)!;
-      if (c.contains(r'\') || c.contains('^')) return '\$$c\$';
-      return m.group(0)!;
-    });
     r = r
         .replaceAll(r'\\(', r'$')
         .replaceAll(r'\\)', r'$')
@@ -198,7 +195,16 @@ class MathContentView extends StatelessWidget {
         .replaceAll(r'\)', r'$')
         .replaceAll(r'\[', r'$$')
         .replaceAll(r'\]', r'$$');
+    r = r.replaceAllMapped(_reBracketLatex, (m) {
+      final c = m.group(1)!;
+      if (c.contains(r'\') || c.contains('^')) return '\$$c\$';
+      return m.group(0)!;
+    });
     r = r.replaceAllMapped(_reNakedCases, (m) => '\$\$${m.group(0)}\$\$');
+    r = r.replaceAllMapped(_reInlineCases, (m) {
+      final full = m.group(0)!;
+      return '\$${full}\$';
+    });
 
     // Step 5: fix lone backslash-space → \\ inside cases/aligned
     r = r.replaceAllMapped(_reCasesBody, (m) {

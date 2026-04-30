@@ -523,4 +523,48 @@ void main() {
     expect(find.textContaining('begin{cases}'), findsNothing);
     expect(find.textContaining('解方程组'), findsOneWidget);
   });
+
+  testWidgets('cases inside \\( \\) without brackets upgrades to display math',
+      (tester) async {
+    // JSON: "\\(\\\\\\begin{cases} x+y=5 \\ x-y=1 \\ \\ \\end{cases}\\)。"
+    // After JSON decode: \(\\\begin{cases} x+y=5 \ x-y=1 \ \ \end{cases}\)。
+    // After Step 1: \(\begin{cases} x+y=5 \ x-y=1 \ \ \end{cases}\)。
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            '4. 解方程组：\\(\\begin{cases} x+y=5 \\ x-y=1 \\ \\ \\end{cases}\\)。',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    expect(find.textContaining('begin{cases}'), findsNothing);
+    expect(find.textContaining(r'\('), findsNothing);
+    expect(find.textContaining(r'\)'), findsNothing);
+    expect(find.textContaining(r'$\'), findsNothing);
+    expect(find.textContaining('解方程组'), findsOneWidget);
+  });
+
+  testWidgets('exercise cases with \\[ \\] delimiters renders correctly',
+      (tester) async {
+    // Exercise JSON: "\\[\\\\begin{cases} x+y=8 \\ x-y=2 \\ \\end{cases}\\]"
+    // After decode: \[\\begin{cases} x+y=8 \ x-y=2 \ \end{cases}\]
+    // After Step 1: \[\begin{cases} x+y=8 \ x-y=2 \ \end{cases}\]
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            '解方程组：\\[\\begin{cases} x+y=8 \\ x-y=2 \\ \\end{cases}\\]则 x 的值是',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    expect(find.textContaining('begin{cases}'), findsNothing);
+    expect(find.textContaining('解方程组'), findsOneWidget);
+  });
 }
+
