@@ -85,18 +85,18 @@ class StatsBarChart extends StatelessWidget {
               borderData: FlBorderData(show: false),
               barGroups: <BarChartGroupData>[
                 BarChartGroupData(
-                  x: 0,
+                  x: MasteryLevel.newQuestion.index,
                   barRods: [
                     BarChartRodData(
-                      toY: mastered.toDouble(),
-                      color: _colors[MasteryLevel.mastered],
+                      toY: newQ.toDouble(),
+                      color: _colors[MasteryLevel.newQuestion],
                       width: 28,
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                     ),
                   ],
                 ),
                 BarChartGroupData(
-                  x: 1,
+                  x: MasteryLevel.reviewing.index,
                   barRods: [
                     BarChartRodData(
                       toY: reviewing.toDouble(),
@@ -107,11 +107,11 @@ class StatsBarChart extends StatelessWidget {
                   ],
                 ),
                 BarChartGroupData(
-                  x: 2,
+                  x: MasteryLevel.mastered.index,
                   barRods: [
                     BarChartRodData(
-                      toY: newQ.toDouble(),
-                      color: _colors[MasteryLevel.newQuestion],
+                      toY: mastered.toDouble(),
+                      color: _colors[MasteryLevel.mastered],
                       width: 28,
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                     ),
@@ -124,11 +124,11 @@ class StatsBarChart extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: <Widget>[
-            _LegendDot(color: _colors[MasteryLevel.mastered]!, label: '已掌握 ($mastered)'),
+            _LegendDot(color: _colors[MasteryLevel.newQuestion]!, label: '新增 ($newQ)'),
             const SizedBox(width: 16),
             _LegendDot(color: _colors[MasteryLevel.reviewing]!, label: '复习中 ($reviewing)'),
             const SizedBox(width: 16),
-            _LegendDot(color: _colors[MasteryLevel.newQuestion]!, label: '新增 ($newQ)'),
+            _LegendDot(color: _colors[MasteryLevel.mastered]!, label: '已掌握 ($mastered)'),
           ],
         ),
       ],
