@@ -1,125 +1,99 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:webview_flutter/webview_flutter.dart';
 
 class KatexMathView extends StatefulWidget {
-  const KatexMathView(this.formula, {super.key, this.onHeight});
+  const KatexMathView(this.formula, {super.key, this.fallback});
 
   final String formula;
-  final ValueChanged<double>? onHeight;
+  final Widget? fallback;
 
-  /// Enable/disable KaTeX WebView fallback.
-  /// Set to false in widget tests for deterministic behavior.
-  /// Disabled by default due to WebView initialization overhead on scroll.
-  static bool enabled = false;
+  static bool enabled = true;
+  static const _maxConcurrent = 3;
+  static int _activeCount = 0;
+  static String? _templateHtml;
 
-  /// Global WebView controller cache for performance optimization.
-  /// Avoids re-creating WebView for each formula.
-  static WebViewController? _cachedController;
+  static Future<void> preload() async {
+    _templateHtml ??=
+        await rootBundle.loadString('assets/katex/katex_template.html');
+  }
 
   @override
   State<KatexMathView> createState() => _KatexMathViewState();
 }
 
 class _KatexMathViewState extends State<KatexMathView> {
-  late WebViewController _controller;
+  WebViewController? _controller;
   double _height = 40;
   bool _ready = false;
+  bool _acquired = false;
 
   @override
   void initState() {
     super.initState();
-    _initWebView();
+    if (KatexMathView._activeCount >= KatexMathView._maxConcurrent) return;
+    final template = KatexMathView._templateHtml;
+    if (template == null) return;
+    KatexMathView._activeCount++;
+    _acquired = true;
+    _initWebView(template);
   }
 
-  Future<void> _initWebView() async {
-    // Try to reuse cached controller for performance
-    if (KatexMathView._cachedController != null) {
-      _controller = KatexMathView._cachedController!;
-      _ready = true;
-      return;
-    }
+  void _initWebView(String template) {
+    final escaped = widget.formula
+        .replaceAll('\\', '\\\\')
+        .replaceAll("'", "\\'")
+        .replaceAll('\n', '\\n')
+        .replaceAll('\r', '\\r');
+
+    final isDisplay = widget.formula.contains(r'\begin{') ||
+        widget.formula.contains(r'\\');
+
+    final html = template
+        .replaceFirst('FORMULA_PLACEHOLDER', escaped)
+        .replaceFirst('DISPLAY_MODE', isDisplay.toString());
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.transparent)
       ..addJavaScriptChannel(
         'HeightChannel',
-        onMessageReceived: (message) {
-          final h = double.tryParse(message.message) ?? 40;
-          if (h != _height) {
-            setState(() => _height = h + 16);
-            widget.onHeight?.call(_height);
+        onMessageReceived: (msg) {
+          final h = double.tryParse(msg.message) ?? 40;
+          if (mounted && h != _height) {
+            setState(() {
+              _height = h + 16;
+              _ready = true;
+            });
           }
         },
       )
       ..setNavigationDelegate(NavigationDelegate(
         onPageFinished: (_) {
-          if (mounted) setState(() => _ready = true);
-          KatexMathView._cachedController ??= _controller;
+          if (mounted && !_ready) setState(() => _ready = true);
         },
       ))
-      ..loadHtmlString(_katexBaseHtml, baseUrl: 'asset:///assets/katex/');
+      ..loadHtmlString(html, baseUrl: 'asset:///assets/katex/');
   }
 
-  String _escapeFormula(String s) {
-    return s
-        .replaceAll('\\', '\\\\')
-        .replaceAll('"', '\\"')
-        .replaceAll('\n', '\\n')
-        .replaceAll('\r', '\\r');
+  @override
+  void dispose() {
+    if (_acquired) KatexMathView._activeCount--;
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // If using cached controller, inject formula via JavaScript
-    if (_cachedReady && KatexMathView._cachedController != null) {
-      _controller.runJavaScript(_buildJsCall(widget.formula));
+    if (_controller == null) {
+      return widget.fallback ?? const SizedBox.shrink();
     }
     return SizedBox(
       height: _height,
       child: AnimatedOpacity(
         opacity: _ready ? 1 : 0,
         duration: const Duration(milliseconds: 150),
-        child: WebViewWidget(controller: _controller),
+        child: WebViewWidget(controller: _controller!),
       ),
     );
   }
-
-  String _buildJsCall(String formula) {
-    return '''
-try {
-  var formula = "${_escapeFormula(formula)}";
-  katex.render(formula, document.getElementById('formula'), {
-    throwOnError: false, strict: false, trust: true, displayMode: false
-  });
-  var h = document.body.scrollHeight;
-  HeightChannel.postMessage(h.toString());
-} catch(e) {
-  HeightChannel.postMessage('40');
-}
-''';
-  }
-
-  bool get _cachedReady => !_ready && KatexMathView._cachedController != null;
-
-  static const _katexBaseHtml = '''
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<link rel="stylesheet" href="katex.min.css">
-<style>
-body{margin:0;padding:8px;overflow:hidden;background:transparent}
-</style>
-</head>
-<body>
-<span id="formula"></span>
-<script src="katex.min.js"></script>
-<script>
-HeightChannel.postMessage('40');
-</script>
-</body>
-</html>
-''';
 }

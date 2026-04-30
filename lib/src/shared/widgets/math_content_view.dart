@@ -5,6 +5,12 @@ import 'package:smart_wrong_notebook/src/shared/widgets/katex_math_view.dart';
 
 enum MathContentViewMode { full, compact }
 
+/// Renders mixed text+LaTeX content.
+///
+/// Pipeline: normalize → detect → parse → render.
+/// Layer 1: flutter_math_fork (native, ~0ms).
+/// Layer 2: KaTeX WebView (complex formulas flutter_math can't handle).
+/// Layer 3: Plain text fallback (readable Unicode substitution).
 class MathContentView extends StatelessWidget {
   const MathContentView(
     this.content, {
@@ -30,457 +36,322 @@ class MathContentView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trimmed = content.trim();
-    final effectiveStyle =
-        (style ?? DefaultTextStyle.of(context).style).copyWith(
+    final ts = (style ?? DefaultTextStyle.of(context).style).copyWith(
       color: color,
       fontWeight: fontWeight,
     );
 
     if (trimmed.isEmpty) {
-      return Text('',
-          style: effectiveStyle, maxLines: maxLines, overflow: overflow);
+      return Text('', style: ts, maxLines: maxLines, overflow: overflow);
     }
 
     if (mode == MathContentViewMode.compact) {
       return Text(
         _compactText(trimmed),
-        style: effectiveStyle,
+        style: ts,
         maxLines: maxLines,
         overflow: overflow ?? TextOverflow.ellipsis,
       );
     }
 
-    final normalized = _normalizeMathDelimiters(_normalizeDisplayText(trimmed));
-    if (!_shouldRenderMath(normalized)) {
-      return Text(normalized,
-          style: effectiveStyle, maxLines: maxLines, overflow: overflow);
+    final norm = _normalize(trimmed);
+    if (!_hasMath(norm)) {
+      return Text(norm, style: ts, maxLines: maxLines, overflow: overflow);
     }
 
     try {
-      final blocks = _parseBlocks(normalized);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children:
-            blocks.map((block) => _buildBlock(block, effectiveStyle)).toList(),
+        children: _parseDisplay(norm)
+            .map((b) => _buildBlock(b, ts))
+            .toList(),
       );
     } catch (_) {
-      return Text(normalized,
-          style: effectiveStyle, maxLines: maxLines, overflow: overflow);
+      return Text(norm, style: ts, maxLines: maxLines, overflow: overflow);
     }
   }
 
-  Widget _buildBlock(_MathBlock block, TextStyle effectiveStyle) {
-    if (block.isMath) {
+  // ── Rendering ──
+
+  Widget _buildBlock(_Span b, TextStyle ts) {
+    if (b.math) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: _buildMath(block.value, effectiveStyle),
+        child: _renderMath(b.text, ts, display: true),
       );
     }
-
-    final segments = _parseInlineSegments(block.value);
+    final segs = _parseInline(b.text);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 1,
         runSpacing: 4,
-        children: segments
-            .map((segment) => segment.isMath
-                ? _buildMath(segment.value, effectiveStyle)
-                : Text(segment.value, style: effectiveStyle))
+        children: segs
+            .map((s) => s.math
+                ? _renderMath(s.text, ts)
+                : Text(s.text, style: ts))
             .toList(),
       ),
     );
   }
 
-  Widget _buildMath(String value, TextStyle effectiveStyle) {
-    final normalized = _normalizeMathExpression(value);
-    final mathStyle =
-        _isDisplayMath(normalized) ? MathStyle.display : MathStyle.text;
+  Widget _renderMath(String raw, TextStyle ts, {bool display = false}) {
+    final tex = _cleanTex(raw);
+    final ms = display || _isDisplayTex(tex)
+        ? MathStyle.display
+        : MathStyle.text;
     try {
       return Math.tex(
-        normalized.trim(),
-        mathStyle: mathStyle,
-        textStyle: effectiveStyle,
-        onErrorFallback: (_) => _tryKatex(normalized, effectiveStyle),
+        tex.trim(),
+        mathStyle: ms,
+        textStyle: ts,
+        onErrorFallback: (_) => _katexFallback(tex, ts),
       );
     } catch (_) {
-      return _tryKatex(normalized, effectiveStyle);
+      return _katexFallback(tex, ts);
     }
   }
 
-  Widget _tryKatex(String value, TextStyle effectiveStyle) {
-    if (KatexMathView.enabled) {
-      return KatexMathView(value, onHeight: (h) {});
-    }
-    return Text(_readableMathText(value), style: effectiveStyle);
+  Widget _katexFallback(String tex, TextStyle ts) {
+    final plain = Text(_toReadable(tex), style: ts);
+    if (!KatexMathView.enabled) return plain;
+    return KatexMathView(tex, fallback: plain);
   }
 
-  String _normalizeDisplayText(String value) {
-    return _normalizeBrokenEquationSystem(_normalizeDoubleBackslashLatex(value))
-        .replaceAll(RegExp(r'(?<![A-Za-z\\])tri\\angle\s*'), r'\triangle ')
-        .replaceAll(RegExp(r'(?<![A-Za-z\\])tri∠'), r'\triangle ')
-        .replaceAll(RegExp(r'(?<![A-Za-z\\])tri(?=\\angle|/)'), r'\triangle')
-        .replaceAll(
-            RegExp(r'(?<![A-Za-z\\])text(?=kg|m|cm|g|s|N|Pa|J|W|V|A|Ω)'),
-            r'\mathrm')
+  // ── Single normalization pass ──
+
+  static final _reDoubleBS = RegExp(r'\\\\([a-zA-Z]+)');
+  static final _reDoubleBSChar = RegExp(r'\\\\(.)');
+  static final _reTriAngle = RegExp(r'(?<![A-Za-z\\])tri(?:\\angle|∠|(?=/))\s*');
+  static final _reTextUnit =
+      RegExp(r'(?<![A-Za-z\\])text(?=kg|m|cm|g|s|N|Pa|J|W|V|A|Ω)');
+  static final _reMatrmBare = RegExp(r'\\?mathrm([A-Za-zΩ]+)(\^-?\d+)?');
+  static final _reBrokenEq = RegExp(
+    r'方程组[：:]\s*([^。]+?[A-Za-z]\s*=\s*[^\\。\n]+)(?:\\+|\n)\s*([^。]+?[A-Za-z]\s*=\s*[^\\。\n]+?)\s*\\*\s*[。.]?\s*$',
+    multiLine: true,
+  );
+  static final _reParenBracket =
+      RegExp(r'\(\[([^\[\]]*(?:\\[a-zA-Z]+|\\begin\{)[^\[\]]*)\]\)');
+  static final _reBracketCases = RegExp(
+      r'\[\\?\begin\{(?:cases|aligned)\}[\s\S]*?\\?\end\{(?:cases|aligned)\}\]');
+  static final _reBracketLatex = RegExp(r'\[([^\[\]]+)\]');
+  static final _reNakedCases = RegExp(
+      r'(?<![\$\\])begin\{(?:cases|aligned)\}[\s\S]*?end\{(?:cases|aligned)\}');
+
+  String _normalize(String v) {
+    // Step 1: fix double-escaped backslashes from AI output
+    var r = v
+        .replaceAllMapped(_reDoubleBS, (m) => '\\${m.group(1)}')
+        .replaceAllMapped(_reDoubleBSChar, (m) => '\\${m.group(1)}');
+
+    // Step 2: fix common AI output quirks
+    r = r
+        .replaceAll(_reTriAngle, r'\triangle ')
+        .replaceAll(_reTextUnit, r'\mathrm')
         .replaceAllMapped(
-          RegExp(r'\\?mathrm([A-Za-zΩ]+)(\^-?\d+)?'),
-          (match) => '\\mathrm{${match.group(1)}}${match.group(2) ?? ''}',
+          _reMatrmBare,
+          (m) => '\\mathrm{${m.group(1)}}${m.group(2) ?? ''}',
         );
-  }
 
-  String _normalizeDoubleBackslashLatex(String value) {
-    return value
-        .replaceAllMapped(
-          RegExp(r'\\\\([a-zA-Z]+)'),
-          (match) => '\\${match.group(1)}',
-        )
-        .replaceAllMapped(
-          RegExp(r'\\\\(.)'),
-          (match) => '\\${match.group(1)}',
-        )
-        // 具体的 LaTeX 命令（覆盖通用规则处理不到的复杂情况）
-        .replaceAll(RegExp(r'\\\\times\b'), r'\times')
-        .replaceAll(RegExp(r'\\\\cdot\b'), r'\cdot')
-        .replaceAll(RegExp(r'\\\\pi\b'), r'\pi')
-        .replaceAll(RegExp(r'\\\\alpha\b'), r'\alpha')
-        .replaceAll(RegExp(r'\\\\beta\b'), r'\beta')
-        .replaceAll(RegExp(r'\\\\gamma\b'), r'\gamma')
-        .replaceAll(RegExp(r'\\\\theta\b'), r'\theta')
-        .replaceAll(RegExp(r'\\\\Delta\b'), r'\Delta')
-        .replaceAll(RegExp(r'\\\\sqrt\b'), r'\sqrt')
-        .replaceAll(RegExp(r'\\\\angle\b'), r'\angle')
-        .replaceAll(RegExp(r'\\\\triangle\b'), r'\triangle')
-        .replaceAll(RegExp(r'\\\\circ\b'), r'\circ')
-        .replaceAll(RegExp(r'\\\\sin\b'), r'\sin')
-        .replaceAll(RegExp(r'\\\\cos\b'), r'\cos')
-        .replaceAll(RegExp(r'\\\\tan\b'), r'\tan')
-        .replaceAll(RegExp(r'\\\\log\b'), r'\log')
-        .replaceAll(RegExp(r'\\\\ln\b'), r'\ln')
-        .replaceAll(RegExp(r'\\\\div\b'), r'\div')
-        .replaceAll(RegExp(r'\\\\pm\b'), r'\pm')
-        .replaceAll(RegExp(r'\\\\leq\b'), r'\leq')
-        .replaceAll(RegExp(r'\\\\geq\b'), r'\geq')
-        .replaceAll(RegExp(r'\\\\neq\b'), r'\neq')
-        .replaceAll(RegExp(r'\\\\approx\b'), r'\approx')
-        .replaceAll(RegExp(r'\\\\,'), r'\,');
-  }
-
-  String _normalizeBrokenEquationSystem(String value) {
-    if (!value.contains('方程组') || value.contains(r'\begin{cases}')) {
-      return value;
+    // Step 3: broken equation system → cases environment
+    if (r.contains('方程组') && !r.contains(r'\begin{cases}')) {
+      r = r.replaceAllMapped(_reBrokenEq, (m) {
+        final a = m.group(1)!.trim();
+        final b = m.group(2)!.trim();
+        return '方程组：\$\$\\begin{cases} $a \\\\ $b \\end{cases}\$\$';
+      });
     }
 
-    return value.replaceAllMapped(
-      RegExp(
-        r'方程组[：:]\s*([^。]+?[A-Za-z]\s*=\s*[^\\。\n]+)(?:\\+|\n)\s*([^。]+?[A-Za-z]\s*=\s*[^\\。\n]+?)\s*\\*\s*[。.]?\s*$',
-        multiLine: true,
-      ),
-      (match) {
-        final first = match.group(1)!.trim();
-        final second = match.group(2)!.trim();
-        return '方程组：\$\$\\begin{cases} $first \\\\ $second \\end{cases}\$\$';
-      },
-    );
+    // Step 4: normalize delimiters to $ / $$
+    r = r.replaceAllMapped(_reParenBracket, (m) => '[${m.group(1)}]');
+    r = r.replaceAllMapped(_reBracketCases, (m) {
+      final inner = m.group(0)!;
+      return '\$\$${inner.substring(1, inner.length - 1)}\$\$';
+    });
+    r = r.replaceAllMapped(_reBracketLatex, (m) {
+      final c = m.group(1)!;
+      if (c.contains(r'\') || c.contains('^')) return '\$$c\$';
+      return m.group(0)!;
+    });
+    r = r
+        .replaceAll(r'\\(', r'$')
+        .replaceAll(r'\\)', r'$')
+        .replaceAll(r'\\[', r'$$')
+        .replaceAll(r'\\]', r'$$')
+        .replaceAll(r'\(', r'$')
+        .replaceAll(r'\)', r'$')
+        .replaceAll(r'\[', r'$$')
+        .replaceAll(r'\]', r'$$');
+    r = r.replaceAllMapped(_reNakedCases, (m) => '\$\$${m.group(0)}\$\$');
+
+    return r;
   }
 
-  String _normalizeMathExpression(String value) {
-    final multilineNormalized = _normalizeMultilineMath(value)
+  // ── TeX expression cleanup (per-formula, not per-document) ──
+
+  static final _reNakedBegin = RegExp(r'(?<!\\)begin\{(cases|aligned)\}');
+  static final _reNakedEnd = RegExp(r'(?<!\\)end\{(cases|aligned)\}');
+  static final _reNakedAngle = RegExp(r'(?<!\\)angle\b');
+  static final _reNakedCirc = RegExp(r'(?<!\\)circ\b');
+  static final _reNakedPm = RegExp(r'(?<!\\)pm(?=\b|[0-9])');
+  static final _reLeadingBrace = RegExp(r'^\\\{\s*');
+  static final _reUnsupported = RegExp(r'\\([a-zA-Z]+)(?=\b|[0-9])');
+  static const _envCmds = {'begin', 'end', 'cases', 'aligned'};
+
+  String _cleanTex(String v) {
+    var r = v
+        .replaceAll(_reNakedBegin, r'\begin{$1}')
+        .replaceAll(_reNakedEnd, r'\end{$1}')
+        .replaceAll(_reNakedAngle, r'\angle')
+        .replaceAll(_reNakedCirc, r'\circ')
+        .replaceAll(_reNakedPm, r'\pm')
+        .replaceAll(r'\newline', r' \\ ')
         .replaceAll(r'\qquad', ' ')
         .replaceAll(r'\quad', ' ')
         .replaceAll(r'\x', 'x');
 
-    return multilineNormalized.replaceAllMapped(
-      RegExp(r'\\([a-zA-Z]+)\b'),
-      (match) {
-        final cmd = match.group(1)!;
-        // 这些命令需要保留 \ 前缀，不能单独处理
-        if (['begin', 'end', 'cases', 'aligned'].contains(cmd)) {
-          return match.group(0)!;
-        }
-        return _supportedLatexCommands.contains(cmd)
-            ? match.group(0)!
-            : cmd;
-      },
-    );
-  }
-
-  String _normalizeMultilineMath(String value) {
-    final processed = _normalizeDisplayText(value)
-        .replaceAll(RegExp(r'(?<!\\)begin\{(cases|aligned)\}'), r'\begin{$1}')
-        .replaceAll(RegExp(r'(?<!\\)end\{(cases|aligned)\}'), r'\end{$1}')
-        .replaceAll(RegExp(r'(?<!\\)angle\b'), r'\angle')
-        .replaceAll(RegExp(r'(?<!\\)circ\b'), r'\circ')
-        .replaceAllMapped(RegExp(r'(?<!\\)pm(?=[A-Za-z0-9])'), (_) => r'\pm ')
-        .replaceAll(RegExp(r'(?<!\\)pm\b'), r'\pm')
-        .replaceAll(r'\newline', r' \\ ');
-    if (!processed.contains(r'\\') || processed.contains(r'\begin{')) {
-      return processed;
+    // Wrap bare \\ lines in aligned environment
+    if (r.contains(r'\\') && !r.contains(r'\begin{')) {
+      r = r'\begin{aligned} '
+          '${r.trim().replaceFirst(_reLeadingBrace, '').replaceAll('&', '').trim()}'
+          r' \end{aligned}';
     }
 
-    final trimmed = processed.trim();
-    final body = trimmed
-        .replaceFirst(RegExp(r'^\\\{\s*'), '')
-        .replaceAll('&', '')
-        .trim();
-
-    return r'\begin{aligned} ' + body + r' \end{aligned}';
+    // Strip unsupported commands, keep their name as text
+    return r.replaceAllMapped(_reUnsupported, (m) {
+      final cmd = m.group(1)!;
+      if (_envCmds.contains(cmd)) return m.group(0)!;
+      return _supported.contains(cmd) ? m.group(0)! : cmd;
+    });
   }
 
-  String _readableMathText(String value) {
-    return _normalizeDisplayText(value)
-        .replaceAll(RegExp(r'\\?begin\{[^}]+\}|\\?end\{[^}]+\}'), '')
+  bool _isDisplayTex(String v) =>
+      v.contains(r'\begin{cases}') ||
+      v.contains(r'\begin{aligned}') ||
+      v.contains(r'\\');
+
+  // ── Detection ──
+
+  static final _reHasLatex = RegExp(r'\\[a-zA-Z]+');
+  static final _reHasAscii =
+      RegExp(r'[A-Za-z0-9]+(?:\^[A-Za-z0-9]+)+|[A-Za-z0-9]+_[A-Za-z0-9]+');
+  static final _reHasInline = RegExp(r'(?<!\\)\$[^\$]+\$');
+
+  bool _hasMath(String v) {
+    if (contentFormat == QuestionContentFormat.latexMixed) return true;
+    return v.contains(r'$$') ||
+        _reHasLatex.hasMatch(v) ||
+        _reHasAscii.hasMatch(v) ||
+        _reHasInline.hasMatch(v);
+  }
+
+  // ── Parsing ──
+
+  static final _reDisplay = RegExp(r'\$\$([\s\S]*?)\$\$', multiLine: true);
+  static final _reInline = RegExp(r'(?<!\\)\$([^\$]+)\$');
+  static final _rePlainMath = RegExp(
+      r'(\\?begin\{(?:cases|aligned)\}[\s\S]*?\\?end\{(?:cases|aligned)\}|\\[a-zA-Z]+(?:\{[^}]*\})*|[A-Za-z0-9]+(?:\^[A-Za-z0-9]+)+|[A-Za-z0-9]+_[A-Za-z0-9]+)');
+
+  List<_Span> _parseDisplay(String v) {
+    final out = <_Span>[];
+    var cur = 0;
+    for (final m in _reDisplay.allMatches(v)) {
+      if (m.start > cur) out.add(_Span(v.substring(cur, m.start), false));
+      out.add(_Span(m.group(1)!.trim(), true));
+      cur = m.end;
+    }
+    if (cur < v.length) out.add(_Span(v.substring(cur), false));
+    return out.where((b) => b.text.trim().isNotEmpty).toList();
+  }
+
+  List<_Span> _parseInline(String v) {
+    final out = <_Span>[];
+    var cur = 0;
+    for (final m in _reInline.allMatches(v)) {
+      if (m.start > cur) out.addAll(_splitPlain(v.substring(cur, m.start)));
+      out.add(_Span(m.group(1)!.trim(), true));
+      cur = m.end;
+    }
+    if (cur < v.length) out.addAll(_splitPlain(v.substring(cur)));
+    return out.where((s) => s.text.isNotEmpty).toList();
+  }
+
+  List<_Span> _splitPlain(String v) {
+    final out = <_Span>[];
+    var cur = 0;
+    for (final m in _rePlainMath.allMatches(v)) {
+      if (m.start > cur) out.add(_Span(v.substring(cur, m.start), false));
+      out.add(_Span(m.group(0)!, true));
+      cur = m.end;
+    }
+    if (cur < v.length) out.add(_Span(v.substring(cur), false));
+    return out;
+  }
+
+  // ── Layer 3: readable text ──
+
+  static final _reBeginEnd = RegExp(r'\\?begin\{[^}]+\}|\\?end\{[^}]+\}');
+  static final _reFrac = RegExp(r'\\frac\{([^}]*)\}\{([^}]*)\}');
+  static final _reMatrm = RegExp(r'\\mathrm\{([^}]*)\}');
+  static final _reCmd = RegExp(r'\\([a-zA-Z]+)(?=\b|[0-9])');
+  static final _reNakedSymbols =
+      RegExp(r'(?<![A-Za-z\\])(?:angle|triangle|circ|times|div|pm)(?=\b|[0-9])');
+  static final _reSpaces = RegExp(r'[ \t]+');
+
+  static const _symbols = {
+    'angle': '∠', 'triangle': '△', 'circ': '°', 'pm': '±',
+    'times': '×', 'div': '÷',
+  };
+
+  String _toReadable(String v) {
+    return v
+        .replaceAll(_reBeginEnd, '')
         .replaceAll(r'\newline', '\n')
         .replaceAll(r'\\', '\n')
         .replaceAll('&', '')
         .replaceAll(r'\qquad', ' ')
         .replaceAll(r'\quad', ' ')
-        .replaceAll(r'\left', '')
-        .replaceAll(r'\right', '')
-        .replaceAll(r'\angle', '∠')
-        .replaceAll(RegExp(r'(?<![A-Za-z])angle\b'), '∠')
-        .replaceAll(r'\triangle', '△')
-        .replaceAll(RegExp(r'(?<![A-Za-z])triangle\b'), '△')
-        .replaceAll(r'\circ', '°')
-        .replaceAll(RegExp(r'(?<![A-Za-z])circ\b'), '°')
-        .replaceAll(r'\pm', '±')
-        .replaceAllMapped(RegExp(r'(?<![A-Za-z])pm(?=[A-Za-z0-9])'), (_) => '±')
-        .replaceAll(RegExp(r'(?<![A-Za-z])pm\b'), '±')
-        .replaceAll(r'\times', '×')
-        .replaceAll(RegExp(r'(?<![A-Za-z])times\b'), '×')
-        .replaceAll(r'\div', '÷')
-        .replaceAll(RegExp(r'(?<![A-Za-z])div\b'), '÷')
+        .replaceAllMapped(_reFrac, (m) => '${m.group(1)}/${m.group(2)}')
+        .replaceAllMapped(_reMatrm, (m) => m.group(1)!)
+        .replaceAllMapped(_reCmd, (m) {
+          final c = m.group(1)!;
+          if (_symbols.containsKey(c)) return _symbols[c]!;
+          return _supported.contains(c) ? '' : c;
+        })
         .replaceAllMapped(
-          RegExp(r'\\frac\{([^}]*)\}\{([^}]*)\}'),
-          (match) => '${match.group(1)}/${match.group(2)}',
-        )
-        .replaceAllMapped(
-          RegExp(r'\\mathrm\{([^}]*)\}'),
-          (match) => match.group(1)!,
-        )
-        .replaceAllMapped(
-          RegExp(r'\\([a-zA-Z]+)\b'),
-          (match) => _supportedLatexCommands.contains(match.group(1))
-              ? ''
-              : match.group(1)!,
-        )
+            _reNakedSymbols, (m) => _symbols[m.group(0)!] ?? m.group(0)!)
         .replaceAll(r'\x', 'x')
         .replaceAll(r'\{', '{')
         .replaceAll(r'\}', '}')
-        .replaceAll(r'\(', '')
-        .replaceAll(r'\)', '')
-        .replaceAll(r'\[', '')
-        .replaceAll(r'\]', '')
-        .replaceAll(RegExp(r'[ \t]+'), ' ')
+        .replaceAll(_reSpaces, ' ')
         .trim();
   }
 
-  bool _shouldRenderMath(String value) {
-    if (contentFormat == QuestionContentFormat.latexMixed) {
-      return true;
-    }
+  // ── Compact mode ──
 
-    return value.contains(r'$$') ||
-        value.contains(r'\(') ||
-        value.contains(r'\)') ||
-        value.contains(r'\[') ||
-        value.contains(r'\]') ||
-        _hasLatexCommand(value) ||
-        _hasAsciiFormula(value) ||
-        RegExp(r'(?<!\\)\$[^\$]+\$').hasMatch(value);
-  }
+  static final _reWS = RegExp(r'\s+');
 
-  List<_MathBlock> _parseBlocks(String value) {
-    final blockPattern = RegExp(r'\$\$([\s\S]*?)\$\$', multiLine: true);
-    final blocks = <_MathBlock>[];
-    var cursor = 0;
-
-    for (final blockMatch in blockPattern.allMatches(value)) {
-      if (blockMatch.start > cursor) {
-        blocks
-            .add(_MathBlock(value.substring(cursor, blockMatch.start), false));
-      }
-      blocks.add(_MathBlock(blockMatch.group(1)!.trim(), true));
-      cursor = blockMatch.end;
-    }
-
-    if (cursor < value.length) {
-      blocks.add(_MathBlock(value.substring(cursor), false));
-    }
-
-    return blocks.where((block) => block.value.trim().isNotEmpty).toList();
-  }
-
-  List<_MathSegment> _parseInlineSegments(String value) {
-    final pattern = RegExp(r'(?<!\\)\$([^\$]+)\$');
-    final segments = <_MathSegment>[];
-    var cursor = 0;
-
-    for (final match in pattern.allMatches(value)) {
-      if (match.start > cursor) {
-        segments.addAll(_splitPlainText(value.substring(cursor, match.start)));
-      }
-      segments.add(_MathSegment(match.group(1)!.trim(), true));
-      cursor = match.end;
-    }
-
-    if (cursor < value.length) {
-      segments.addAll(_splitPlainText(value.substring(cursor)));
-    }
-
-    return segments.where((segment) => segment.value.isNotEmpty).toList();
-  }
-
-  List<_MathSegment> _splitPlainText(String value) {
-    final parts = <_MathSegment>[];
-    final pattern = RegExp(
-        r'(\$\$[\s\S]*?\$\$|\\?begin\{(?:cases|aligned)\}[\s\S]*?\\?end\{(?:cases|aligned)\}|\\[a-zA-Z]+(?:\{[^}]*\})*(?:\{[^}]*\})*|[A-Za-z0-9]+(?:\^[A-Za-z0-9]+)+|[A-Za-z0-9]+_[A-Za-z0-9]+)');
-    var cursor = 0;
-
-    for (final match in pattern.allMatches(value)) {
-      if (match.start > cursor) {
-        parts.add(_MathSegment(value.substring(cursor, match.start), false));
-      }
-      parts.add(_MathSegment(match.group(0)!, true));
-      cursor = match.end;
-    }
-
-    if (cursor < value.length) {
-      parts.add(_MathSegment(value.substring(cursor), false));
-    }
-
-    return parts;
-  }
-
-  String _normalizeMathDelimiters(String value) {
-    // 1. 先处理方括号包裹的 cases 环境（最优先，因为后续转换会破坏格式）
-    // 例如: [\begin{cases} x+y=5 \\ x-y=1 \end{cases}] → $$\begin{cases} x+y=5 \\ x-y=1 \end{cases}$$
-    var result = value.replaceAllMapped(
-      RegExp(r'\[\\?\begin\{(?:cases|aligned)\}[\s\S]*?\\?\end\{(?:cases|aligned)\}\]'),
-      (match) {
-        final inner = match.group(0)!;
-        // 去掉首尾的方括号，保留 LaTeX 内容
-        final stripped = inner.substring(1, inner.length - 1);
-        return '\$\$$stripped\$\$';
-      },
-    );
-
-    // 2. 处理方括号包裹的普通 LaTeX（如 [x^2] → $x^2$）
-    result = result.replaceAllMapped(
-      RegExp(r'\[([^\[\]]+)\]'),
-      (match) {
-        final content = match.group(1)!;
-        if (content.contains(r'\') || content.contains('^') || content.contains(r'\frac') || content.contains(r'\times') || content.contains(r'\begin')) {
-          return '\$$content\$';
-        }
-        return match.group(0)!;
-      },
-    );
-
-    // 3. 处理带反斜杠的转义括号
-    result = result
-        .replaceAll(r'\\(', r'$')
-        .replaceAll(r'\\)', r'$')
-        .replaceAll(r'\\[', r'$$')
-        .replaceAll(r'\\]', r'$$');
-
-    // 4. 处理普通圆括号
-    result = result
-        .replaceAll(r'\(', r'$')
-        .replaceAll(r'\)', r'$');
-
-    // 5. 处理普通方括号
-    result = result
-        .replaceAll(r'\[', r'$$')
-        .replaceAll(r'\]', r'$$');
-
-    // 6. 处理裸 cases 环境
-    result = result.replaceAllMapped(
-      RegExp(r'(?<!\\)(?:begin\{(?:cases|aligned)\}[\s\S]*?end\{(?:cases|aligned)\})'),
-      (match) => '\$\$${match.group(0)}\$\$',
-    );
-
-    // 7. 处理 triangle 简写
-    result = result.replaceAllMapped(
-      RegExp(r'(?<![A-Za-z\\])tri\\angle\s*|(?<![A-Za-z\\])tri∠'),
-      (_) => r'\triangle ',
-    );
-
-    return result;
-  }
-
-  bool _hasLatexCommand(String value) {
-    return RegExp(r'\\[a-zA-Z]+').hasMatch(value);
-  }
-
-  bool _hasAsciiFormula(String value) {
-    return RegExp(r'[A-Za-z0-9]+(?:\^[A-Za-z0-9]+)+|[A-Za-z0-9]+_[A-Za-z0-9]+')
-        .hasMatch(value);
-  }
-
-  bool _isDisplayMath(String value) {
-    return value.contains(r'\begin{cases}') ||
-        value.contains(r'\begin{aligned}') ||
-        value.contains(r'\\');
-  }
-
-  String _compactText(String value) {
-    return _readableMathText(_normalizeMathDelimiters(
-                _normalizeDisplayText(value))
-            .replaceAll(RegExp(r'\$\$([\s\S]*?)\$\$', multiLine: true), r' $1 ')
-            .replaceAllMapped(RegExp(r'(?<!\\)\$([^\$]+)\$'),
-                (match) => ' ${match.group(1)} '))
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+  String _compactText(String v) {
+    final norm = _normalize(v);
+    final stripped = norm
+        .replaceAll(_reDisplay, r' $1 ')
+        .replaceAllMapped(_reInline, (m) => ' ${m.group(1)} ');
+    return _toReadable(stripped).replaceAll(_reWS, ' ').trim();
   }
 }
 
-const _supportedLatexCommands = <String>{
-  'begin',
-  'end',
-  'frac',
-  'sqrt',
-  'angle',
-  'triangle',
-  'circ',
-  'degree',
-  'times',
-  'div',
-  'cdot',
-  'pm',
-  'leq',
-  'geq',
-  'neq',
-  'approx',
-  'left',
-  'right',
-  'sin',
-  'cos',
-  'tan',
-  'log',
-  'ln',
-  'pi',
-  'alpha',
-  'beta',
-  'gamma',
-  'theta',
-  'Delta',
-  'mathrm',
-  'cases',
-  'aligned',
+const _supported = <String>{
+  'begin', 'end', 'frac', 'sqrt', 'angle', 'triangle', 'circ', 'degree',
+  'times', 'div', 'cdot', 'pm', 'leq', 'geq', 'neq', 'approx',
+  'left', 'right', 'sin', 'cos', 'tan', 'log', 'ln',
+  'pi', 'rho', 'lambda', 'mu', 'sigma', 'omega', 'alpha', 'beta',
+  'gamma', 'theta', 'Delta', 'mathrm', 'cases', 'aligned',
+  'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow',
 };
 
-class _MathBlock {
-  const _MathBlock(this.value, this.isMath);
-
-  final String value;
-  final bool isMath;
-}
-
-class _MathSegment {
-  const _MathSegment(this.value, this.isMath);
-
-  final String value;
-  final bool isMath;
+class _Span {
+  const _Span(this.text, this.math);
+  final String text;
+  final bool math;
 }

@@ -6,12 +6,14 @@ class QuestionSplitDraft {
     required this.id,
     required this.text,
     required this.selected,
+    required this.originalOrder,
     this.contentFormat,
   });
 
   final String id;
   final String text;
   final bool selected;
+  final int originalOrder;
   final QuestionContentFormat? contentFormat;
 
   QuestionSplitDraft copyWith({
@@ -23,6 +25,7 @@ class QuestionSplitDraft {
       id: id,
       text: text ?? this.text,
       selected: selected ?? this.selected,
+      originalOrder: originalOrder,
       contentFormat: contentFormat ?? this.contentFormat,
     );
   }

@@ -96,6 +96,7 @@ Future<QuestionSplitSession> buildQuestionSplitSession(
         id: '${source.id}-${candidate.order - 1}',
         text: candidate.text,
         selected: true,
+        originalOrder: candidate.order,
         contentFormat: source.contentFormat,
       );
     }).toList(),
@@ -109,7 +110,7 @@ Future<QuestionSplitResult> _resolveSplitResult(
   final normalized = source.normalizedQuestionText.trim();
   final extracted = source.extractedQuestionText.trim();
   final seedText = normalized.isNotEmpty ? normalized : extracted;
-  return splitter.split(seedText);
+  return splitter.split(seedText, subject: source.subject);
 }
 
 QuestionRecord buildSplitQuestionRecord({
@@ -121,7 +122,7 @@ QuestionRecord buildSplitQuestionRecord({
   final now = DateTime.now();
   final candidateSnapshot = source.candidateAnalyses
       .where((candidate) {
-        return candidate.order == sortOrder;
+        return candidate.order == draft.originalOrder;
       })
       .cast<CandidateAnalysisSnapshot?>()
       .firstWhere(

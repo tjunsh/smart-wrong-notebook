@@ -8,6 +8,7 @@ import 'package:smart_wrong_notebook/src/domain/models/analysis_result.dart';
 import 'package:smart_wrong_notebook/src/domain/models/generated_exercise.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_split_result.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
+import 'package:smart_wrong_notebook/src/shared/utils/composite_worksheet_detector.dart';
 
 class AiQuestionExtractionResult {
   const AiQuestionExtractionResult({
@@ -168,9 +169,12 @@ class AiAnalysisService {
 
   Future<QuestionSplitResult> splitQuestionCandidates({
     required String text,
+    String? subjectName,
     QuestionSplitResult Function(String text)? fallbackSplit,
   }) async {
-    final splitter = fallbackSplit ?? _defaultSplitQuestionCandidates;
+    final subject = subjectName != null ? _parseSubject(subjectName) : null;
+    final splitter = fallbackSplit ??
+        (String t) => _defaultSplitQuestionCandidates(t, subject: subject);
     return splitter(text);
   }
 
@@ -218,51 +222,59 @@ class AiAnalysisService {
     required String subjectName,
     required QuestionSplitResult splitResult,
     String? imagePath,
-    void Function(int completed, int total)? onProgress,
+    void Function(int completed, int total, {int failed})? onProgress,
   }) async {
     final candidates = splitResult.candidates;
     final total = candidates.length;
     var completed = 0;
+    var failed = 0;
 
     debugPrint(
         '[AiAnalysisService] analyzeSplitCandidates: $total candidates, parallel');
 
-    // 并行分析所有 candidate
     final futures = candidates.map((candidate) async {
-      final candidateText = candidate.text;
-      final analysis = await analyzeExtractedQuestion(
-        correctedText: candidateText,
-        subjectName: subjectName,
-      );
-      final exercises = analysis is ParsedAnalysisResult
-          ? extractGeneratedExercisesFromContent(
-              analysis.rawContent,
-              questionId: '$questionId-${candidate.order}',
-              analysis: analysis,
-            )
-          : extractGeneratedExercises(
-              analysis,
-              questionId: '$questionId-${candidate.order}',
-            );
+      try {
+        final candidateText = candidate.text;
+        final analysis = await analyzeExtractedQuestion(
+          correctedText: candidateText,
+          subjectName: subjectName,
+        );
+        final exercises = analysis is ParsedAnalysisResult
+            ? extractGeneratedExercisesFromContent(
+                analysis.rawContent,
+                questionId: '$questionId-${candidate.order}',
+                analysis: analysis,
+              )
+            : extractGeneratedExercises(
+                analysis,
+                questionId: '$questionId-${candidate.order}',
+              );
 
-      completed++;
-      onProgress?.call(completed, total);
+        completed++;
+        onProgress?.call(completed, total, failed: failed);
 
-      return CandidateAnalysisPayload(
-        candidateId: candidate.id,
-        order: candidate.order,
-        questionText: candidateText,
-        analysisResult: analysis,
-        savedExercises: exercises,
-        subject: analysis.subject,
-        aiTags: analysis.aiTags,
-        aiKnowledgePoints: analysis.knowledgePoints,
-      );
+        return CandidateAnalysisPayload(
+          candidateId: candidate.id,
+          order: candidate.order,
+          questionText: candidateText,
+          analysisResult: analysis,
+          savedExercises: exercises,
+          subject: analysis.subject,
+          aiTags: analysis.aiTags,
+          aiKnowledgePoints: analysis.knowledgePoints,
+        );
+      } catch (e) {
+        debugPrint(
+            '[AiAnalysisService] candidate ${candidate.order} failed: $e');
+        failed++;
+        completed++;
+        onProgress?.call(completed, total, failed: failed);
+        return null;
+      }
     }).toList();
 
-    final payloads = await Future.wait(futures);
-
-    // 按 order 排序确保顺序一致
+    final results = await Future.wait(futures);
+    final payloads = results.whereType<CandidateAnalysisPayload>().toList();
     payloads.sort((a, b) => a.order.compareTo(b.order));
     return payloads;
   }
@@ -407,7 +419,7 @@ class AiAnalysisService {
     return buffer.toString();
   }
 
-  QuestionSplitResult _defaultSplitQuestionCandidates(String text) {
+  QuestionSplitResult _defaultSplitQuestionCandidates(String text, {Subject? subject}) {
     final normalized = _normalizeExtractedQuestionText(
       text.replaceAll('\r\n', '\n').trim(),
     );
@@ -419,7 +431,7 @@ class AiAnalysisService {
       );
     }
 
-    if (_isCompositeLanguageWorksheet(normalized)) {
+    if (isCompositeLanguageWorksheet(normalized, subject: subject)) {
       return QuestionSplitResult(
         sourceText: normalized,
         candidates: _buildSplitCandidates(
@@ -506,42 +518,7 @@ class AiAnalysisService {
         text.trim().isEmpty) {
       return true;
     }
-    return _isCompositeLanguageWorksheet(text);
-  }
-
-  bool _isCompositeLanguageWorksheet(String text) {
-    final blankCount =
-        RegExp(r'_{2,}|＿{2,}|\(\s*\)|（\s*）').allMatches(text).length;
-    final optionRows =
-        RegExp(r'(^|\n)\s*\d+[\.、．)]\s*[A-C][\.、．)]\s+', multiLine: true)
-            .allMatches(text)
-            .length;
-    final hasEnglishPassage =
-        RegExp(r'\b(the|that|which|while|however|because|people|money|family|should|china|saving|some|they|was|for|with|and|of|to)\b',
-                    caseSensitive: false)
-                .allMatches(text)
-                .length >=
-            8;
-    final hasChineseWorksheetMarker =
-        RegExp(r'文常积累|字词释义|翻译卷|课文|文言文|释义|翻译').hasMatch(text);
-    final hasClassicalChinese =
-        RegExp(r'之|其|乃|遂|为|问所从来|落英|缤纷|阡陌|桃花源记').allMatches(text).length >= 4;
-    final numberedBlankCount = RegExp(
-            r'(^|[^\d])(?:[1-9]|10)\s*[\.、．)]?\s*[A-C][\.、．)]',
-            multiLine: true)
-        .allMatches(text)
-        .length;
-
-    if (hasEnglishPassage && (optionRows >= 3 || numberedBlankCount >= 5)) {
-      return true;
-    }
-
-    if (hasChineseWorksheetMarker || hasClassicalChinese) {
-      return true;
-    }
-
-    return blankCount >= 5 &&
-        (hasChineseWorksheetMarker || hasClassicalChinese);
+    return isCompositeLanguageWorksheet(text, subject: subject);
   }
 
   List<QuestionSplitCandidate> _buildSplitCandidates(
@@ -725,9 +702,9 @@ class AiAnalysisService {
 - 【LaTeX 格式强制规范——必须严格遵守】
   1. 所有数学公式必须使用标准 LaTeX 定界符包裹：行内公式用 \(公式\)，独立公式用 \[公式\]。禁止使用方括号 [(...) 或 [...] 作为 LaTeX 定界符。
   2. LaTeX 命令必须使用完整的反斜杠前缀，禁止省略反斜杠：
-     - 正确命令：\frac、\angle、\triangle、\circ、\times、\cdot、\pm、\sqrt、\pi、\alpha、\beta、\gamma、\theta、\Delta、\leq、\geq、\neq、\approx、\sin、\cos、\tan、\log、\ln、\mathrm
-     - 错误写法：frac、angle、triangle、circ、times、cdot、pm、sqrt、pi、alpha
-     - 注意：乘号用 \times，除法用 \frac，分数用 \frac{a}{b}，圆周率用 \pi
+     - 正确命令：\frac、\angle、\triangle、\circ、\times、\cdot、\pm、\sqrt、\pi、\rho、\alpha、\beta、\gamma、\theta、\Delta、\lambda、\mu、\sigma、\omega、\leq、\geq、\neq、\approx、\sin、\cos、\tan、\log、\ln、\mathrm、\rightarrow、\leftarrow
+     - 错误写法：frac、angle、triangle、circ、times、cdot、pm、sqrt、pi、rho、alpha
+     - 注意：乘号用 \times，除法用 \frac，分数用 \frac{a}{b}，圆周率用 \pi，密度用 \rho
   3. 角度/度数统一用 ^\circ，圆周率统一用 \pi
   4. 上标用 ^{n} 格式，禁止裸 ^n
   5. 物理单位用 \mathrm{}：\mathrm{kg}、\mathrm{m}、\mathrm{N}、\mathrm{Pa}、\mathrm{J}、\mathrm{W}、\mathrm{V}、\mathrm{A}、\mathrm{\Omega}
@@ -770,9 +747,9 @@ class AiAnalysisService {
 - 【LaTeX 格式强制规范——必须严格遵守】
   1. 所有数学公式必须使用标准 LaTeX 定界符包裹：行内公式用 \(公式\)，独立公式用 \[公式\]。禁止使用方括号 [(...) 或 [...] 作为 LaTeX 定界符。
   2. LaTeX 命令必须使用完整的反斜杠前缀，禁止省略反斜杠：
-     - 正确命令：\frac、\angle、\triangle、\circ、\times、\cdot、\pm、\sqrt、\pi、\alpha、\beta、\gamma、\theta、\Delta、\leq、\geq、\neq、\approx、\sin、\cos、\tan、\log、\ln、\mathrm
-     - 错误写法：frac、angle、triangle、circ、times、cdot、pm、sqrt、pi、alpha
-     - 注意：乘号用 \times，除法用 \frac，分数用 \frac{a}{b}，圆周率用 \pi
+     - 正确命令：\frac、\angle、\triangle、\circ、\times、\cdot、\pm、\sqrt、\pi、\rho、\alpha、\beta、\gamma、\theta、\Delta、\lambda、\mu、\sigma、\omega、\leq、\geq、\neq、\approx、\sin、\cos、\tan、\log、\ln、\mathrm、\rightarrow、\leftarrow
+     - 错误写法：frac、angle、triangle、circ、times、cdot、pm、sqrt、pi、rho、alpha
+     - 注意：乘号用 \times，除法用 \frac，分数用 \frac{a}{b}，圆周率用 \pi，密度用 \rho
   3. 角度/度数统一用 ^\circ，圆周率统一用 \pi
   4. 上标用 ^{n} 格式，禁止裸 ^n
   5. 物理单位用 \mathrm{}：\mathrm{kg}、\mathrm{m}、\mathrm{N}、\mathrm{Pa}、\mathrm{J}、\mathrm{W}、\mathrm{V}、\mathrm{A}、\mathrm{\Omega}
@@ -1359,6 +1336,66 @@ class AiAnalysisService {
       ];
     }
 
+    if (tags.contains('体积') ||
+        tags.contains('立体几何') ||
+        tags.contains('圆柱') ||
+        tags.contains('圆锥')) {
+      return <GeneratedExercise>[
+        GeneratedExercise(
+          id: 'e1',
+          questionId: questionId,
+          generationMode: ExerciseGenerationMode.practice,
+          difficulty: '简单',
+          question:
+              r'圆锥底面半径为 \(r=2\)，高为 \(h=3\)，则体积 \(V\) 为',
+          options: const [
+            r'A. \(4\pi\)',
+            r'B. \(8\pi\)',
+            r'C. \(12\pi\)',
+            r'D. \(6\pi\)',
+          ],
+          answer: 'A',
+          explanation:
+              r'\(V=\frac{1}{3}\pi r^2 h=\frac{1}{3}\pi \times 4 \times 3=4\pi\)',
+          createdAt: now,
+          order: 0,
+        ),
+        GeneratedExercise(
+          id: 'e2',
+          questionId: questionId,
+          generationMode: ExerciseGenerationMode.practice,
+          difficulty: '同级',
+          question:
+              r'圆柱底面半径为 \(r=3\)，高为 \(h=5\)，则圆柱体积为',
+          options: const [
+            r'A. \(15\pi\)',
+            r'B. \(30\pi\)',
+            r'C. \(45\pi\)',
+            r'D. \(20\pi\)',
+          ],
+          answer: 'C',
+          explanation:
+              r'\(V=\pi r^2 h=\pi \times 9 \times 5=45\pi\)',
+          createdAt: now,
+          order: 1,
+        ),
+        GeneratedExercise(
+          id: 'e3',
+          questionId: questionId,
+          generationMode: ExerciseGenerationMode.practice,
+          difficulty: '提高',
+          question:
+              r'同底等高的圆锥和圆柱，圆柱体积是圆锥体积的几倍？',
+          options: const ['A. 2倍', 'B. 3倍', 'C. 4倍', 'D. 1倍'],
+          answer: 'B',
+          explanation:
+              r'圆锥体积 \(V_1=\frac{1}{3}\pi r^2 h\)，圆柱体积 \(V_2=\pi r^2 h\)，所以 \(V_2/V_1=3\)',
+          createdAt: now,
+          order: 2,
+        ),
+      ];
+    }
+
     return <GeneratedExercise>[
       GeneratedExercise(
         id: 'e1',
@@ -1460,7 +1497,7 @@ class _FakeAiAnalysisService extends AiAnalysisService {
     String textHint = '',
   }) async {
     final normalized = textHint.isNotEmpty ? textHint : '示例题目文本';
-    final splitResult = await splitQuestionCandidates(text: normalized);
+    final splitResult = await splitQuestionCandidates(text: normalized, subjectName: subjectName);
     return AiQuestionExtractionResult(
       extractedQuestionText: normalized,
       normalizedQuestionText: normalized,

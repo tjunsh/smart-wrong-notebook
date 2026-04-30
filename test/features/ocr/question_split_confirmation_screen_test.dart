@@ -71,8 +71,8 @@ void main() {
       source: source,
       strategy: QuestionSplitStrategy.fallback,
       drafts: const <QuestionSplitDraft>[
-        QuestionSplitDraft(id: 'd-1', text: r'第一题：已知 \\(x+1=3\\)，求 \\(x\\)', selected: true),
-        QuestionSplitDraft(id: 'd-2', text: '第二题：求 y=2x 的值', selected: false),
+        QuestionSplitDraft(id: 'd-1', text: r'第一题：已知 \\(x+1=3\\)，求 \\(x\\)', selected: true, originalOrder: 1),
+        QuestionSplitDraft(id: 'd-2', text: '第二题：求 y=2x 的值', selected: false, originalOrder: 2),
       ],
     );
 
@@ -135,7 +135,7 @@ void main() {
       ),
       strategy: QuestionSplitStrategy.fallback,
       drafts: const <QuestionSplitDraft>[
-        QuestionSplitDraft(id: 'd-1', text: '第一题', selected: false),
+        QuestionSplitDraft(id: 'd-1', text: '第一题', selected: false, originalOrder: 1),
       ],
     );
 

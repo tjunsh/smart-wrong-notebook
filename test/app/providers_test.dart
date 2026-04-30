@@ -157,6 +157,7 @@ Some young people save income, _____ 4 _____ spend most of it on travel.
         id: 'candidate-2',
         text: '第二题',
         selected: true,
+        originalOrder: 2,
       ),
       sortOrder: 2,
     );

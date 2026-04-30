@@ -1,22 +1,24 @@
 import 'package:smart_wrong_notebook/src/data/remote/ai/ai_analysis_service.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_split_result.dart';
+import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
+import 'package:smart_wrong_notebook/src/shared/utils/composite_worksheet_detector.dart';
 
 class QuestionSplitService {
   const QuestionSplitService({this.aiAnalysisService});
 
   final AiAnalysisService? aiAnalysisService;
 
-  Future<QuestionSplitResult> split(String text) async {
+  Future<QuestionSplitResult> split(String text, {Subject? subject}) async {
     if (aiAnalysisService != null) {
       return aiAnalysisService!.splitQuestionCandidates(
         text: text,
-        fallbackSplit: _splitLocally,
+        subjectName: subject?.name,
       );
     }
-    return _splitLocally(text);
+    return _splitLocally(text, subject: subject);
   }
 
-  QuestionSplitResult _splitLocally(String text) {
+  QuestionSplitResult _splitLocally(String text, {Subject? subject}) {
     final normalized = text.replaceAll('\r\n', '\n').trim();
     if (normalized.isEmpty) {
       return const QuestionSplitResult(
@@ -26,7 +28,7 @@ class QuestionSplitService {
       );
     }
 
-    if (_isCompositeLanguageWorksheet(normalized)) {
+    if (isCompositeLanguageWorksheet(normalized, subject: subject)) {
       return QuestionSplitResult(
         sourceText: normalized,
         candidates: _buildCandidates(<String>[normalized], QuestionSplitStrategy.fallback),
@@ -72,32 +74,6 @@ class QuestionSplitService {
         strategy: strategy,
       );
     }).toList();
-  }
-
-  bool _isCompositeLanguageWorksheet(String text) {
-    final blankCount = RegExp(r'_{2,}|＿{2,}|\(\s*\)|（\s*）').allMatches(text).length;
-    final optionRows = RegExp(r'(^|\n)\s*\d+[\.、．)]\s*[A-C][\.、．)]\s+', multiLine: true)
-        .allMatches(text)
-        .length;
-    final hasEnglishPassage = RegExp(r'\b(the|that|which|while|however|because|people|money|family|should|china|saving|some|they|was|for|with|and|of|to)\b', caseSensitive: false)
-        .allMatches(text)
-        .length >=
-        8;
-    final hasChineseWorksheetMarker = RegExp(r'文常积累|字词释义|翻译卷|课文|文言文|释义|翻译').hasMatch(text);
-    final hasClassicalChinese = RegExp(r'之|其|乃|遂|为|问所从来|落英|缤纷|阡陌|桃花源记').allMatches(text).length >= 4;
-    final numberedBlankCount = RegExp(r'(^|[^\d])(?:[1-9]|10)\s*[\.、．)]?\s*[A-C][\.、．)]', multiLine: true)
-        .allMatches(text)
-        .length;
-
-    if (hasEnglishPassage && (optionRows >= 3 || numberedBlankCount >= 5)) {
-      return true;
-    }
-
-    if (hasChineseWorksheetMarker || hasClassicalChinese) {
-      return true;
-    }
-
-    return blankCount >= 5 && (hasChineseWorksheetMarker || hasClassicalChinese);
   }
 
   List<String> _splitByNumberedQuestions(String text) {

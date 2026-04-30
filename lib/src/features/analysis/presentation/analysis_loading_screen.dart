@@ -8,6 +8,7 @@ import 'package:smart_wrong_notebook/src/data/remote/ai/ai_analysis_service.dart
 import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
 import 'package:smart_wrong_notebook/src/domain/models/question_record.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
+import 'package:smart_wrong_notebook/src/shared/utils/composite_worksheet_detector.dart';
 
 class AnalysisLoadingScreen extends ConsumerStatefulWidget {
   const AnalysisLoadingScreen({super.key});
@@ -115,10 +116,11 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
           questionId: working.id,
           subjectName: working.subject.name,
           splitResult: working.splitResult!,
-          onProgress: (completed, total) {
+          onProgress: (completed, total, {int failed = 0}) {
             if (mounted) {
               setState(() {
-                _progressText = '已完成 $completed/$total 题分析...';
+                final suffix = failed > 0 ? '（$failed 题失败）' : '';
+                _progressText = '已完成 $completed/$total 题分析$suffix';
               });
             }
           },
@@ -186,31 +188,12 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
   bool _shouldAnalyzeImageDirectly(QuestionRecord question) {
     final subject = question.subject;
     final text = question.correctedText.trim();
-    if (subject == Subject.english || subject == Subject.chinese) {
-      return text.isEmpty || _looksLikeCompositeLanguageWorksheet(text);
+    if (subject == Subject.english || subject == Subject.chinese ||
+        subject == Subject.history || subject == Subject.geography ||
+        subject == Subject.politics) {
+      return text.isEmpty || isCompositeLanguageWorksheet(text, subject: subject);
     }
     return false;
-  }
-
-  bool _looksLikeCompositeLanguageWorksheet(String text) {
-    final blankCount = RegExp(r'_{2,}|＿{2,}|\(\s*\)|（\s*）').allMatches(text).length;
-    final optionRows = RegExp(r'(^|\n)\s*\d+[\.、．)]\s*[A-C][\.、．)]\s+', multiLine: true)
-        .allMatches(text)
-        .length;
-    final hasEnglishPassage = RegExp(r'\b(the|that|which|while|however|because|people|money|family|should|china|saving|some|they|was|for|with|and|of|to)\b', caseSensitive: false)
-        .allMatches(text)
-        .length >=
-        8;
-    final hasChineseWorksheetMarker = RegExp(r'文常积累|字词释义|翻译卷|课文|文言文|释义|翻译').hasMatch(text);
-    final hasClassicalChinese = RegExp(r'之|其|乃|遂|为|问所从来|落英|缤纷|阡陌|桃花源记').allMatches(text).length >= 4;
-    final numberedBlankCount = RegExp(r'(^|[^\d])(?:[1-9]|10)\s*[\.、．)]?\s*[A-C][\.、．)]', multiLine: true)
-        .allMatches(text)
-        .length;
-
-    return (hasEnglishPassage && (optionRows >= 3 || numberedBlankCount >= 5)) ||
-        hasChineseWorksheetMarker ||
-        hasClassicalChinese ||
-        blankCount >= 8;
   }
 
   bool _shouldUseImageForAnalysis(QuestionRecord question) {
