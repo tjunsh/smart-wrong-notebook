@@ -133,6 +133,8 @@ class MathContentView extends StatelessWidget {
   );
   static final _reParenBracket =
       RegExp(r'\(\[([^\[\]]*(?:\\[a-zA-Z]+|\\begin\{)[^\[\]]*)\]\)');
+  static final _reDelimBracketCases = RegExp(
+      r'\\[(\(]\[\\?begin\{(?:cases|aligned)\}[\s\S]*?\\?end\{(?:cases|aligned)\}\]\\[)\)]');
   static final _reBracketCases = RegExp(
       r'\[\\?begin\{(?:cases|aligned)\}[\s\S]*?\\?end\{(?:cases|aligned)\}\]');
   static final _reBracketLatex = RegExp(r'\[([^\[\]]+)\]');
@@ -141,10 +143,14 @@ class MathContentView extends StatelessWidget {
   static final _reCasesBody = RegExp(
       r'(\\begin\{(?:cases|aligned)\})([\s\S]*?)(\\end\{(?:cases|aligned)\})');
   static final _reLoneBackslashSpace = RegExp(r'(?<!\\)\\ ');
+  static final _reTrailingBackslash = RegExp(r'(?<!\\)\\\n');
 
   String _normalize(String v) {
+    // Step 0: strip trailing backslash before newline (JSON artifact: \\\n → \\+LF)
+    var r = v.replaceAll(_reTrailingBackslash, '\n');
+
     // Step 1: fix double-escaped backslashes from AI output
-    var r = v
+    r = r
         .replaceAllMapped(_reDoubleBS, (m) => '\\${m.group(1)}')
         .replaceAllMapped(_reDoubleBSChar, (m) => '\\${m.group(1)}');
 
@@ -167,6 +173,12 @@ class MathContentView extends StatelessWidget {
     }
 
     // Step 4: normalize delimiters to $ / $$
+    r = r.replaceAllMapped(_reDelimBracketCases, (m) {
+      final full = m.group(0)!;
+      final bracketStart = full.indexOf('[');
+      final bracketEnd = full.lastIndexOf(']');
+      return '\$\$${full.substring(bracketStart + 1, bracketEnd)}\$\$';
+    });
     r = r.replaceAllMapped(_reParenBracket, (m) => '[${m.group(1)}]');
     r = r.replaceAllMapped(_reBracketCases, (m) {
       final inner = m.group(0)!;

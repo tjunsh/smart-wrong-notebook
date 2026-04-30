@@ -490,4 +490,37 @@ void main() {
     expect(find.textContaining('['), findsNothing);
     expect(find.textContaining(']'), findsNothing);
   });
+
+  testWidgets('strips trailing backslash before newline on option lines',
+      (tester) async {
+    // JSON: "A. 选项一\\\nB. 选项二" → after decode: "A. 选项一\<LF>B. 选项二"
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MathContentView('A. 受力面积一定时，压强与压力成正比\\\nB. 压力一定时，压强与受力面积成反比'),
+        ),
+      ),
+    );
+
+    expect(find.textContaining(r'\'), findsNothing);
+    expect(find.textContaining('受力面积'), findsOneWidget);
+  });
+
+  testWidgets('renders cases wrapped in \\( [ ] \\) delimiters',
+      (tester) async {
+    // After JSON decode + Step 1: \([\begin{cases} x+y=5 \ x-y=1 \ \ \end{cases}]\)
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MathContentView(
+            '4. 解方程组：\\([\\begin{cases} x+y=5 \\ x-y=1 \\ \\ \\end{cases}]\\)',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Parser Error'), findsNothing);
+    expect(find.textContaining('begin{cases}'), findsNothing);
+    expect(find.textContaining('解方程组'), findsOneWidget);
+  });
 }
