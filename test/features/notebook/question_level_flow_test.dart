@@ -69,7 +69,8 @@ QuestionRecord _buildSavedSplitQuestion({
 }
 
 void main() {
-  testWidgets('notebook screen shows saved split question tags and text', (tester) async {
+  testWidgets('notebook screen shows saved split question tags and text',
+      (tester) async {
     final repository = InMemoryQuestionRepository();
     final question = _buildSavedSplitQuestion();
     await repository.saveDraft(question);
@@ -88,7 +89,9 @@ void main() {
     expect(find.text('课堂'), findsOneWidget);
   });
 
-  testWidgets('saved split question navigates from notebook to detail to practice', (tester) async {
+  testWidgets(
+      'saved split question navigates from notebook to detail to practice',
+      (tester) async {
     final repository = InMemoryQuestionRepository();
     final question = _buildSavedSplitQuestion();
     await repository.saveDraft(question);
@@ -146,7 +149,9 @@ void main() {
     expect(find.text('练习题1'), findsOneWidget);
   });
 
-  testWidgets('practice completion updates detail answered count for saved split question', (tester) async {
+  testWidgets(
+      'practice completion updates detail answered count for saved split question',
+      (tester) async {
     final repository = InMemoryQuestionRepository();
     final question = _buildSavedSplitQuestion().copyWith(
       savedExercises: <GeneratedExercise>[
@@ -169,7 +174,8 @@ void main() {
     final container = ProviderContainer(
       overrides: <Override>[
         questionRepositoryProvider.overrideWithValue(repository),
-        settingsRepositoryProvider.overrideWithValue(InMemorySettingsRepository()),
+        settingsRepositoryProvider
+            .overrideWithValue(InMemorySettingsRepository()),
         aiAnalysisServiceProvider.overrideWithValue(AiAnalysisService.fake()),
       ],
     );
@@ -225,12 +231,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1/1 已答'), findsOneWidget);
-    expect(container.read(currentQuestionProvider)?.savedExercises.first.isCorrect, isTrue);
+    expect(
+        container.read(currentQuestionProvider)?.savedExercises.first.isCorrect,
+        isTrue);
 
     final saved = await repository.getById('q-batch-1');
     expect(saved?.savedExercises.first.isCorrect, isTrue);
   });
-  testWidgets('question detail screen shows candidate-level analysis and exercise entry', (tester) async {
+  testWidgets(
+      'question detail screen shows candidate-level analysis and exercise entry',
+      (tester) async {
     final question = _buildSavedSplitQuestion();
     final container = ProviderContainer(
       overrides: <Override>[
@@ -263,18 +273,30 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('一次方程'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -700));
+    await tester.pumpAndSettle();
+
+    expect(find.text('x=2'), findsOneWidget);
     expect(find.text('移项法则'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, 700));
+    await tester.pumpAndSettle();
     expect(find.text('继续练习'), findsOneWidget);
 
     await tester.tap(find.text('继续练习'));
     await tester.pumpAndSettle();
 
     expect(find.text('PRACTICE'), findsOneWidget);
-    expect(container.read(currentQuestionProvider)?.savedExercises.map((exercise) => exercise.question).toList(), <String>['练习题1']);
+    expect(
+        container
+            .read(currentQuestionProvider)
+            ?.savedExercises
+            .map((exercise) => exercise.question)
+            .toList(),
+        <String>['练习题1']);
   });
 
-  testWidgets('question detail screen switches between same batch siblings', (tester) async {
+  testWidgets('question detail screen switches between same batch siblings',
+      (tester) async {
     final repository = InMemoryQuestionRepository();
     final first = _buildSavedSplitQuestion();
     final second = _buildSavedSplitQuestion(
@@ -328,7 +350,8 @@ void main() {
     expect(find.text('第二题：已知 y-2=0，求 y'), findsOneWidget);
   });
 
-  testWidgets('exercise practice screen uses saved split question exercises', (tester) async {
+  testWidgets('exercise practice screen uses saved split question exercises',
+      (tester) async {
     final repository = InMemoryQuestionRepository();
     final question = _buildSavedSplitQuestion();
     await repository.saveDraft(question);

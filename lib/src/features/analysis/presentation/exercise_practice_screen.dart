@@ -11,7 +11,8 @@ class ExercisePracticeScreen extends ConsumerStatefulWidget {
   const ExercisePracticeScreen({super.key});
 
   @override
-  ConsumerState<ExercisePracticeScreen> createState() => _ExercisePracticeState();
+  ConsumerState<ExercisePracticeScreen> createState() =>
+      _ExercisePracticeState();
 }
 
 class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
@@ -23,18 +24,24 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
   @override
   Widget build(BuildContext context) {
     final current = ref.watch(currentQuestionProvider);
-
+    final practiceContext = ref.watch(currentPracticeContextProvider);
+    final returnRoute = practiceContext?.returnRoute;
+    final fallbackRoute = returnRoute ?? '/notebook';
     if (current == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('练习'), leading: IconButton(icon: const Icon(CupertinoIcons.chevron_left), onPressed: () => context.go('/notebook'))),
+        appBar: AppBar(
+            title: const Text('练习'),
+            leading: IconButton(
+                icon: const Icon(CupertinoIcons.chevron_left),
+                onPressed: () => context.go(fallbackRoute))),
         body: const Center(child: Text('未找到错题记录')),
       );
     }
 
-    if (current.id != _questionId) {
+    if (current.id != _questionId || _exercises == null) {
       _index = 0;
       _questionId = current.id;
-      _exercises = List.from(current.savedExercises);
+      _exercises = List.from(_practiceExercises(current, practiceContext));
     }
 
     final exercises = _exercises!;
@@ -44,20 +51,23 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
           title: const Text('举一反三'),
           leading: IconButton(
             icon: const Icon(CupertinoIcons.chevron_left),
-            onPressed: () => context.go('/notebook/question/${current.id}'),
+            onPressed: () =>
+                context.go(returnRoute ?? '/notebook/question/${current.id}'),
           ),
         ),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(CupertinoIcons.question, size: 64, color: Colors.grey.shade300),
+              Icon(CupertinoIcons.question,
+                  size: 64, color: Colors.grey.shade300),
               const SizedBox(height: 16),
               const Text('暂无练习题', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () => context.go('/notebook/question/${current.id}'),
-                child: const Text('返回错题详情'),
+                onPressed: () => context
+                    .go(returnRoute ?? '/notebook/question/${current.id}'),
+                child: Text(returnRoute == null ? '返回错题详情' : '返回解析'),
               ),
             ],
           ),
@@ -76,7 +86,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
         title: Text('举一反三 ${_index + 1}/${exercises.length}'),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.xmark),
-          onPressed: () => context.go('/notebook'),
+          onPressed: () => context.go(fallbackRoute),
         ),
       ),
       body: Column(
@@ -93,19 +103,28 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                 Row(
                   children: <Widget>[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _difficultyColor(exercise.difficulty).withValues(alpha: 0.1),
+                        color: _difficultyColor(exercise.difficulty)
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: _difficultyColor(exercise.difficulty).withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color: _difficultyColor(exercise.difficulty)
+                                .withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         exercise.difficulty,
-                        style: TextStyle(fontSize: 12, color: _difficultyColor(exercise.difficulty), fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: _difficultyColor(exercise.difficulty),
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                     const Spacer(),
-                    Text('$answeredCount/${exercises.length} 已答', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Text('$answeredCount/${exercises.length} 已答',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade500)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -115,14 +134,22 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2))
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text('第 ${_index + 1} 题', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      Text('第 ${_index + 1} 题',
+                          style: TextStyle(
+                              fontSize: 11, color: Colors.grey.shade500)),
                       const SizedBox(height: 8),
-                      MathContentView(exercise.question, style: Theme.of(context).textTheme.titleMedium),
+                      MathContentView(exercise.question,
+                          style: Theme.of(context).textTheme.titleMedium),
                     ],
                   ),
                 ),
@@ -158,13 +185,15 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: GestureDetector(
-                        onTap: answered ? null : () => _selectOption(optionLetter),
+                        onTap:
+                            answered ? null : () => _selectOption(optionLetter),
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: bgColor ?? Colors.white,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: borderColor ?? Colors.grey.shade300),
+                            border: Border.all(
+                                color: borderColor ?? Colors.grey.shade300),
                           ),
                           child: Row(
                             children: <Widget>[
@@ -172,7 +201,8 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: isSelected || (answered && isCorrectAnswer)
+                                  color: isSelected ||
+                                          (answered && isCorrectAnswer)
                                       ? (borderColor ?? const Color(0xFF6366F1))
                                       : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(14),
@@ -183,7 +213,8 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: isSelected || (answered && isCorrectAnswer)
+                                      color: isSelected ||
+                                              (answered && isCorrectAnswer)
                                           ? Colors.white
                                           : Colors.grey.shade600,
                                     ),
@@ -194,13 +225,17 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                               Expanded(
                                 child: MathContentView(
                                   optionText,
-                                  style: TextStyle(fontSize: 14, color: textColor ?? Colors.grey.shade800),
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: textColor ?? Colors.grey.shade800),
                                 ),
                               ),
                               if (answered && isCorrectAnswer)
-                                const Icon(CupertinoIcons.checkmark_circle, color: Color(0xFF16A34A), size: 20)
+                                const Icon(CupertinoIcons.checkmark_circle,
+                                    color: Color(0xFF16A34A), size: 20)
                               else if (answered && isSelected && !isCorrect)
-                                const Icon(CupertinoIcons.xmark_circle, color: Color(0xFFEA580C), size: 20),
+                                const Icon(CupertinoIcons.xmark_circle,
+                                    color: Color(0xFFEA580C), size: 20),
                             ],
                           ),
                         ),
@@ -214,9 +249,14 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isCorrect ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
+                      color: isCorrect
+                          ? const Color(0xFFF0FDF4)
+                          : const Color(0xFFFFF7ED),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isCorrect ? const Color(0xFFBBF7D0) : const Color(0xFFFED7AA)),
+                      border: Border.all(
+                          color: isCorrect
+                              ? const Color(0xFFBBF7D0)
+                              : const Color(0xFFFED7AA)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,8 +264,12 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                         Row(
                           children: <Widget>[
                             Icon(
-                              isCorrect ? CupertinoIcons.checkmark_circle : CupertinoIcons.xmark_circle,
-                              color: isCorrect ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
+                              isCorrect
+                                  ? CupertinoIcons.checkmark_circle
+                                  : CupertinoIcons.xmark_circle,
+                              color: isCorrect
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFFEA580C),
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -233,7 +277,9 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                               isCorrect ? '回答正确' : '回答错误',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isCorrect ? const Color(0xFF166534) : const Color(0xFF9A3412),
+                                color: isCorrect
+                                    ? const Color(0xFF166534)
+                                    : const Color(0xFF9A3412),
                               ),
                             ),
                           ],
@@ -241,13 +287,15 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                         const SizedBox(height: 12),
                         MathContentView(
                           '正确答案：${exercise.answer}',
-                          style: TextStyle(fontSize: 15, color: Colors.grey.shade800),
+                          style: TextStyle(
+                              fontSize: 15, color: Colors.grey.shade800),
                         ),
                         if (exercise.explanation.isNotEmpty) ...<Widget>[
                           const SizedBox(height: 8),
                           MathContentView(
                             exercise.explanation,
-                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey.shade600),
                           ),
                         ],
                       ],
@@ -269,15 +317,21 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                           setState(() => _index++);
                         }
                       },
-                      icon: Icon(isLast ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.arrow_right),
+                      icon: Icon(isLast
+                          ? CupertinoIcons.checkmark_circle_fill
+                          : CupertinoIcons.arrow_right),
                       label: Text(isLast ? '完成练习' : '下一题'),
-                      style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+                      style: FilledButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48)),
                     )
                   : _isJudging
                       ? const Center(child: CircularProgressIndicator())
                       : FilledButton.icon(
-                          onPressed: exercise.userAnswer != null ? () => _submitAnswer(exercises, _index) : null,
-                          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+                          onPressed: exercise.userAnswer != null
+                              ? () => _submitAnswer(exercises, _index)
+                              : null,
+                          style: FilledButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 48)),
                           icon: const Icon(CupertinoIcons.checkmark),
                           label: const Text('提交答案'),
                         ),
@@ -286,6 +340,21 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
         ],
       ),
     );
+  }
+
+  List<GeneratedExercise> _practiceExercises(
+    QuestionRecord current,
+    PracticeContext? practiceContext,
+  ) {
+    final candidateId = practiceContext?.candidateId;
+    if (candidateId == null) return current.savedExercises;
+
+    for (final candidate in current.candidateAnalyses) {
+      if (candidate.candidateId == candidateId) {
+        return candidate.savedExercises;
+      }
+    }
+    return current.savedExercises;
   }
 
   Color _difficultyColor(String difficulty) {
@@ -306,9 +375,12 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
   }
 
   _ParsedOption _parseOption(String option) {
-    final match = RegExp(r'^\s*([A-Za-z])\s*[\.、:：\)]\s*(.*)$', dotAll: true).firstMatch(option);
+    final match = RegExp(r'^\s*([A-Za-z])\s*[\.、:：\)]\s*(.*)$', dotAll: true)
+        .firstMatch(option);
     if (match == null) {
-      final fallbackLabel = option.trim().isNotEmpty ? option.trim().substring(0, 1).toUpperCase() : '?';
+      final fallbackLabel = option.trim().isNotEmpty
+          ? option.trim().substring(0, 1).toUpperCase()
+          : '?';
       return _ParsedOption(label: fallbackLabel, content: option.trim());
     }
 
@@ -320,7 +392,8 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
 
   void _selectOption(String optionLetter) {
     setState(() {
-      _exercises![_index] = _exercises![_index].copyWith(userAnswer: optionLetter);
+      _exercises![_index] =
+          _exercises![_index].copyWith(userAnswer: optionLetter);
     });
   }
 
@@ -348,7 +421,10 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
       final settingsRepo = ref.read(settingsRepositoryProvider);
       final config = await settingsRepo.getAiProviderConfig();
 
-      if (config == null || config.baseUrl.isEmpty || config.apiKey.isEmpty || config.model.isEmpty) {
+      if (config == null ||
+          config.baseUrl.isEmpty ||
+          config.apiKey.isEmpty ||
+          config.model.isEmpty) {
         return exercise.userAnswer == exercise.answer;
       }
 
@@ -361,23 +437,52 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
       );
       return isCorrect;
     } catch (e) {
-      debugPrint('[ExercisePractice] AI judgment failed: $e, fallback to direct compare');
+      debugPrint(
+          '[ExercisePractice] AI judgment failed: $e, fallback to direct compare');
       return exercise.userAnswer == exercise.answer;
     }
   }
 
-  Future<void> _finish(QuestionRecord question, List<GeneratedExercise> exercises) async {
-    final updated = question.copyWith(savedExercises: exercises);
-    await ref.read(questionRepositoryProvider).update(updated);
-    invalidateQuestionList(ref);
-    ref.read(currentQuestionProvider.notifier).state = updated;
+  Future<void> _finish(
+      QuestionRecord question, List<GeneratedExercise> exercises) async {
+    final practiceContext = ref.read(currentPracticeContextProvider);
+    final updated = practiceContext?.source == PracticeContextSource.analysis
+        ? _updateAnalysisPracticeState(question, exercises, practiceContext)
+        : question.copyWith(savedExercises: exercises);
+
+    if (practiceContext?.source == PracticeContextSource.analysis) {
+      ref.read(currentQuestionProvider.notifier).state = updated;
+    } else {
+      await ref.read(questionRepositoryProvider).update(updated);
+      invalidateQuestionList(ref);
+      ref.read(currentQuestionProvider.notifier).state = updated;
+      ref.read(currentPracticeContextProvider.notifier).state = null;
+    }
 
     if (!mounted) return;
     final correctCount = exercises.where((e) => e.isCorrect == true).length;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('练习完成：${exercises.length} 题中答对 $correctCount 题')),
     );
-    context.go('/notebook');
+    context.go(practiceContext?.returnRoute ?? '/notebook');
+  }
+
+  QuestionRecord _updateAnalysisPracticeState(
+    QuestionRecord question,
+    List<GeneratedExercise> exercises,
+    PracticeContext? practiceContext,
+  ) {
+    final candidateId = practiceContext?.candidateId;
+    if (candidateId == null || question.candidateAnalyses.isEmpty) {
+      return question.copyWith(savedExercises: exercises);
+    }
+
+    return question.copyWith(
+      candidateAnalyses: question.candidateAnalyses.map((candidate) {
+        if (candidate.candidateId != candidateId) return candidate;
+        return candidate.copyWith(savedExercises: exercises);
+      }).toList(),
+    );
   }
 }
 

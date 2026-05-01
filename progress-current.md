@@ -1,51 +1,40 @@
-# 2026-04-30 工作进度
+# 2026-05-01 工作进度
 
 ## Done
 
-### 1. 四层 LaTeX 渲染体系
-- Layer 0: System Prompt 补强 ✅
-- Layer 1: flutter_math_fork ✅
-- Layer 2: KaTeX WebView（已创建，暂时禁用性能问题）
-- Layer 3: 纯文本 fallback ✅
+### 1. P0：多题保存逻辑修正
+- 新增练习上下文，区分 AI 解析页练习和错题详情练习。
+- AI 解析页进入举一反三后，完成练习只更新内存并返回解析页，不再自动写入错题本。
+- 错题详情进入举一反三仍保留持久化更新答题状态。
+- 多题 AI 解析页练习结果按当前 candidate 回写，避免整张图/整段 OCR 被混保存。
 
-### 2. Prompt 补强（ai_analysis_service.dart）
-- 明确 \pi、希腊字母、禁止方括号定界符
-- JSON 转义规则完善
-- generatedExercises 字段约束
+### 2. P0：四类页面信息结构统一
+- 单题/多题 AI 解析页统一为：标签信息 → 题号切换（多题）→ 原题区域 → 解析内容 → 举一反三/保存操作。
+- 单题/多题错题详情页统一为：标签信息 → 同批题目（多题）→ 原题区域 → 解析内容 → 举一反三/复习操作。
+- 移除重复题干展示。
+- 错题详情顶部移除重复知识点，知识点只保留在解析区。
 
-### 3. LaTeX 规范化修复
-- `_normalizeDoubleBackslashLatex`: 20+ LaTeX 命令 \\\\ → \
-- `_supportedLatexCommands`: 新增 `cases`, `aligned`
-- `_normalizeMathExpression`: 保留 begin/end/cases/aligned 不剥离
-- `_normalizeMathDelimiters`: 处理方括号包裹的方程组
+### 3. APK 打包
+- Release APK 构建成功。
+- APK 路径：`build/app/outputs/flutter-apk/1.0.0-20260501-1051.apk`
+- 原始 release 包：`build/app/outputs/flutter-apk/app-release.apk`
 
-### 4. KaTeX WebView 基础设施
-- katex_math_view.dart 已创建
-- assets/katex/ 资源文件已下载
-- WebView 复用控制器缓存已实现
+## Verification
+
+- `dart format`：已格式化修改过的 Dart 文件和相关测试。
+- `flutter test --reporter expanded`：129 个测试全部通过。
+- `flutter analyze`：仍有 111 个既有 info/lint，主要集中在 `ai_analysis_service.dart`、`math_content_view.dart` 和测试 const 提示；本次引入的 unused warning 已修复。
 
 ## Blockers
 
-### 1. 方程组渲染问题
-- JSON 格式：`[\\begin{cases} x+y=5 \\ x-y=1 \\ \\end{cases}]`
-- 方括号包裹 + 双反斜杠，需进一步调试
-
-### 2. 三角形渲染问题
-- `\triangle` 可能渲染失败
-
-### 3. 举一反三退化
-- 圆锥体积/立体几何题 → 一元一次方程
-- 需在 `_defaultGeneratedExercises` 中添加几何专用题
-
-### 4. KaTeX WebView 性能
-- 滑动卡顿，暂时禁用
-- 需优化后启用
-
-## 测试状态
-- 25 tests passed ✅
-- APK: ai-wrong-notebook-v50-20260430-1205.apk
+- 尚未完成真机测试，需要重点验证：
+  - 多题 AI 解析页练习完成后不自动保存。
+  - 保存仍进入拆题确认。
+  - 单题/多题页面题干和知识点不重复。
+  - 真机长题排版是否舒服。
+- 构建 APK 时有 MaterialIcons 字体提示：如果真机图标缺失，需要补 `uses-material-design: true`。
 
 ## Next First Step
-- 真机测试方程组和三角形渲染
-- 调试 `[\begin{cases}...]` 格式处理
-- 添加几何专用举一反三题
+
+- 在真机安装 `1.0.0-20260501-1051.apk`，按单题 AI 解析、多题 AI 解析、单题错题详情、多题错题详情四条路径做回归。
+- 真机确认 P0 稳定后，再开始 P1：举一反三多轮继续练习。

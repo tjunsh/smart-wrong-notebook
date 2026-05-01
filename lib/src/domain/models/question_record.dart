@@ -26,13 +26,16 @@ class CandidateAnalysisSnapshot {
       candidateId: json['candidateId'] as String? ?? '',
       order: json['order'] as int? ?? 0,
       questionText: json['questionText'] as String? ?? '',
-      analysisResult: analysisJson != null ? AnalysisResult.fromJson(analysisJson) : null,
+      analysisResult:
+          analysisJson != null ? AnalysisResult.fromJson(analysisJson) : null,
       savedExercises: exercisesJson
-          .map((item) => GeneratedExercise.fromJson(item as Map<String, dynamic>))
+          .map((item) =>
+              GeneratedExercise.fromJson(item as Map<String, dynamic>))
           .toList(),
       subject: _parseSubjectFromJson(json['subject'] as String?),
       aiTags: List<String>.from(json['aiTags'] as List? ?? const <String>[]),
-      aiKnowledgePoints: List<String>.from(json['aiKnowledgePoints'] as List? ?? const <String>[]),
+      aiKnowledgePoints: List<String>.from(
+          json['aiKnowledgePoints'] as List? ?? const <String>[]),
     );
   }
 
@@ -45,13 +48,36 @@ class CandidateAnalysisSnapshot {
   final List<String> aiTags;
   final List<String> aiKnowledgePoints;
 
+  CandidateAnalysisSnapshot copyWith({
+    String? candidateId,
+    int? order,
+    String? questionText,
+    AnalysisResult? analysisResult,
+    List<GeneratedExercise>? savedExercises,
+    Subject? subject,
+    List<String>? aiTags,
+    List<String>? aiKnowledgePoints,
+  }) {
+    return CandidateAnalysisSnapshot(
+      candidateId: candidateId ?? this.candidateId,
+      order: order ?? this.order,
+      questionText: questionText ?? this.questionText,
+      analysisResult: analysisResult ?? this.analysisResult,
+      savedExercises: savedExercises ?? this.savedExercises,
+      subject: subject ?? this.subject,
+      aiTags: aiTags ?? this.aiTags,
+      aiKnowledgePoints: aiKnowledgePoints ?? this.aiKnowledgePoints,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'candidateId': candidateId,
       'order': order,
       'questionText': questionText,
       'analysisResult': analysisResult?.toJson(),
-      'savedExercises': savedExercises.map((exercise) => exercise.toJson()).toList(),
+      'savedExercises':
+          savedExercises.map((exercise) => exercise.toJson()).toList(),
       'subject': subject?.name,
       'aiTags': aiTags,
       'aiKnowledgePoints': aiKnowledgePoints,
@@ -141,20 +167,28 @@ class QuestionRecord {
 
   factory QuestionRecord.fromJson(Map<String, dynamic> json) {
     final analysisResult = json['analysisResult'] != null
-        ? AnalysisResult.fromJson(json['analysisResult'] as Map<String, dynamic>)
+        ? AnalysisResult.fromJson(
+            json['analysisResult'] as Map<String, dynamic>)
         : null;
 
     final savedExercisesJson = json['savedExercises'] as List?;
-    final legacyExercisesJson = (json['analysisResult'] as Map<String, dynamic>?)?['generatedExercises'] as List?;
-    final extractedQuestionText = json['extractedQuestionText'] as String? ?? json['recognizedText'] as String? ?? '';
-    final normalizedQuestionText = json['normalizedQuestionText'] as String? ?? json['correctedText'] as String? ?? extractedQuestionText;
+    final legacyExercisesJson = (json['analysisResult']
+        as Map<String, dynamic>?)?['generatedExercises'] as List?;
+    final extractedQuestionText = json['extractedQuestionText'] as String? ??
+        json['recognizedText'] as String? ??
+        '';
+    final normalizedQuestionText = json['normalizedQuestionText'] as String? ??
+        json['correctedText'] as String? ??
+        extractedQuestionText;
     final formatName = json['contentFormat'] as String?;
     final splitResultJson = json['splitResult'] as Map<String, dynamic>?;
-    final candidateAnalysesJson = json['candidateAnalyses'] as List? ?? const <Object>[];
+    final candidateAnalysesJson =
+        json['candidateAnalyses'] as List? ?? const <Object>[];
 
-    final savedExercises = (savedExercisesJson ?? legacyExercisesJson ?? const [])
-        .map((e) => GeneratedExercise.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final savedExercises =
+        (savedExercisesJson ?? legacyExercisesJson ?? const [])
+            .map((e) => GeneratedExercise.fromJson(e as Map<String, dynamic>))
+            .toList();
 
     final id = json['id'] as String? ?? '';
 
@@ -172,8 +206,10 @@ class QuestionRecord {
         orElse: () => QuestionContentFormat.plain,
       ),
       tags: List<String>.from(json['tags'] as List? ?? []),
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
       lastReviewedAt: json['lastReviewedAt'] != null
           ? DateTime.tryParse(json['lastReviewedAt'] as String)
           : null,
@@ -192,16 +228,22 @@ class QuestionRecord {
           .asMap()
           .entries
           .map((entry) => entry.value.copyWith(
-                questionId: entry.value.questionId.isEmpty ? id : entry.value.questionId,
+                questionId: entry.value.questionId.isEmpty
+                    ? id
+                    : entry.value.questionId,
                 order: entry.value.order ?? entry.key,
               ))
           .toList(),
       aiTags: List<String>.from(json['aiTags'] as List? ?? []),
-      aiKnowledgePoints: List<String>.from(json['aiKnowledgePoints'] as List? ?? []),
+      aiKnowledgePoints:
+          List<String>.from(json['aiKnowledgePoints'] as List? ?? []),
       customTags: List<String>.from(json['customTags'] as List? ?? []),
-      splitResult: splitResultJson != null ? QuestionSplitResult.fromJson(splitResultJson) : null,
+      splitResult: splitResultJson != null
+          ? QuestionSplitResult.fromJson(splitResultJson)
+          : null,
       candidateAnalyses: candidateAnalysesJson
-          .map((item) => CandidateAnalysisSnapshot.fromJson(item as Map<String, dynamic>))
+          .map((item) =>
+              CandidateAnalysisSnapshot.fromJson(item as Map<String, dynamic>))
           .toList(),
       parentQuestionId: _nullableString(json['parentQuestionId']),
       rootQuestionId: _nullableString(json['rootQuestionId']),
@@ -228,12 +270,14 @@ class QuestionRecord {
       'contentStatus': contentStatus.name,
       'masteryLevel': masteryLevel.name,
       'analysisResult': analysisResult?.toJson(),
-      'savedExercises': savedExercises.map((exercise) => exercise.toJson()).toList(),
+      'savedExercises':
+          savedExercises.map((exercise) => exercise.toJson()).toList(),
       'aiTags': aiTags,
       'aiKnowledgePoints': aiKnowledgePoints,
       'customTags': customTags,
       'splitResult': splitResult?.toJson(),
-      'candidateAnalyses': candidateAnalyses.map((candidate) => candidate.toJson()).toList(),
+      'candidateAnalyses':
+          candidateAnalyses.map((candidate) => candidate.toJson()).toList(),
       'parentQuestionId': parentQuestionId,
       'rootQuestionId': rootQuestionId,
       'splitOrder': splitOrder,
@@ -296,8 +340,10 @@ class QuestionRecord {
       id: id,
       imagePath: imagePath,
       subject: subject ?? this.subject,
-      extractedQuestionText: extractedQuestionText ?? this.extractedQuestionText,
-      normalizedQuestionText: normalizedQuestionText ?? this.normalizedQuestionText,
+      extractedQuestionText:
+          extractedQuestionText ?? this.extractedQuestionText,
+      normalizedQuestionText:
+          normalizedQuestionText ?? this.normalizedQuestionText,
       contentFormat: contentFormat ?? this.contentFormat,
       tags: tags ?? this.tags,
       createdAt: createdAt,

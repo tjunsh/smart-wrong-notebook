@@ -62,7 +62,7 @@ class QuestionDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: <Widget>[
-          // 统一标签分类框：科目 | AI识别 | 状态 | 知识点
+          // 统一标签分类框：科目 | AI识别 | 状态
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -118,25 +118,6 @@ class QuestionDetailScreen extends ConsumerWidget {
                     children: current.aiTags
                         .map((tag) => _TagChip(
                               label: tag,
-                              bgColor: const Color(0xFFFFF7ED),
-                              textColor: const Color(0xFFD97706),
-                            ))
-                        .toList(),
-                  ),
-                ],
-                // AI 知识点（橙色，详细）
-                if (current.aiKnowledgePoints.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 8),
-                  Text('知识点',
-                      style:
-                          TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: current.aiKnowledgePoints
-                        .map((kp) => _MathTagChip(
-                              label: kp,
                               bgColor: const Color(0xFFFFF7ED),
                               textColor: const Color(0xFFD97706),
                             ))
@@ -203,12 +184,6 @@ class QuestionDetailScreen extends ConsumerWidget {
               },
             ),
           ],
-          const SizedBox(height: 12),
-          MathContentView(
-            current.correctedText,
-            contentFormat: current.contentFormat,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
           if (result == null) ...<Widget>[
             const SizedBox(height: 20),
             Container(
@@ -282,6 +257,12 @@ class QuestionDetailScreen extends ConsumerWidget {
                       onPressed: current.savedExercises.isEmpty
                           ? null
                           : () {
+                              ref
+                                  .read(currentPracticeContextProvider.notifier)
+                                  .state = PracticeContext(
+                                source: PracticeContextSource.notebook,
+                                returnRoute: '/notebook/question/${current.id}',
+                              );
                               ref.read(currentQuestionProvider.notifier).state =
                                   current;
                               context.go('/exercise/practice');
@@ -368,16 +349,13 @@ class QuestionDetailScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  if (batchGroup == null) ...<Widget>[
-                    if (current.imagePath.isNotEmpty)
-                      const SizedBox(height: 10),
-                    MathContentView(
-                      current.correctedText,
-                      contentFormat: current.contentFormat,
-                      style: const TextStyle(
-                          fontSize: 14, color: Color(0xFF3730A3)),
-                    ),
-                  ],
+                  if (current.imagePath.isNotEmpty) const SizedBox(height: 10),
+                  MathContentView(
+                    current.correctedText,
+                    contentFormat: current.contentFormat,
+                    style: const TextStyle(
+                        fontSize: 14, color: Color(0xFF3730A3), height: 1.5),
+                  ),
                 ],
               ),
             ),
@@ -864,31 +842,6 @@ class _TagChip extends StatelessWidget {
       child: Text(label,
           style: TextStyle(
               fontSize: 12, color: textColor, fontWeight: FontWeight.w500)),
-    );
-  }
-}
-
-class _MathTagChip extends StatelessWidget {
-  const _MathTagChip(
-      {required this.label, required this.bgColor, required this.textColor});
-
-  final String label;
-  final Color bgColor;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: MathContentView(
-        label,
-        style: TextStyle(
-            fontSize: 12, color: textColor, fontWeight: FontWeight.w500),
-      ),
     );
   }
 }

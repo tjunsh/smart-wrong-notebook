@@ -163,7 +163,7 @@ void main() {
     await tester.tap(find.text('第 2 题'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('当前预览'), findsOneWidget);
+    expect(find.text('题号切换'), findsOneWidget);
     expect(find.text('2. 第二题'), findsWidgets);
     await tester.drag(find.byType(ListView), const Offset(0, -900));
     await tester.pumpAndSettle();
@@ -447,9 +447,10 @@ void main() {
     expect(find.textContaining('tri'), findsNothing);
     expect(find.textContaining('x = 3，y = 2'), findsNothing);
 
-    await tester.ensureVisible(find.text('拆题预览'));
+    await tester.ensureVisible(find.text('题号切换'));
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(-320, 0));
+    await tester.drag(
+        find.byType(SingleChildScrollView).first, const Offset(-320, 0));
     await tester.pumpAndSettle();
     await tester.tap(find.text('第 4 题'));
     await tester.pumpAndSettle();
@@ -458,9 +459,10 @@ void main() {
     expect(find.textContaining('x = 3，y = 2'), findsOneWidget);
     expect(find.textContaining('x = 2 或 x = -2'), findsNothing);
 
-    await tester.ensureVisible(find.text('拆题预览'));
+    await tester.ensureVisible(find.text('题号切换'));
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(-320, 0));
+    await tester.drag(
+        find.byType(SingleChildScrollView).first, const Offset(-320, 0));
     await tester.pumpAndSettle();
     await tester.tap(find.text('第 6 题'));
     await tester.pumpAndSettle();

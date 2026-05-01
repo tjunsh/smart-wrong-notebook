@@ -78,6 +78,25 @@ final Provider<CaptureService> captureServiceProvider =
 final StateProvider<QuestionRecord?> currentQuestionProvider =
     StateProvider<QuestionRecord?>((ref) => null);
 
+enum PracticeContextSource { analysis, notebook }
+
+class PracticeContext {
+  const PracticeContext({
+    required this.source,
+    this.candidateId,
+    this.candidateOrder,
+    required this.returnRoute,
+  });
+
+  final PracticeContextSource source;
+  final String? candidateId;
+  final int? candidateOrder;
+  final String returnRoute;
+}
+
+final StateProvider<PracticeContext?> currentPracticeContextProvider =
+    StateProvider<PracticeContext?>((ref) => null);
+
 final StateProvider<QuestionSplitSession?> currentQuestionSplitSessionProvider =
     StateProvider<QuestionSplitSession?>((ref) => null);
 

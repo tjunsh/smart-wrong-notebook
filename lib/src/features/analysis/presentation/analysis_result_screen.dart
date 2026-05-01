@@ -196,73 +196,28 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
               iconColor: const Color(0xFF7C3AED),
               bg: const Color(0xFFF5F3FF),
               border: const Color(0xFFDDD6FE),
-              title: '拆题预览',
+              title: '题号切换',
               titleColor: const Color(0xFF6D28D9),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children:
-                          splitResult!.candidates.asMap().entries.map((entry) {
-                        final candidate = entry.value;
-                        final isActive = entry.key == safeCandidateIndex;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text('第 ${candidate.order} 题'),
-                            selected: isActive,
-                            onSelected: (_) {
-                              setState(() => _activeCandidateIndex = entry.key);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE9D5FF)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          '当前预览',
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade700),
-                        ),
-                        const SizedBox(height: 8),
-                        MathContentView(
-                          activeCandidate?.text ?? '',
-                          contentFormat: QuestionContentFormat.latexMixed,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF374151),
-                              height: 1.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children:
+                      splitResult!.candidates.asMap().entries.map((entry) {
+                    final candidate = entry.value;
+                    final isActive = entry.key == safeCandidateIndex;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text('第 ${candidate.order} 题'),
+                        selected: isActive,
+                        onSelected: (_) {
+                          setState(() => _activeCandidateIndex = entry.key);
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
-          ],
-          if (!(record.splitResult?.hasMultipleCandidates ??
-              false)) ...<Widget>[
-            const SizedBox(height: 12),
-            MathContentView(
-              displayQuestionText,
-              contentFormat: record.contentFormat,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ],
           if (displayResult == null) ...<Widget>[
@@ -284,7 +239,6 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  // 图片预览
                   if (File(record.imagePath).existsSync())
                     GestureDetector(
                       onTap: () => _showFullImage(context, record.imagePath),
@@ -332,16 +286,16 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                         ),
                       ),
                     ),
-                  if (!hasMultipleCandidates) ...<Widget>[
-                    if (File(record.imagePath).existsSync())
-                      const SizedBox(height: 10),
-                    MathContentView(
-                      displayQuestionText,
-                      contentFormat: record.contentFormat,
-                      style: const TextStyle(
-                          fontSize: 14, color: Color(0xFF3730A3)),
-                    ),
-                  ],
+                  if (File(record.imagePath).existsSync())
+                    const SizedBox(height: 10),
+                  MathContentView(
+                    displayQuestionText,
+                    contentFormat: hasMultipleCandidates
+                        ? QuestionContentFormat.latexMixed
+                        : record.contentFormat,
+                    style: const TextStyle(
+                        fontSize: 14, color: Color(0xFF3730A3), height: 1.5),
+                  ),
                 ],
               ),
             ),
@@ -593,10 +547,8 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
               children: <Widget>[
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-                      ref.read(currentQuestionProvider.notifier).state = record;
-                      context.go('/exercise/practice');
-                    },
+                    onPressed: () =>
+                        _startPractice(record, activeCandidateAnalysis),
                     child: const Text('开始练习'),
                   ),
                 ),
@@ -623,6 +575,20 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
         ],
       ),
     );
+  }
+
+  void _startPractice(
+    QuestionRecord record,
+    CandidateAnalysisSnapshot? activeCandidateAnalysis,
+  ) {
+    ref.read(currentPracticeContextProvider.notifier).state = PracticeContext(
+      source: PracticeContextSource.analysis,
+      candidateId: activeCandidateAnalysis?.candidateId,
+      candidateOrder: activeCandidateAnalysis?.order,
+      returnRoute: '/analysis/result',
+    );
+    ref.read(currentQuestionProvider.notifier).state = record;
+    context.go('/exercise/practice');
   }
 
   String _candidateInsight({
