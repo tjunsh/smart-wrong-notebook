@@ -28,62 +28,49 @@ class DataManagementScreen extends ConsumerWidget {
         data: (questions) => ListView(
           padding: const EdgeInsets.all(16),
           children: <Widget>[
-            Card(
-              child: ListTile(
-                leading: const Icon(CupertinoIcons.tray),
-                title: const Text('题库总量'),
-                trailing: Text('${questions.length} 题',
-                    style: Theme.of(context).textTheme.titleMedium),
-              ),
+            _DataCard(
+              icon: CupertinoIcons.tray,
+              title: '题库总量',
+              trailing: '${questions.length} 题',
             ),
             const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(CupertinoIcons.clock),
-                title: const Text('复习记录总量'),
-                trailing: reviewLogsAsync.when(
-                  data: (logs) => Text('${logs.length} 条',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  loading: () => const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2)),
-                  error: (_, __) => const Text('加载失败'),
-                ),
+            _DataCard(
+              icon: CupertinoIcons.clock,
+              title: '复习记录总量',
+              trailingWidget: reviewLogsAsync.when(
+                data: (logs) =>
+                    Text('${logs.length} 条', style: _trailingStyle(context)),
+                loading: () => const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2)),
+                error: (_, __) => Text('加载失败', style: _subtitleStyle(context)),
               ),
             ),
             const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: const Icon(CupertinoIcons.arrow_up),
-                title: const Text('导入错题'),
-                subtitle: const Text('从 JSON 文件导入错题记录'),
-                trailing: const Icon(CupertinoIcons.chevron_right),
-                onTap: () => _importQuestions(context, ref),
-              ),
+            _DataCard(
+              icon: CupertinoIcons.arrow_up,
+              title: '导入错题',
+              subtitle: '从 JSON 文件导入错题记录',
+              onTap: () => _importQuestions(context, ref),
             ),
             const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(CupertinoIcons.arrow_down),
-                title: const Text('导出当前题库'),
-                subtitle: const Text('导出所有错题为 JSON 文件，可分享'),
-                trailing: const Icon(CupertinoIcons.chevron_right),
-                onTap: questions.isEmpty
-                    ? null
-                    : () => _exportQuestions(context, questions),
-              ),
+            _DataCard(
+              icon: CupertinoIcons.arrow_down,
+              title: '导出当前题库',
+              subtitle: '导出所有错题为 JSON 文件，可分享',
+              onTap: questions.isEmpty
+                  ? null
+                  : () => _exportQuestions(context, questions),
             ),
             const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(CupertinoIcons.trash, color: Colors.red),
-                title:
-                    const Text('清空所有数据', style: TextStyle(color: Colors.red)),
-                subtitle: const Text('删除所有错题和复习记录，不可恢复'),
-                trailing: const Icon(CupertinoIcons.chevron_right),
-                onTap: () => _confirmClearAll(context, ref, questions.length),
-              ),
+            _DataCard(
+              icon: CupertinoIcons.trash,
+              iconColor: Colors.red,
+              title: '清空所有数据',
+              titleColor: Colors.red,
+              subtitle: '删除所有错题和复习记录，不可恢复',
+              onTap: () => _confirmClearAll(context, ref, questions.length),
             ),
           ],
         ),
@@ -218,4 +205,96 @@ class DataManagementScreen extends ConsumerWidget {
       );
     }
   }
+}
+
+class _DataCard extends StatelessWidget {
+  const _DataCard({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.trailingWidget,
+    this.iconColor,
+    this.titleColor,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final String? trailing;
+  final Widget? trailingWidget;
+  final Color? iconColor;
+  final Color? titleColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final effectiveIconColor = iconColor ?? colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: colorScheme.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Row(
+            children: <Widget>[
+              Icon(icon, size: 24, color: effectiveIconColor),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(title, style: _titleStyle(context, color: titleColor)),
+                    if (subtitle != null) ...<Widget>[
+                      const SizedBox(height: 4),
+                      Text(subtitle!, style: _subtitleStyle(context)),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailingWidget != null)
+                trailingWidget!
+              else if (trailing != null)
+                Text(trailing!, style: _trailingStyle(context))
+              else if (onTap != null)
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 22,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+TextStyle _titleStyle(BuildContext context, {Color? color}) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: color ?? colorScheme.onSurface);
+}
+
+TextStyle _subtitleStyle(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return TextStyle(
+      fontSize: 12, color: colorScheme.onSurfaceVariant, height: 1.35);
+}
+
+TextStyle _trailingStyle(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return TextStyle(
+      fontSize: 16, fontWeight: FontWeight.w600, color: colorScheme.onSurface);
 }

@@ -227,7 +227,11 @@ void main() {
     await tester.tap(find.text('完成练习'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('第一题：已知 x+1=3，求 x'));
+    final updated = (await repository.getById('q-batch-1'))!;
+    container.read(currentQuestionProvider.notifier).state = updated;
+    container.read(currentPracticeContextProvider.notifier).state = null;
+
+    router.go('/notebook/question/q-batch-1');
     await tester.pumpAndSettle();
 
     expect(find.text('1/1 已答'), findsOneWidget);

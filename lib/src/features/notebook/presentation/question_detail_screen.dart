@@ -24,9 +24,11 @@ class QuestionDetailScreen extends ConsumerWidget {
     }
 
     final result = current.analysisResult;
-    final masteryColor = _masteryColor(current.masteryLevel);
+    final masteryColor = _masteryColor(context, current.masteryLevel);
     final batchGroups = ref.watch(questionBatchGroupsProvider).valueOrNull;
     final batchGroup = batchGroups?[questionBatchRootId(current)];
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -66,9 +68,9 @@ class QuestionDetailScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,8 +111,10 @@ class QuestionDetailScreen extends ConsumerWidget {
                 if (current.aiTags.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 10),
                   Text('AI标签',
-                      style:
-                          TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
@@ -128,8 +132,10 @@ class QuestionDetailScreen extends ConsumerWidget {
                 if (current.customTags.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 8),
                   Text('自定义标签',
-                      style:
-                          TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
@@ -151,21 +157,29 @@ class QuestionDetailScreen extends ConsumerWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: Colors.grey.shade300,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant
+                              .withValues(alpha: 0.5),
                           style: BorderStyle.solid),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Icon(CupertinoIcons.plus,
-                            size: 14, color: Colors.grey.shade500),
+                            size: 14,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant),
                         const SizedBox(width: 4),
                         Text('添加标签',
                             style: TextStyle(
-                                fontSize: 12, color: Colors.grey.shade500)),
+                                fontSize: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant)),
                       ],
                     ),
                   ),
@@ -189,14 +203,19 @@ class QuestionDetailScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Column(
                 children: <Widget>[
                   Icon(CupertinoIcons.sparkles,
-                      size: 40, color: Colors.grey.shade300),
+                      size: 40,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
                   const Text('暂无 AI 解析结果', style: TextStyle(fontSize: 15)),
                   const SizedBox(height: 8),
@@ -215,66 +234,7 @@ class QuestionDetailScreen extends ConsumerWidget {
           ],
           if (result != null) ...<Widget>[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      const Icon(CupertinoIcons.arrow_2_circlepath,
-                          size: 18, color: Color(0xFF6366F1)),
-                      const SizedBox(width: 8),
-                      const Text('举一反三',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w600)),
-                      const Spacer(),
-                      Text(
-                        current.savedExercises.isEmpty
-                            ? '暂无练习'
-                            : '${current.savedExercises.where((e) => e.isCorrect != null).length}/${current.savedExercises.length} 已答',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade500),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    current.savedExercises.isEmpty
-                        ? '这道错题还没有可继续的练习题。'
-                        : '继续基于这道原题完成练习，已作答状态会保留。',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: current.savedExercises.isEmpty
-                          ? null
-                          : () {
-                              ref
-                                  .read(currentPracticeContextProvider.notifier)
-                                  .state = PracticeContext(
-                                source: PracticeContextSource.notebook,
-                                returnRoute: '/notebook/question/${current.id}',
-                              );
-                              ref.read(currentQuestionProvider.notifier).state =
-                                  current;
-                              context.go('/exercise/practice');
-                            },
-                      icon: const Icon(CupertinoIcons.play_fill),
-                      label: Text(
-                          current.savedExercises.isEmpty ? '暂无可练习内容' : '继续练习'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _PracticeSummaryCard(current: current),
             const SizedBox(height: 20),
             // 原题（包含图片和文本）
             _InfoCard(
@@ -294,7 +254,9 @@ class QuestionDetailScreen extends ConsumerWidget {
                       child: Container(
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Stack(
@@ -306,16 +268,18 @@ class QuestionDetailScreen extends ConsumerWidget {
                                 width: double.infinity,
                                 height: 120,
                                 fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Center(
+                                errorBuilder: (_, __, ___) => Center(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: <Widget>[
                                       Icon(CupertinoIcons.photo,
-                                          size: 30, color: Colors.grey),
-                                      SizedBox(height: 4),
+                                          size: 30,
+                                          color: colorScheme.onSurfaceVariant),
+                                      const SizedBox(height: 4),
                                       Text('图片加载失败',
                                           style: TextStyle(
-                                              color: Colors.grey,
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
                                               fontSize: 11)),
                                     ],
                                   ),
@@ -329,7 +293,7 @@ class QuestionDetailScreen extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 6, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: Colors.black54,
+                                  color: Colors.black.withValues(alpha: 0.58),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Row(
@@ -353,8 +317,10 @@ class QuestionDetailScreen extends ConsumerWidget {
                   MathContentView(
                     current.correctedText,
                     contentFormat: current.contentFormat,
-                    style: const TextStyle(
-                        fontSize: 14, color: Color(0xFF3730A3), height: 1.5),
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.5),
                   ),
                 ],
               ),
@@ -370,7 +336,12 @@ class QuestionDetailScreen extends ConsumerWidget {
               titleColor: const Color(0xFF166534),
               child: MathContentView(
                 result.finalAnswer,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF15803D)),
+                style: TextStyle(
+                    fontSize: 14,
+                    color: isDark
+                        ? colorScheme.onSurface
+                        : const Color(0xFF15803D),
+                    fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(height: 10),
@@ -384,7 +355,12 @@ class QuestionDetailScreen extends ConsumerWidget {
               titleColor: const Color(0xFF9A3412),
               child: MathContentView(
                 result.mistakeReason,
-                style: const TextStyle(fontSize: 14, color: Color(0xFFC2410C)),
+                style: TextStyle(
+                    fontSize: 14,
+                    color: isDark
+                        ? colorScheme.onSurface
+                        : const Color(0xFFC2410C),
+                    height: 1.5),
               ),
             ),
             const SizedBox(height: 10),
@@ -398,7 +374,12 @@ class QuestionDetailScreen extends ConsumerWidget {
               titleColor: const Color(0xFF92400E),
               child: MathContentView(
                 result.studyAdvice,
-                style: const TextStyle(fontSize: 14, color: Color(0xFFB45309)),
+                style: TextStyle(
+                    fontSize: 14,
+                    color: isDark
+                        ? colorScheme.onSurface
+                        : const Color(0xFFB45309),
+                    height: 1.5),
               ),
             ),
             // Knowledge points
@@ -418,14 +399,24 @@ class QuestionDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFC7D2FE)),
+                            color: isDark
+                                ? colorScheme.surface
+                                : const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isDark
+                                  ? colorScheme.outlineVariant
+                                  : const Color(0xFFC7D2FE),
+                            ),
                           ),
                           child: MathContentView(
                             p,
-                            style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF4F46E5)),
+                            style: TextStyle(
+                                fontSize: 12,
+                                height: 1.45,
+                                color: isDark
+                                    ? colorScheme.onSurface
+                                    : const Color(0xFF4F46E5)),
                           ),
                         ))
                     .toList(),
@@ -449,20 +440,27 @@ class QuestionDetailScreen extends ConsumerWidget {
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
+                            color: isDark
+                                ? colorScheme.primary.withValues(alpha: 0.14)
+                                : const Color(0xFFEEF2FF),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(
                               child: Text('${e.key + 1}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF4F46E5)))),
+                                      color: isDark
+                                          ? colorScheme.primary
+                                          : const Color(0xFF4F46E5)))),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                             child: MathContentView(e.value,
-                                style: const TextStyle(fontSize: 14))),
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    color: colorScheme.onSurface,
+                                    height: 1.5))),
                       ],
                     ),
                   )),
@@ -502,14 +500,15 @@ class QuestionDetailScreen extends ConsumerWidget {
     }
   }
 
-  Color _masteryColor(MasteryLevel level) {
+  Color _masteryColor(BuildContext context, MasteryLevel level) {
+    final colorScheme = Theme.of(context).colorScheme;
     switch (level) {
       case MasteryLevel.newQuestion:
-        return Colors.grey;
+        return colorScheme.onSurfaceVariant;
       case MasteryLevel.reviewing:
-        return Colors.orange;
+        return const Color(0xFFD97706);
       case MasteryLevel.mastered:
-        return Colors.green;
+        return const Color(0xFF16A34A);
     }
   }
 
@@ -597,7 +596,9 @@ class QuestionDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text('已有标签',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 4),
             Wrap(
               spacing: 6,
@@ -655,7 +656,7 @@ class QuestionDetailScreen extends ConsumerWidget {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, color: color)),
+      child: Text(label, style: TextStyle(fontSize: 12, color: color)),
     );
   }
 
@@ -697,6 +698,91 @@ class QuestionDetailScreen extends ConsumerWidget {
   }
 }
 
+class _PracticeSummaryCard extends ConsumerWidget {
+  const _PracticeSummaryCard({required this.current});
+
+  final QuestionRecord current;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const accent = Color(0xFF6366F1);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: isDark ? 0.16 : 0.1),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: const Icon(CupertinoIcons.arrow_2_circlepath,
+                    size: 16, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Text('举一反三',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface)),
+              const Spacer(),
+              Text(
+                current.savedExercises.isEmpty
+                    ? '暂无练习'
+                    : '${current.savedExercises.where((e) => e.isCorrect != null).length}/${current.savedExercises.length} 已答',
+                style: TextStyle(
+                    fontSize: 12, color: colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            current.savedExercises.isEmpty
+                ? '这道错题还没有可继续的练习题。'
+                : '继续基于这道原题完成练习，已作答状态会保留。',
+            style: TextStyle(
+                fontSize: 14,
+                height: 1.45,
+                color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: current.savedExercises.isEmpty
+                  ? null
+                  : () {
+                      ref.read(currentPracticeContextProvider.notifier).state =
+                          PracticeContext(
+                        source: PracticeContextSource.notebook,
+                        returnRoute: '/notebook/question/${current.id}',
+                      );
+                      ref.read(currentQuestionProvider.notifier).state =
+                          current;
+                      context.go('/exercise/practice');
+                    },
+              icon: const Icon(CupertinoIcons.play_fill),
+              label: Text(current.savedExercises.isEmpty ? '暂无可练习内容' : '继续练习'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InfoCard extends StatelessWidget {
   const _InfoCard({
     required this.icon,
@@ -718,25 +804,39 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
+        color: isDark ? colorScheme.surface : bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? iconColor.withValues(alpha: 0.28) : border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(icon, size: 18, color: iconColor),
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? iconColor.withValues(alpha: 0.16) : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 15, color: iconColor),
+              ),
               const SizedBox(width: 8),
               Text(title,
                   style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: titleColor)),
+                      color: isDark ? colorScheme.onSurface : titleColor)),
             ],
           ),
           const SizedBox(height: 10),
@@ -757,12 +857,14 @@ class _BatchSiblingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,16 +872,17 @@ class _BatchSiblingCard extends StatelessWidget {
           Row(
             children: <Widget>[
               Icon(CupertinoIcons.square_grid_2x2,
-                  size: 16, color: Colors.grey.shade600),
+                  size: 16, color: colorScheme.onSurfaceVariant),
               const SizedBox(width: 6),
               Text('同批题目',
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700)),
+                      color: colorScheme.onSurfaceVariant)),
               const SizedBox(width: 6),
               Text('${group.questions.length} 题',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  style: TextStyle(
+                      fontSize: 12, color: colorScheme.onSurfaceVariant)),
             ],
           ),
           const SizedBox(height: 8),
@@ -794,18 +897,20 @@ class _BatchSiblingCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: selected ? const Color(0xFF6366F1) : Colors.white,
+                    color: selected ? colorScheme.primary : colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color: selected
-                            ? const Color(0xFF6366F1)
-                            : const Color(0xFFE2E8F0)),
+                            ? colorScheme.primary
+                            : colorScheme.outlineVariant),
                   ),
                   child: Text(
                     _siblingLabel(question),
                     style: TextStyle(
                         fontSize: 12,
-                        color: selected ? Colors.white : Colors.grey.shade700,
+                        color: selected
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -833,15 +938,25 @@ class _TagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
+        color: isDark ? textColor.withValues(alpha: 0.14) : bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark
+              ? textColor.withValues(alpha: 0.24)
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 12, color: textColor, fontWeight: FontWeight.w500)),
+              fontSize: 12,
+              color: isDark ? colorScheme.onSurface : textColor,
+              fontWeight: FontWeight.w500)),
     );
   }
 }

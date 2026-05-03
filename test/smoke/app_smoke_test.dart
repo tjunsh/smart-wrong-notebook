@@ -75,7 +75,10 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('深色模式'), findsOneWidget);
+      expect(find.text('外观'), findsOneWidget);
+      expect(find.text('系统'), findsOneWidget);
+      expect(find.text('浅色'), findsOneWidget);
+      expect(find.text('深色'), findsOneWidget);
       expect(find.text('复习提醒'), findsOneWidget);
       expect(find.text('AI 服务'), findsOneWidget);
       expect(find.text('内容'), findsOneWidget);

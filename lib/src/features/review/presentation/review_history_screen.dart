@@ -39,19 +39,27 @@ class ReviewHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildEntry(BuildContext context, WidgetRef ref, _ReviewEntry entry) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMastered = entry.log.masteryAfter == MasteryLevel.mastered;
+    final statusColor =
+        isMastered ? const Color(0xFF16A34A) : const Color(0xFFD97706);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: (isMastered ? Colors.green : Colors.orange)
-              .withValues(alpha: 0.1),
+          backgroundColor: statusColor.withValues(alpha: isDark ? 0.16 : 0.1),
           child: Icon(
             isMastered
                 ? CupertinoIcons.checkmark_circle
                 : CupertinoIcons.arrow_2_circlepath,
-            color: isMastered ? Colors.green : Colors.orange,
+            color: statusColor,
             size: 18,
           ),
         ),
@@ -60,6 +68,7 @@ class ReviewHistoryScreen extends ConsumerWidget {
                 '已删除',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 14),
               )
             : MathContentView(
                 entry.question!.correctedText,
@@ -67,18 +76,23 @@ class ReviewHistoryScreen extends ConsumerWidget {
                 mode: MathContentViewMode.compact,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14),
               ),
         subtitle: Text(
           '${_formatDate(entry.log.reviewedAt)} · ${_resultLabel(entry.log.result)}',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
         ),
         trailing: Chip(
           label: Text(_masteryLabel(entry.log.masteryAfter)),
-          backgroundColor: (isMastered ? Colors.green : Colors.orange)
-              .withValues(alpha: 0.1),
+          backgroundColor: statusColor.withValues(alpha: isDark ? 0.16 : 0.1),
           labelStyle: TextStyle(
-            fontSize: 11,
-            color: isMastered ? Colors.green : Colors.orange,
+            fontSize: 12,
+            color: isDark ? colorScheme.onSurface : statusColor,
+          ),
+          side: BorderSide(
+            color: isDark
+                ? statusColor.withValues(alpha: 0.24)
+                : colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
           visualDensity: VisualDensity.compact,
         ),
@@ -131,19 +145,25 @@ class ReviewHistoryScreen extends ConsumerWidget {
 class _EmptyHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(CupertinoIcons.clock, size: 64, color: Colors.grey.shade300),
+            Icon(CupertinoIcons.clock,
+                size: 64,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.45)),
             const SizedBox(height: 16),
-            const Text('暂无复习记录', style: TextStyle(fontSize: 16)),
+            const Text('暂无复习记录',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Text(
               '开始复习后在首页查看历史',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+              style:
+                  TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),

@@ -17,6 +17,10 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const orange = Color(0xFFEA580C);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -24,16 +28,20 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               '添加错题',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
             if (_isLoading)
@@ -43,7 +51,8 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
                   children: <Widget>[
                     const CircularProgressIndicator(),
                     const SizedBox(height: 16),
-                    Text('正在打开相机...', style: TextStyle(color: Colors.grey.shade600)),
+                    Text('正在打开相机...',
+                        style: TextStyle(color: colorScheme.onSurfaceVariant)),
                   ],
                 ),
               )
@@ -51,7 +60,9 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
               _EntryOption(
                 icon: CupertinoIcons.camera,
                 iconColor: const Color(0xFF6366F1),
-                iconBg: const Color(0xFFEEF2FF),
+                iconBg: isDark
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.16)
+                    : const Color(0xFFEEF2FF),
                 label: '拍照',
                 description: '使用相机拍摄错题',
                 onTap: () => _pickAndNavigate(fromCamera: true),
@@ -60,7 +71,9 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
               _EntryOption(
                 icon: CupertinoIcons.photo,
                 iconColor: const Color(0xFFD97706),
-                iconBg: const Color(0xFFFFFBEB),
+                iconBg: isDark
+                    ? const Color(0xFFD97706).withValues(alpha: 0.16)
+                    : const Color(0xFFFFFBEB),
                 label: '相册',
                 description: '从相册选择图片',
                 onTap: () => _pickAndNavigate(fromCamera: false),
@@ -71,16 +84,26 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
+                  color: isDark
+                      ? orange.withValues(alpha: 0.14)
+                      : const Color(0xFFFFF7ED),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFFED7AA)),
+                  border: Border.all(
+                      color: isDark
+                          ? orange.withValues(alpha: 0.35)
+                          : const Color(0xFFFED7AA)),
                 ),
                 child: Row(
                   children: <Widget>[
-                    const Icon(CupertinoIcons.exclamationmark_triangle, size: 18, color: Color(0xFFEA580C)),
+                    const Icon(CupertinoIcons.exclamationmark_triangle,
+                        size: 18, color: orange),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(_errorMessage!, style: const TextStyle(fontSize: 13, color: Color(0xFF9A3412))),
+                      child: Text(_errorMessage!,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  isDark ? orange : const Color(0xFF9A3412))),
                     ),
                     IconButton(
                       icon: const Icon(CupertinoIcons.xmark, size: 16),
@@ -102,8 +125,12 @@ class _CaptureEntrySheetState extends ConsumerState<CaptureEntrySheet> {
     final router = GoRouter.of(context);
 
     // 先检查 AI 是否已配置
-    final config = await ref.read(settingsRepositoryProvider).getAiProviderConfig();
-    if (config == null || config.baseUrl.isEmpty || config.apiKey.isEmpty || config.model.isEmpty) {
+    final config =
+        await ref.read(settingsRepositoryProvider).getAiProviderConfig();
+    if (config == null ||
+        config.baseUrl.isEmpty ||
+        config.apiKey.isEmpty ||
+        config.model.isEmpty) {
       setState(() => _isLoading = false);
       setState(() => _errorMessage = '请先在设置中配置 AI 服务');
       return;
@@ -177,20 +204,23 @@ class _EntryOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Row(
           children: <Widget>[
             Container(
-              width: 44, height: 44,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: iconBg,
                 borderRadius: BorderRadius.circular(22),
@@ -202,13 +232,21 @@ class _EntryOption extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  Text(label,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface)),
                   const SizedBox(height: 2),
-                  Text(description, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  Text(description,
+                      style: TextStyle(
+                          fontSize: 12, color: colorScheme.onSurfaceVariant)),
                 ],
               ),
             ),
-            Icon(CupertinoIcons.chevron_right, size: 22, color: Colors.grey.shade300),
+            Icon(CupertinoIcons.chevron_right,
+                size: 22,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
           ],
         ),
       ),

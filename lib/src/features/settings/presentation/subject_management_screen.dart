@@ -14,22 +14,47 @@ class SubjectManagementScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('科目管理'),
-        leading: IconButton(icon: const Icon(CupertinoIcons.chevron_left), onPressed: () => Navigator.of(context).pop()),
+        leading: IconButton(
+            icon: const Icon(CupertinoIcons.chevron_left),
+            onPressed: () => Navigator.of(context).pop()),
       ),
       body: questionsAsync.when(
-        data: (questions) => ListView.separated(
+        data: (questions) => ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: Subject.values.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (context, index) {
+            final colorScheme = Theme.of(context).colorScheme;
             final subject = Subject.values[index];
             final count = questions.where((q) => q.subject == subject).length;
-            return ListTile(
-              leading: const Icon(CupertinoIcons.book),
-              title: Text(subject.label),
-              trailing: Text(
-                '$count 题',
-                style: TextStyle(color: count > 0 ? Colors.grey.shade600 : Colors.grey.shade400),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                ),
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: subject.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Icon(subject.icon, size: 18, color: subject.color),
+                  ),
+                  title: Text(subject.label,
+                      style: TextStyle(
+                          fontSize: 14, color: colorScheme.onSurface)),
+                  trailing: Text(
+                    '$count 题',
+                    style: TextStyle(
+                        fontSize: 12, color: colorScheme.onSurfaceVariant),
+                  ),
+                ),
               ),
             );
           },

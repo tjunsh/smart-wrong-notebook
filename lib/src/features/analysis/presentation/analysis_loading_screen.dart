@@ -86,7 +86,8 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
 
       var working = current;
       final shouldAnalyzeImageDirectly = _shouldAnalyzeImageDirectly(working);
-      if (working.normalizedQuestionText.isEmpty && !shouldAnalyzeImageDirectly) {
+      if (working.normalizedQuestionText.isEmpty &&
+          !shouldAnalyzeImageDirectly) {
         final extraction = await service.extractQuestionStructure(
           subjectName: working.subject.name,
           imagePath: working.imagePath,
@@ -188,10 +189,13 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
   bool _shouldAnalyzeImageDirectly(QuestionRecord question) {
     final subject = question.subject;
     final text = question.correctedText.trim();
-    if (subject == Subject.english || subject == Subject.chinese ||
-        subject == Subject.history || subject == Subject.geography ||
+    if (subject == Subject.english ||
+        subject == Subject.chinese ||
+        subject == Subject.history ||
+        subject == Subject.geography ||
         subject == Subject.politics) {
-      return text.isEmpty || isCompositeLanguageWorksheet(text, subject: subject);
+      return text.isEmpty ||
+          isCompositeLanguageWorksheet(text, subject: subject);
     }
     return false;
   }
@@ -236,7 +240,9 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF7ED),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFFEA580C).withValues(alpha: 0.16)
+                    : const Color(0xFFFFF7ED),
                 borderRadius: BorderRadius.circular(32),
               ),
               child: const Icon(
@@ -255,9 +261,10 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,7 +349,9 @@ class _LoadingViewState extends State<_LoadingView>
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: const Color(0xFFEEF2FF),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.18)
+                    : const Color(0xFFEEF2FF),
                 borderRadius: BorderRadius.circular(44),
               ),
               child: AnimatedBuilder(
@@ -369,7 +378,9 @@ class _LoadingViewState extends State<_LoadingView>
               widget.progressText != null
                   ? '多题并行分析中，请稍候...'
                   : 'AI 正在生成学习分析，请稍候...',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),

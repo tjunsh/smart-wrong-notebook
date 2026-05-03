@@ -30,7 +30,9 @@ class StatsBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxY = [mastered, reviewing, newQ].reduce((a, b) => a > b ? a : b).toDouble();
+    final colorScheme = Theme.of(context).colorScheme;
+    final maxY =
+        [mastered, reviewing, newQ].reduce((a, b) => a > b ? a : b).toDouble();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +70,7 @@ class StatsBarChart extends StatelessWidget {
                           _labels[level]!,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey.shade600,
+                            color: colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -77,9 +79,12 @@ class StatsBarChart extends StatelessWidget {
                     reservedSize: 32,
                   ),
                 ),
-                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               gridData: const FlGridData(show: false),
               borderData: FlBorderData(show: false),
@@ -91,7 +96,8 @@ class StatsBarChart extends StatelessWidget {
                       toY: newQ.toDouble(),
                       color: _colors[MasteryLevel.newQuestion],
                       width: 28,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(6)),
                     ),
                   ],
                 ),
@@ -102,7 +108,8 @@ class StatsBarChart extends StatelessWidget {
                       toY: reviewing.toDouble(),
                       color: _colors[MasteryLevel.reviewing],
                       width: 28,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(6)),
                     ),
                   ],
                 ),
@@ -113,7 +120,8 @@ class StatsBarChart extends StatelessWidget {
                       toY: mastered.toDouble(),
                       color: _colors[MasteryLevel.mastered],
                       width: 28,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(6)),
                     ),
                   ],
                 ),
@@ -124,11 +132,16 @@ class StatsBarChart extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: <Widget>[
-            _LegendDot(color: _colors[MasteryLevel.newQuestion]!, label: '新增 ($newQ)'),
+            _LegendDot(
+                color: _colors[MasteryLevel.newQuestion]!, label: '新增 ($newQ)'),
             const SizedBox(width: 16),
-            _LegendDot(color: _colors[MasteryLevel.reviewing]!, label: '复习中 ($reviewing)'),
+            _LegendDot(
+                color: _colors[MasteryLevel.reviewing]!,
+                label: '复习中 ($reviewing)'),
             const SizedBox(width: 16),
-            _LegendDot(color: _colors[MasteryLevel.mastered]!, label: '已掌握 ($mastered)'),
+            _LegendDot(
+                color: _colors[MasteryLevel.mastered]!,
+                label: '已掌握 ($mastered)'),
           ],
         ),
       ],
@@ -144,15 +157,22 @@ class _LegendDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
-          width: 10, height: 10,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(5)),
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+              color: color, borderRadius: BorderRadius.circular(5)),
         ),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+        ),
       ],
     );
   }
@@ -176,23 +196,70 @@ class StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: <Widget>[
         Row(
           children: <Widget>[
-            Expanded(child: _StatCard(label: '题库总量', value: '$total', bg: const Color(0xFFEFF6FF), border: const Color(0xFFBFDBFE), text: const Color(0xFF2563EB))),
+            Expanded(
+                child: _StatCard(
+                    label: '题库总量',
+                    value: '$total',
+                    bg: const Color(0xFFEFF6FF),
+                    darkBg: const Color(0xFF2563EB).withValues(alpha: 0.14),
+                    border: const Color(0xFFBFDBFE),
+                    darkBorder: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                    text: const Color(0xFF2563EB))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: '待复习', value: '$due', bg: const Color(0xFFFFF7ED), border: const Color(0xFFFED7AA), text: const Color(0xFFEA580C))),
+            Expanded(
+                child: _StatCard(
+                    label: '待复习',
+                    value: '$due',
+                    bg: const Color(0xFFFFF7ED),
+                    darkBg: const Color(0xFFEA580C).withValues(alpha: 0.14),
+                    border: const Color(0xFFFED7AA),
+                    darkBorder: const Color(0xFFEA580C).withValues(alpha: 0.35),
+                    text: const Color(0xFFEA580C))),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: <Widget>[
-            Expanded(child: _StatCard(label: '已掌握', value: '$mastered', bg: const Color(0xFFF0FDF4), border: const Color(0xFFBBF7D0), text: const Color(0xFF16A34A))),
+            Expanded(
+                child: _StatCard(
+                    label: '已掌握',
+                    value: '$mastered',
+                    bg: const Color(0xFFF0FDF4),
+                    darkBg: const Color(0xFF16A34A).withValues(alpha: 0.14),
+                    border: const Color(0xFFBBF7D0),
+                    darkBorder: const Color(0xFF16A34A).withValues(alpha: 0.35),
+                    text: const Color(0xFF16A34A))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: '复习中', value: '$reviewing', bg: const Color(0xFFFEF3C7), border: const Color(0xFFFDE68A), text: const Color(0xFFD97706))),
+            Expanded(
+                child: _StatCard(
+                    label: '复习中',
+                    value: '$reviewing',
+                    bg: const Color(0xFFFEF3C7),
+                    darkBg: const Color(0xFFD97706).withValues(alpha: 0.14),
+                    border: const Color(0xFFFDE68A),
+                    darkBorder: const Color(0xFFD97706).withValues(alpha: 0.35),
+                    text: const Color(0xFFD97706))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: '新增', value: '$newQ', bg: const Color(0xFFF9FAFB), border: const Color(0xFFE5E7EB), text: const Color(0xFF6B7280))),
+            Expanded(
+                child: _StatCard(
+                    label: '新增',
+                    value: '$newQ',
+                    bg: const Color(0xFFF9FAFB),
+                    darkBg:
+                        colorScheme.onSurfaceVariant.withValues(alpha: 0.12),
+                    border: const Color(0xFFE5E7EB),
+                    darkBorder:
+                        colorScheme.onSurfaceVariant.withValues(alpha: 0.28),
+                    text: isDark
+                        ? colorScheme.onSurfaceVariant
+                        : const Color(0xFF6B7280))),
           ],
         ),
       ],
@@ -201,26 +268,40 @@ class StatsGrid extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value, required this.bg, required this.border, required this.text});
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.bg,
+    required this.darkBg,
+    required this.border,
+    required this.darkBorder,
+    required this.text,
+  });
 
   final String label;
   final String value;
   final Color bg;
+  final Color darkBg;
   final Color border;
+  final Color darkBorder;
   final Color text;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: bg,
+        color: isDark ? darkBg : bg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: border),
+        border: Border.all(color: isDark ? darkBorder : border),
       ),
       child: Column(
         children: <Widget>[
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: text)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold, color: text)),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(fontSize: 11, color: text)),
         ],

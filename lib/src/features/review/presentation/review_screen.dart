@@ -21,6 +21,8 @@ class ReviewScreen extends ConsumerWidget {
       logRepository: ref.read(reviewLogRepositoryProvider),
     );
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('复习')),
       body: ListView(
@@ -51,8 +53,10 @@ class ReviewScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               dueAsync.when(
                 data: (questions) => Text('${questions.length}道错题等待巩固',
-                    style:
-                        TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    )),
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
               ),
@@ -98,19 +102,23 @@ class ReviewScreen extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Row(
                 children: <Widget>[
                   Icon(CupertinoIcons.clock,
-                      size: 20, color: Colors.grey.shade600),
+                      size: 20, color: colorScheme.onSurfaceVariant),
                   const SizedBox(width: 12),
-                  const Expanded(
-                      child: Text('复习记录', style: TextStyle(fontSize: 15))),
+                  Expanded(
+                      child: Text('复习记录',
+                          style: TextStyle(
+                              fontSize: 14, color: colorScheme.onSurface))),
                   Icon(CupertinoIcons.chevron_right,
-                      size: 22, color: Colors.grey.shade300),
+                      size: 22,
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.65)),
                 ],
               ),
             ),
@@ -131,12 +139,14 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,20 +160,26 @@ class _SummaryCard extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.w600)),
               const Spacer(),
               Text('共 $total 题',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  style: TextStyle(
+                      fontSize: 12, color: colorScheme.onSurfaceVariant)),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
-              _MiniStat(value: '$mastered', label: '已掌握', color: Colors.green),
               _MiniStat(
-                  value: '$reviewing', label: '复习中', color: Colors.orange),
+                  value: '$mastered',
+                  label: '已掌握',
+                  color: const Color(0xFF16A34A)),
+              _MiniStat(
+                  value: '$reviewing',
+                  label: '复习中',
+                  color: const Color(0xFFD97706)),
               _MiniStat(
                   value: '${total - mastered - reviewing}',
                   label: '新增',
-                  color: Colors.grey),
+                  color: colorScheme.onSurfaceVariant),
             ],
           ),
         ],
@@ -182,6 +198,8 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: <Widget>[
         Text(value,
@@ -189,7 +207,8 @@ class _MiniStat extends StatelessWidget {
                 fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         const SizedBox(height: 2),
         Text(label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            style:
+                TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
       ],
     );
   }
@@ -198,21 +217,30 @@ class _MiniStat extends StatelessWidget {
 class _EmptyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const green = Color(0xFF16A34A);
+
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
+        color: isDark ? green.withValues(alpha: 0.12) : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFBBF7D0)),
+        border: Border.all(
+            color: isDark
+                ? green.withValues(alpha: 0.35)
+                : const Color(0xFFBBF7D0)),
       ),
       child: Column(
         children: <Widget>[
-          Icon(CupertinoIcons.star, size: 48, color: Colors.green.shade300),
+          Icon(CupertinoIcons.star,
+              size: 48, color: green.withValues(alpha: 0.65)),
           const SizedBox(height: 12),
           const Text('太棒了！',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 4),
-          Text('暂无待复习错题', style: TextStyle(color: Colors.grey.shade600)),
+          Text('暂无待复习错题',
+              style: TextStyle(color: colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -257,14 +285,15 @@ String _masteryLabel(MasteryLevel level) {
   }
 }
 
-Color _masteryColor(MasteryLevel level) {
+Color _masteryColor(BuildContext context, MasteryLevel level) {
+  final colorScheme = Theme.of(context).colorScheme;
   switch (level) {
     case MasteryLevel.newQuestion:
-      return Colors.grey;
+      return colorScheme.onSurfaceVariant;
     case MasteryLevel.reviewing:
-      return Colors.orange;
+      return const Color(0xFFD97706);
     case MasteryLevel.mastered:
-      return Colors.green;
+      return const Color(0xFF16A34A);
   }
 }
 
@@ -275,11 +304,13 @@ class _MasteryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _masteryColor(level);
+    final color = _masteryColor(context, level);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: isDark ? 0.16 : 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -307,14 +338,17 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Column(
           children: <Widget>[
@@ -351,7 +385,8 @@ class _ReviewCard extends StatelessWidget {
                           Text(
                             batchLabel!,
                             style: TextStyle(
-                                fontSize: 11, color: Colors.grey.shade500),
+                                fontSize: 11,
+                                color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                         const SizedBox(height: 4),
@@ -366,28 +401,43 @@ class _ReviewCard extends StatelessWidget {
                                   fontSize: 12, color: question.subject.color),
                             ),
                             _MasteryChip(level: question.masteryLevel),
-                            ...question.aiTags.take(3).map((tag) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF7ED),
-                                    borderRadius: BorderRadius.circular(4),
+                            ...question.aiTags.take(3).map((tag) {
+                              const tagColor = Color(0xFFD97706);
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? tagColor.withValues(alpha: 0.14)
+                                      : const Color(0xFFFFF7ED),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? tagColor.withValues(alpha: 0.22)
+                                        : colorScheme.outlineVariant
+                                            .withValues(alpha: 0.5),
                                   ),
-                                  child: MathContentView(
-                                    tag,
-                                    mode: MathContentViewMode.compact,
-                                    style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Color(0xFFD97706)),
-                                  ),
-                                )),
+                                ),
+                                child: MathContentView(
+                                  tag,
+                                  mode: MathContentViewMode.compact,
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark
+                                          ? colorScheme.onSurface
+                                          : tagColor),
+                                ),
+                              );
+                            }),
                           ],
                         ),
                       ],
                     ),
                   ),
                   Icon(CupertinoIcons.chevron_right,
-                      color: Colors.grey.shade300, size: 22),
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
+                      size: 22),
                 ],
               ),
             ),

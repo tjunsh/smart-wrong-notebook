@@ -32,7 +32,15 @@ class QuestionCorrectionScreen extends ConsumerWidget {
                       child: Image.file(File(imagePath), fit: BoxFit.contain),
                     ),
                   )
-                : const Center(child: Text('未选择图片', style: TextStyle(color: Colors.grey))),
+                : Center(
+                    child: Text(
+                      '未选择图片',
+                      style: TextStyle(
+                          fontSize: 14,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ),
           ),
         ],
       ),

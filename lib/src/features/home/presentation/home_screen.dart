@@ -23,7 +23,10 @@ class HomeScreen extends ConsumerWidget {
         children: <Widget>[
           Text(
             '开始拍错题',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -33,12 +36,14 @@ class HomeScreen extends ConsumerWidget {
             ),
             icon: const Icon(CupertinoIcons.camera),
             label: const Text('拍照录题'),
-            style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52)),
+            style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 52)),
           ),
           const SizedBox(height: 20),
           dueAsync.when(
             data: (due) => due.isNotEmpty
-                ? _ReviewBanner(count: due.length, onTap: () => context.go('/review'))
+                ? _ReviewBanner(
+                    count: due.length, onTap: () => context.go('/review'))
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
@@ -48,7 +53,8 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           RepaintBoundary(
             child: questionsAsync.when(
-              data: (questions) => _buildStatsSection(context, questions, dueAsync),
+              data: (questions) =>
+                  _buildStatsSection(context, questions, dueAsync),
               loading: () => const _StatsGridSkeleton(),
               error: (e, _) => Text('加载失败: $e'),
             ),
@@ -66,7 +72,8 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           questionsAsync.when(
-            data: (questions) => _RecentList(questions: questions.take(5).toList(), ref: ref),
+            data: (questions) =>
+                _RecentList(questions: questions.take(5).toList(), ref: ref),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('加载失败: $e'),
           ),
@@ -75,31 +82,55 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsSection(BuildContext context, List<QuestionRecord> questions, AsyncValue<List<QuestionRecord>> dueAsync) {
+  Widget _buildStatsSection(
+      BuildContext context,
+      List<QuestionRecord> questions,
+      AsyncValue<List<QuestionRecord>> dueAsync) {
+    final colorScheme = Theme.of(context).colorScheme;
     final total = questions.length;
-    final mastered = questions.where((q) => q.masteryLevel == MasteryLevel.mastered).length;
-    final reviewing = questions.where((q) => q.masteryLevel == MasteryLevel.reviewing).length;
-    final newQ = questions.where((q) => q.masteryLevel == MasteryLevel.newQuestion).length;
+    final mastered =
+        questions.where((q) => q.masteryLevel == MasteryLevel.mastered).length;
+    final reviewing =
+        questions.where((q) => q.masteryLevel == MasteryLevel.reviewing).length;
+    final newQ = questions
+        .where((q) => q.masteryLevel == MasteryLevel.newQuestion)
+        .length;
     final due = dueAsync.valueOrNull?.length ?? 0;
 
     return Column(
       children: <Widget>[
-        StatsGrid(total: total, mastered: mastered, reviewing: reviewing, newQ: newQ, due: due),
+        StatsGrid(
+            total: total,
+            mastered: mastered,
+            reviewing: reviewing,
+            newQ: newQ,
+            due: due),
         if (total > 0) ...<Widget>[
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('掌握进度', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+                Text(
+                  '掌握进度',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                StatsBarChart(total: total, mastered: mastered, reviewing: reviewing, newQ: newQ),
+                StatsBarChart(
+                    total: total,
+                    mastered: mastered,
+                    reviewing: reviewing,
+                    newQ: newQ),
               ],
             ),
           ),
@@ -141,10 +172,12 @@ class _StatCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 70,
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(10),
       ),
     );
@@ -159,19 +192,24 @@ class _RecentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (questions.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
-        child: const Column(
+        child: Column(
           children: <Widget>[
-            Icon(CupertinoIcons.question, size: 48, color: Colors.grey),
-            SizedBox(height: 12),
-            Text('暂无错题，拍照开始添加', style: TextStyle(color: Colors.grey)),
+            Icon(CupertinoIcons.question,
+                size: 48,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.45)),
+            const SizedBox(height: 12),
+            Text('暂无错题，拍照开始添加',
+                style: TextStyle(color: colorScheme.onSurfaceVariant)),
           ],
         ),
       );
@@ -193,13 +231,16 @@ class _RecentList extends StatelessWidget {
 }
 
 class _RecentQuestionCard extends StatelessWidget {
-  const _RecentQuestionCard({super.key, required this.question, required this.onTap});
+  const _RecentQuestionCard(
+      {super.key, required this.question, required this.onTap});
 
   final QuestionRecord question;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final aiTags = question.aiTags;
     final customTags = question.customTags;
     final allTags = [...aiTags, ...customTags];
@@ -211,52 +252,78 @@ class _RecentQuestionCard extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colorScheme.outlineVariant),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             leading: Container(
-              width: 36, height: 36,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: question.subject.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Icon(question.subject.icon, size: 16, color: question.subject.color),
+              child: Icon(question.subject.icon,
+                  size: 16, color: question.subject.color),
             ),
             title: MathContentView(
               question.correctedText,
               contentFormat: question.contentFormat,
               mode: MathContentViewMode.compact,
               maxLines: 1,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface),
             ),
             subtitle: Row(
               children: <Widget>[
-                Text(question.subject.label, style: TextStyle(fontSize: 12, color: question.subject.color)),
+                Text(question.subject.label,
+                    style:
+                        TextStyle(fontSize: 12, color: question.subject.color)),
                 if (allTags.isNotEmpty) ...<Widget>[
                   const SizedBox(width: 8),
                   ...allTags.take(2).map((tag) {
                     final isAiTag = aiTags.contains(tag);
+                    final tagColor = isAiTag
+                        ? const Color(0xFFD97706)
+                        : const Color(0xFF4F46E5);
+                    final tagBackground = isDark
+                        ? tagColor.withValues(alpha: 0.14)
+                        : isAiTag
+                            ? const Color(0xFFFFF7ED)
+                            : const Color(0xFFEEF2FF);
                     return Container(
                       margin: const EdgeInsets.only(right: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isAiTag ? const Color(0xFFFFF7ED) : const Color(0xFFEEF2FF),
-                        borderRadius: BorderRadius.circular(2),
+                        color: tagBackground,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isDark
+                              ? tagColor.withValues(alpha: 0.22)
+                              : colorScheme.outlineVariant
+                                  .withValues(alpha: 0.5),
+                        ),
                       ),
                       child: MathContentView(
                         tag,
                         mode: MathContentViewMode.compact,
-                        style: TextStyle(fontSize: 10, color: isAiTag ? const Color(0xFFD97706) : const Color(0xFF4F46E5)),
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: isDark ? colorScheme.onSurface : tagColor),
                       ),
                     );
                   }),
                 ],
               ],
             ),
-            trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.grey),
+            trailing: Icon(CupertinoIcons.chevron_right,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.65)),
             onTap: onTap,
           ),
         ),
@@ -273,6 +340,10 @@ class _ReviewBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const orange = Color(0xFFF97316);
+
     return Semantics(
       button: true,
       label: '今日待复习 $count 道错题，点击进入复习',
@@ -282,28 +353,50 @@ class _ReviewBanner extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF7ED),
+            color: isDark
+                ? orange.withValues(alpha: 0.12)
+                : const Color(0xFFFFF7ED),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFED7AA)),
+            border: Border.all(
+                color: isDark
+                    ? orange.withValues(alpha: 0.35)
+                    : const Color(0xFFFED7AA)),
           ),
           child: Row(
             children: <Widget>[
               Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(color: const Color(0xFFFFEDD5), borderRadius: BorderRadius.circular(22)),
-                child: const Icon(CupertinoIcons.arrow_2_circlepath, color: Color(0xFFF97316), size: 22),
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? orange.withValues(alpha: 0.18)
+                      : const Color(0xFFFFEDD5),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: const Icon(CupertinoIcons.arrow_2_circlepath,
+                    color: Color(0xFFF97316), size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('今日待复习', style: Theme.of(context).textTheme.titleMedium),
-                    Text('$count 道错题等待巩固', style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
+                    Text('今日待复习',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface)),
+                    Text('$count 道错题等待巩固',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? colorScheme.onSurfaceVariant
+                                : const Color(0xFFC2410C))),
                   ],
                 ),
               ),
-              const Icon(CupertinoIcons.chevron_right, color: Color(0xFFF97316), size: 22),
+              const Icon(CupertinoIcons.chevron_right,
+                  color: Color(0xFFF97316), size: 22),
             ],
           ),
         ),

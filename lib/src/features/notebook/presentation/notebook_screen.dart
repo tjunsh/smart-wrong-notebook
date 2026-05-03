@@ -31,7 +31,8 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
         title: const Text('确认删除'),
         content: const Text('删除后无法恢复，确定要删除这道错题吗？'),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           TextButton(
             onPressed: () async {
               await ref.read(questionRepositoryProvider).delete(question.id);
@@ -47,10 +48,12 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final questionsAsync = ref.watch(filteredQuestionListProvider);
     final selectedSubject = ref.watch(selectedSubjectFilterProvider);
     final selectedMastery = ref.watch(selectedMasteryFilterProvider);
-    final selectedKnowledgePoint = ref.watch(selectedKnowledgePointFilterProvider);
+    final selectedKnowledgePoint =
+        ref.watch(selectedKnowledgePointFilterProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,18 +87,19 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
                     : null,
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: colorScheme.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+                  borderSide: BorderSide(color: colorScheme.outlineVariant),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+                  borderSide: BorderSide(color: colorScheme.outlineVariant),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
               ),
               onChanged: (v) {
@@ -112,24 +116,32 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
               children: <Widget>[
                 _Chip(
                   label: '全部',
-                  selected: selectedSubject == null && selectedMastery == null && selectedKnowledgePoint == null,
+                  selected: selectedSubject == null &&
+                      selectedMastery == null &&
+                      selectedKnowledgePoint == null,
                   onTap: () {
-                    ref.read(selectedSubjectFilterProvider.notifier).state = null;
-                    ref.read(selectedMasteryFilterProvider.notifier).state = null;
-                    ref.read(selectedKnowledgePointFilterProvider.notifier).state = null;
+                    ref.read(selectedSubjectFilterProvider.notifier).state =
+                        null;
+                    ref.read(selectedMasteryFilterProvider.notifier).state =
+                        null;
+                    ref
+                        .read(selectedKnowledgePointFilterProvider.notifier)
+                        .state = null;
                   },
                 ),
                 const SizedBox(width: 8),
                 ...Subject.values.map((s) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _Chip(
-                    label: s.label,
-                    selected: selectedSubject == s,
-                    onTap: () {
-                      ref.read(selectedSubjectFilterProvider.notifier).state = selectedSubject == s ? null : s;
-                    },
-                  ),
-                )),
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _Chip(
+                        label: s.label,
+                        selected: selectedSubject == s,
+                        onTap: () {
+                          ref
+                              .read(selectedSubjectFilterProvider.notifier)
+                              .state = selectedSubject == s ? null : s;
+                        },
+                      ),
+                    )),
                 // AI 知识点过滤
                 if (selectedKnowledgePoint != null) ...<Widget>[
                   const SizedBox(width: 8),
@@ -137,7 +149,9 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
                     label: '📚 $selectedKnowledgePoint',
                     selected: true,
                     onTap: () {
-                      ref.read(selectedKnowledgePointFilterProvider.notifier).state = null;
+                      ref
+                          .read(selectedKnowledgePointFilterProvider.notifier)
+                          .state = null;
                     },
                   ),
                 ],
@@ -154,11 +168,19 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Icon(CupertinoIcons.question, size: 64, color: Colors.grey.shade300),
+                        Icon(CupertinoIcons.question,
+                            size: 64,
+                            color: colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.45)),
                         const SizedBox(height: 16),
-                        const Text('暂无错题', style: TextStyle(fontSize: 16)),
+                        Text('暂无错题',
+                            style: TextStyle(
+                                fontSize: 16, color: colorScheme.onSurface)),
                         const SizedBox(height: 8),
-                        Text('点击 + 拍照添加', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                        Text('点击 + 拍照添加',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: colorScheme.onSurfaceVariant)),
                       ],
                     ),
                   );
@@ -168,7 +190,8 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
                     ref.invalidate(questionListProvider);
                   },
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                     itemCount: questions.length,
                     itemBuilder: (context, index) {
                       final q = questions[index];
@@ -176,12 +199,16 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
                         child: _QuestionCard(
                           question: q,
                           onTap: () {
-                            ref.read(currentQuestionProvider.notifier).state = q;
+                            ref.read(currentQuestionProvider.notifier).state =
+                                q;
                             context.go('/notebook/question/${q.id}');
                           },
                           onDelete: () => _confirmDelete(context, ref, q),
                           onKnowledgePointTap: (kp) {
-                            ref.read(selectedKnowledgePointFilterProvider.notifier).state = kp;
+                            ref
+                                .read(selectedKnowledgePointFilterProvider
+                                    .notifier)
+                                .state = kp;
                           },
                         ),
                       );
@@ -200,7 +227,8 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.selected, required this.onTap});
+  const _Chip(
+      {required this.label, required this.selected, required this.onTap});
 
   final String label;
   final bool selected;
@@ -208,19 +236,24 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? Theme.of(context).colorScheme.primary : Colors.grey.shade100,
+          color: selected
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13,
-            color: selected ? Colors.white : Colors.grey.shade700,
+            color:
+                selected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -243,7 +276,9 @@ class _QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final masteryColor = _masteryColor(question.masteryLevel);
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final masteryColor = _masteryColor(context, question.masteryLevel);
     final aiTags = question.aiTags ?? <String>[];
     final customTags = question.customTags ?? <String>[];
     final allTags = [...aiTags, ...customTags];
@@ -260,14 +295,16 @@ class _QuestionCard extends StatelessWidget {
         padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: Colors.red.shade50,
+          color:
+              isDark ? Colors.red.withValues(alpha: 0.14) : Colors.red.shade50,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Icon(CupertinoIcons.trash, color: Colors.red),
       ),
       child: Semantics(
         button: true,
-        label: '错题: ${question.correctedText}，科目: ${question.subject.label}，状态: ${_masteryLabel(question.masteryLevel)}，日期: ${_formatDate(question.createdAt)}，左滑删除',
+        label:
+            '错题: ${question.correctedText}，科目: ${question.subject.label}，状态: ${_masteryLabel(question.masteryLevel)}，日期: ${_formatDate(question.createdAt)}，左滑删除',
         child: Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: GestureDetector(
@@ -275,22 +312,30 @@ class _QuestionCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+                border: Border.all(color: colorScheme.outlineVariant),
+                boxShadow: [
+                  BoxShadow(
+                      color:
+                          Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2))
+                ],
               ),
               child: Row(
                 children: <Widget>[
                   Container(
-                    width: 44, height: 44,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       color: question.subject.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(22),
                     ),
                     child: Hero(
                       tag: 'subject_icon_${question.id}',
-                      child: Icon(question.subject.icon, size: 20, color: question.subject.color),
+                      child: Icon(question.subject.icon,
+                          size: 20, color: question.subject.color),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -307,7 +352,8 @@ class _QuestionCard extends StatelessWidget {
                               contentFormat: question.contentFormat,
                               mode: MathContentViewMode.compact,
                               maxLines: 1,
-                              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w500, fontSize: 14),
                             ),
                           ),
                         ),
@@ -316,18 +362,23 @@ class _QuestionCard extends StatelessWidget {
                           children: <Widget>[
                             Text(
                               '${question.subject.label} · ${_formatDate(question.createdAt)}',
-                              style: TextStyle(fontSize: 12, color: question.subject.color),
+                              style: TextStyle(
+                                  fontSize: 12, color: question.subject.color),
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: masteryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 _masteryLabel(question.masteryLevel),
-                                style: TextStyle(fontSize: 11, color: masteryColor, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: masteryColor,
+                                    fontWeight: FontWeight.w500),
                               ),
                             ),
                           ],
@@ -336,7 +387,9 @@ class _QuestionCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             _batchLabel(question)!,
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                         // AI 知识点标签（有颜色区分 AI 生成和手动）
@@ -347,20 +400,37 @@ class _QuestionCard extends StatelessWidget {
                             runSpacing: 4,
                             children: allTags.take(5).map((tag) {
                               final isAiTag = aiTags.contains(tag);
+                              final tagColor = isAiTag
+                                  ? const Color(0xFFD97706)
+                                  : const Color(0xFF4F46E5);
+                              final tagBackground = isDark
+                                  ? tagColor.withValues(alpha: 0.14)
+                                  : isAiTag
+                                      ? const Color(0xFFFFF7ED)
+                                      : const Color(0xFFEEF2FF);
                               return GestureDetector(
                                 onTap: () => onKnowledgePointTap(tag),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: isAiTag ? const Color(0xFFFFF7ED) : const Color(0xFFEEF2FF),
-                                    borderRadius: BorderRadius.circular(4),
+                                    color: tagBackground,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? tagColor.withValues(alpha: 0.22)
+                                          : colorScheme.outlineVariant
+                                              .withValues(alpha: 0.5),
+                                    ),
                                   ),
                                   child: MathContentView(
                                     tag,
                                     mode: MathContentViewMode.compact,
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: isAiTag ? const Color(0xFFD97706) : const Color(0xFF4F46E5),
+                                      color: isDark
+                                          ? colorScheme.onSurface
+                                          : tagColor,
                                     ),
                                   ),
                                 ),
@@ -371,7 +441,10 @@ class _QuestionCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(CupertinoIcons.chevron_right, color: Colors.grey.shade300, size: 22),
+                  Icon(CupertinoIcons.chevron_right,
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
+                      size: 22),
                 ],
               ),
             ),
@@ -390,24 +463,33 @@ class _QuestionCard extends StatelessWidget {
     return '${date.month}月${date.day}日';
   }
 
-  Color _masteryColor(MasteryLevel level) {
+  Color _masteryColor(BuildContext context, MasteryLevel level) {
+    final colorScheme = Theme.of(context).colorScheme;
     switch (level) {
-      case MasteryLevel.newQuestion: return Colors.grey;
-      case MasteryLevel.reviewing: return Colors.orange;
-      case MasteryLevel.mastered: return Colors.green;
+      case MasteryLevel.newQuestion:
+        return colorScheme.onSurfaceVariant;
+      case MasteryLevel.reviewing:
+        return const Color(0xFFD97706);
+      case MasteryLevel.mastered:
+        return const Color(0xFF16A34A);
     }
   }
 
   String _masteryLabel(MasteryLevel level) {
     switch (level) {
-      case MasteryLevel.newQuestion: return '新增';
-      case MasteryLevel.reviewing: return '复习中';
-      case MasteryLevel.mastered: return '已掌握';
+      case MasteryLevel.newQuestion:
+        return '新增';
+      case MasteryLevel.reviewing:
+        return '复习中';
+      case MasteryLevel.mastered:
+        return '已掌握';
     }
   }
 
   String? _batchLabel(QuestionRecord question) {
-    if (question.parentQuestionId == null && question.rootQuestionId == null) return null;
+    if (question.parentQuestionId == null && question.rootQuestionId == null) {
+      return null;
+    }
     final order = question.splitOrder;
     return order == null ? '来自同一拍照批次' : '来自同一拍照批次 · 第 $order 题';
   }

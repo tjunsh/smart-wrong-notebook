@@ -8,7 +8,8 @@ class ProviderConfigScreen extends ConsumerStatefulWidget {
   const ProviderConfigScreen({super.key});
 
   @override
-  ConsumerState<ProviderConfigScreen> createState() => _ProviderConfigScreenState();
+  ConsumerState<ProviderConfigScreen> createState() =>
+      _ProviderConfigScreenState();
 }
 
 class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
@@ -38,7 +39,8 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
 
   Future<void> _loadConfig() async {
     if (_loaded) return;
-    final config = await ref.read(settingsRepositoryProvider).getAiProviderConfig();
+    final config =
+        await ref.read(settingsRepositoryProvider).getAiProviderConfig();
     if (config != null && mounted) {
       _urlController.text = config.baseUrl;
       _modelController.text = config.model;
@@ -50,10 +52,21 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
   @override
   Widget build(BuildContext context) {
     _loadConfig();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final success = _testResult?.contains('成功') ?? false;
+    final statusColor =
+        success ? const Color(0xFF16A34A) : const Color(0xFFEA580C);
+    final statusBg =
+        success ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED);
+    final statusBorder =
+        success ? const Color(0xFFBBF7D0) : const Color(0xFFFED7AA);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI 服务配置'),
-        leading: IconButton(icon: const Icon(CupertinoIcons.chevron_left), onPressed: () => Navigator.of(context).pop()),
+        leading: IconButton(
+            icon: const Icon(CupertinoIcons.chevron_left),
+            onPressed: () => Navigator.of(context).pop()),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -63,7 +76,8 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
               controller: _urlController,
               decoration: const InputDecoration(
                 labelText: 'API 地址',
-                hintText: 'https://api.openai.com/v1 或 https://openrouter.ai/api/v1',
+                hintText:
+                    'https://api.openai.com/v1 或 https://openrouter.ai/api/v1',
               ),
             ),
             const SizedBox(height: 12),
@@ -89,16 +103,22 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
                 padding: const EdgeInsets.all(12),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: _testResult!.contains('成功') ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
+                  color:
+                      isDark ? statusColor.withValues(alpha: 0.14) : statusBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _testResult!.contains('成功') ? const Color(0xFFBBF7D0) : const Color(0xFFFED7AA)),
+                  border: Border.all(
+                      color: isDark
+                          ? statusColor.withValues(alpha: 0.35)
+                          : statusBorder),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Icon(
-                      _testResult!.contains('成功') ? CupertinoIcons.checkmark_circle : CupertinoIcons.exclamationmark_triangle,
-                      color: _testResult!.contains('成功') ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
+                      success
+                          ? CupertinoIcons.checkmark_circle
+                          : CupertinoIcons.exclamationmark_triangle,
+                      color: statusColor,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -106,8 +126,12 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
                       child: Text(
                         _testResult!,
                         style: TextStyle(
-                          fontSize: 13,
-                          color: _testResult!.contains('成功') ? const Color(0xFF166534) : const Color(0xFF9A3412),
+                          fontSize: 12,
+                          color: isDark
+                              ? statusColor
+                              : (success
+                                  ? const Color(0xFF166534)
+                                  : const Color(0xFF9A3412)),
                         ),
                       ),
                     ),
@@ -122,7 +146,10 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _testing ? null : _testConnection,
                     icon: _testing
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(CupertinoIcons.wifi, size: 18),
                     label: Text(_testing ? '测试中...' : '测试连接'),
                   ),
@@ -132,7 +159,10 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
                   child: FilledButton(
                     onPressed: _loading ? null : _save,
                     child: _loading
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Text('保存'),
                   ),
                 ),
@@ -159,7 +189,8 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
     await ref.read(settingsRepositoryProvider).saveAiProviderConfig(config);
     if (mounted) {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('配置已保存')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('配置已保存')));
     }
   }
 
@@ -172,7 +203,9 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       apiKey: _apiKeyController.text.trim(),
     );
 
-    if (config.baseUrl.isEmpty || config.model.isEmpty || config.apiKey.isEmpty) {
+    if (config.baseUrl.isEmpty ||
+        config.model.isEmpty ||
+        config.apiKey.isEmpty) {
       setState(() => _testResult = '请填写完整的配置信息');
       return;
     }
@@ -189,15 +222,18 @@ class _ProviderConfigScreenState extends ConsumerState<ProviderConfigScreen> {
       debugPrint('[ProviderConfig] Config saved successfully');
 
       // 立即读取验证
-      final savedConfig = await ref.read(settingsRepositoryProvider).getAiProviderConfig();
-      debugPrint('[ProviderConfig] Saved config: ${savedConfig?.baseUrl}, ${savedConfig?.model}');
+      final savedConfig =
+          await ref.read(settingsRepositoryProvider).getAiProviderConfig();
+      debugPrint(
+          '[ProviderConfig] Saved config: ${savedConfig?.baseUrl}, ${savedConfig?.model}');
 
       if (savedConfig == null) {
         setState(() => _testResult = '✗ 保存失败\n\n无法读取保存的配置，请重试');
         return;
       }
 
-      setState(() => _testResult = '配置已保存，正在连接 AI...\nURL: ${savedConfig.baseUrl}\n模型: ${savedConfig.model}');
+      setState(() => _testResult =
+          '配置已保存，正在连接 AI...\nURL: ${savedConfig.baseUrl}\n模型: ${savedConfig.model}');
 
       // 调用 AI 服务测试
       final service = ref.read(aiAnalysisServiceProvider);

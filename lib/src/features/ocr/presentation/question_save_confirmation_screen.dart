@@ -75,9 +75,11 @@ class _QuestionSaveConfirmationScreenState
                     width: double.infinity,
                     constraints: const BoxConstraints(maxHeight: 220),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -93,22 +95,28 @@ class _QuestionSaveConfirmationScreenState
                   width: double.infinity,
                   height: 160,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant),
                   ),
-                  child: const Center(
-                      child:
-                          Text('暂无图片', style: TextStyle(color: Colors.grey))),
+                  child: Center(
+                      child: Text('暂无图片',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant))),
                 ),
               const SizedBox(height: 16),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 child: Row(
                   children: <Widget>[
@@ -116,7 +124,9 @@ class _QuestionSaveConfirmationScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEEF2FF),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF4F46E5).withValues(alpha: 0.18)
+                            : const Color(0xFFEEF2FF),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -128,7 +138,7 @@ class _QuestionSaveConfirmationScreenState
                           Text(
                             current.subject.label,
                             style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 color: Color(0xFF4F46E5),
                                 fontWeight: FontWeight.w500),
                           ),
@@ -138,7 +148,10 @@ class _QuestionSaveConfirmationScreenState
                     const Spacer(),
                     Text('保存前可编辑',
                         style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade500)),
+                            fontSize: 12,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant)),
                   ],
                 ),
               ),
@@ -153,7 +166,9 @@ class _QuestionSaveConfirmationScreenState
               const SizedBox(height: 8),
               Text(
                 '保存到错题本前，确认结构化题目文本，方便后续检索、分类与继续练习。',
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -169,14 +184,16 @@ class _QuestionSaveConfirmationScreenState
                   hintText: '如果识别结果为空，可以手动补充题目内容',
                   errorText: _errorMessage,
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).colorScheme.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant),
                   ),
                 ),
               ),
@@ -276,9 +293,9 @@ class _FormulaPreviewCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,13 +305,15 @@ class _FormulaPreviewCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 8),
           trimmed.isEmpty
               ? Text('暂无可预览内容',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500))
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant))
               : MathContentView(trimmed, style: const TextStyle(fontSize: 14)),
         ],
       ),

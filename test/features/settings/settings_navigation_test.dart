@@ -15,24 +15,31 @@ class _OnboardingDoneSettings implements SettingsRepository {
   Future<void> saveAiProviderConfig(AiProviderConfig config) async {}
 
   @override
-  Future<String?> getString(String key) async => key == 'onboarding_done' ? 'true' : null;
+  Future<String?> getString(String key) async =>
+      key == 'onboarding_done' ? 'true' : null;
 
   @override
   Future<void> setString(String key, String value) async {}
 }
 
 void main() {
-  testWidgets('settings screen shows provider, subject, prompt, and data entries', (tester) async {
+  testWidgets(
+      'settings screen shows provider, subject, prompt, and data entries',
+      (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         settingsRepositoryProvider.overrideWithValue(_OnboardingDoneSettings()),
-        questionRepositoryProvider.overrideWithValue(InMemoryQuestionRepository()),
+        questionRepositoryProvider
+            .overrideWithValue(InMemoryQuestionRepository()),
       ],
       child: const MaterialApp(home: SettingsScreen()),
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('深色模式'), findsOneWidget);
+    expect(find.text('外观'), findsOneWidget);
+    expect(find.text('系统'), findsOneWidget);
+    expect(find.text('浅色'), findsOneWidget);
+    expect(find.text('深色'), findsOneWidget);
     expect(find.text('复习提醒'), findsOneWidget);
     expect(find.text('AI 服务'), findsOneWidget);
     expect(find.text('内容'), findsOneWidget);

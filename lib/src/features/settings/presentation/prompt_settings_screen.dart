@@ -7,7 +7,8 @@ class PromptSettingsScreen extends ConsumerStatefulWidget {
   const PromptSettingsScreen({super.key});
 
   @override
-  ConsumerState<PromptSettingsScreen> createState() => _PromptSettingsScreenState();
+  ConsumerState<PromptSettingsScreen> createState() =>
+      _PromptSettingsScreenState();
 }
 
 class _PromptSettingsScreenState extends ConsumerState<PromptSettingsScreen> {
@@ -29,7 +30,8 @@ class _PromptSettingsScreenState extends ConsumerState<PromptSettingsScreen> {
 
   Future<void> _load() async {
     if (_loaded) return;
-    final prompt = await ref.read(settingsRepositoryProvider).getString('system_prompt');
+    final prompt =
+        await ref.read(settingsRepositoryProvider).getString('system_prompt');
     if (mounted) {
       _systemPromptController.text = prompt ?? '';
       setState(() => _loaded = true);
@@ -38,30 +40,42 @@ class _PromptSettingsScreenState extends ConsumerState<PromptSettingsScreen> {
 
   Future<void> _save() async {
     setState(() => _loading = true);
-    await ref.read(settingsRepositoryProvider).setString('system_prompt', _systemPromptController.text);
+    await ref
+        .read(settingsRepositoryProvider)
+        .setString('system_prompt', _systemPromptController.text);
     if (mounted) {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('提示词已保存')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('提示词已保存')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     _load();
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('提示词设置'),
-        leading: IconButton(icon: const Icon(CupertinoIcons.chevron_left), onPressed: () => Navigator.of(context).pop()),
+        leading: IconButton(
+            icon: const Icon(CupertinoIcons.chevron_left),
+            onPressed: () => Navigator.of(context).pop()),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: <Widget>[
-            Text('自定义系统提示词', style: Theme.of(context).textTheme.titleSmall),
+            Text('自定义系统提示词',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             Text(
               '设置后 AI 将使用此提示词进行分析，为空则使用默认提示词',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style:
+                  TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -76,7 +90,10 @@ class _PromptSettingsScreenState extends ConsumerState<PromptSettingsScreen> {
             FilledButton(
               onPressed: _loading ? null : _save,
               child: _loading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('保存提示词'),
             ),
           ],
