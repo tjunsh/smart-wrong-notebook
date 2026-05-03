@@ -102,7 +102,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('今日待复习'), findsOneWidget);
+      expect(find.text('待复习 0'), findsOneWidget);
     });
 
     testWidgets('capture entry sheet has camera and gallery options',

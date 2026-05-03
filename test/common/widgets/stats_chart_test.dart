@@ -11,19 +11,18 @@ void main() {
           home: Scaffold(
             body: StatsGrid(
               total: 10,
+              todayNew: 2,
+              pending: 7,
               mastered: 3,
-              reviewing: 4,
-              newQ: 3,
-              due: 5,
             ),
           ),
         ),
       );
 
       expect(find.text('10'), findsOneWidget); // total
-      expect(find.text('5'), findsOneWidget); // due
-      expect(find.text('3'), findsNWidgets(2)); // mastered and newQ (value 3)
-      expect(find.text('4'), findsOneWidget); // reviewing
+      expect(find.text('2'), findsOneWidget); // today new
+      expect(find.text('7'), findsOneWidget); // pending
+      expect(find.text('3'), findsOneWidget); // mastered
     });
 
     testWidgets('displays all stat labels', (tester) async {
@@ -32,20 +31,18 @@ void main() {
           home: Scaffold(
             body: StatsGrid(
               total: 0,
+              todayNew: 0,
+              pending: 0,
               mastered: 0,
-              reviewing: 0,
-              newQ: 0,
-              due: 0,
             ),
           ),
         ),
       );
 
       expect(find.text('题库总量'), findsOneWidget);
+      expect(find.text('今日新增'), findsOneWidget);
       expect(find.text('待复习'), findsOneWidget);
       expect(find.text('已掌握'), findsOneWidget);
-      expect(find.text('复习中'), findsOneWidget);
-      expect(find.text('新增'), findsOneWidget);
     });
   });
 

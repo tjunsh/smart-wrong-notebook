@@ -64,7 +64,7 @@ void main() {
     testWidgets('shows empty state when no questions due', (tester) async {
       await _pumpReviewScreen(tester, InMemoryQuestionRepository());
 
-      expect(find.text('今日待复习'), findsOneWidget);
+      expect(find.text('待复习 0'), findsOneWidget);
       expect(find.text('暂无待复习错题'), findsOneWidget);
     });
 
@@ -77,6 +77,12 @@ void main() {
 
     testWidgets('shows history link', (tester) async {
       await _pumpReviewScreen(tester, InMemoryQuestionRepository());
+
+      await tester.scrollUntilVisible(
+        find.text('复习记录'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
 
       expect(find.text('复习记录'), findsOneWidget);
       expect(find.byIcon(CupertinoIcons.chevron_right), findsWidgets);
@@ -110,7 +116,7 @@ void main() {
       expect(find.text('来自同一拍照批次 · 第 2 题'), findsOneWidget);
     });
 
-    testWidgets('shows mastery status and quick action buttons',
+    testWidgets('shows mastery status without quick action buttons',
         (tester) async {
       final repository = InMemoryQuestionRepository();
       await repository.saveDrafts(<QuestionRecord>[
@@ -123,56 +129,10 @@ void main() {
 
       expect(find.text('新增题'), findsOneWidget);
       expect(find.text('复习题'), findsOneWidget);
-      expect(find.text('未复习'), findsOneWidget);
-      expect(find.text('复习中'), findsWidgets);
-      expect(find.text('仍需复习'), findsOneWidget);
-      expect(find.text('继续巩固'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, '已掌握'), findsNWidgets(2));
-    });
-
-    testWidgets('mark reviewing keeps question due and updates status',
-        (tester) async {
-      final repository = InMemoryQuestionRepository();
-      final reviewLogRepository = InMemoryReviewLogRepository();
-      await repository
-          .saveDraft(_reviewQuestion('q-1', text: '待巩固', reviewCount: 2));
-
-      await _pumpReviewScreen(tester, repository,
-          reviewLogRepository: reviewLogRepository);
-      await tester.tap(find.text('仍需复习'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('已标记为复习中'), findsOneWidget);
-      expect(find.text('待巩固'), findsOneWidget);
-      expect(find.text('复习中'), findsWidgets);
-      expect(find.text('继续巩固'), findsOneWidget);
-
-      final saved = await repository.getById('q-1');
-      expect(saved?.masteryLevel, MasteryLevel.reviewing);
-      expect(saved?.reviewCount, 3);
-      final logs = await reviewLogRepository.getByQuestionId('q-1');
-      expect(logs.single.result, 'reviewing');
-    });
-
-    testWidgets('mark mastered removes question from due list', (tester) async {
-      final repository = InMemoryQuestionRepository();
-      final reviewLogRepository = InMemoryReviewLogRepository();
-      await repository.saveDraft(_reviewQuestion('q-1', text: '可掌握'));
-
-      await _pumpReviewScreen(tester, repository,
-          reviewLogRepository: reviewLogRepository);
-      await tester.tap(find.widgetWithText(FilledButton, '已掌握'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('已标记为已掌握'), findsOneWidget);
-      expect(find.text('可掌握'), findsNothing);
-      expect(find.text('暂无待复习错题'), findsOneWidget);
-
-      final saved = await repository.getById('q-1');
-      expect(saved?.masteryLevel, MasteryLevel.mastered);
-      expect(saved?.reviewCount, 1);
-      final logs = await reviewLogRepository.getByQuestionId('q-1');
-      expect(logs.single.result, 'mastered');
+      expect(find.text('待复习'), findsWidgets);
+      expect(find.text('仍需复习'), findsNothing);
+      expect(find.text('继续巩固'), findsNothing);
+      expect(find.widgetWithText(FilledButton, '已掌握'), findsNothing);
     });
   });
 }

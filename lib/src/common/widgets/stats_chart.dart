@@ -182,17 +182,15 @@ class StatsGrid extends StatelessWidget {
   const StatsGrid({
     super.key,
     required this.total,
+    required this.todayNew,
+    required this.pending,
     required this.mastered,
-    required this.reviewing,
-    required this.newQ,
-    required this.due,
   });
 
   final int total;
+  final int todayNew;
+  final int pending;
   final int mastered;
-  final int reviewing;
-  final int newQ;
-  final int due;
 
   @override
   Widget build(BuildContext context) {
@@ -204,62 +202,59 @@ class StatsGrid extends StatelessWidget {
         Row(
           children: <Widget>[
             Expanded(
-                child: _StatCard(
-                    label: '题库总量',
-                    value: '$total',
-                    bg: const Color(0xFFEFF6FF),
-                    darkBg: const Color(0xFF2563EB).withValues(alpha: 0.14),
-                    border: const Color(0xFFBFDBFE),
-                    darkBorder: const Color(0xFF2563EB).withValues(alpha: 0.35),
-                    text: const Color(0xFF2563EB))),
+              child: _StatCard(
+                label: '题库总量',
+                value: '$total',
+                bg: const Color(0xFFEFF6FF),
+                darkBg: const Color(0xFF2563EB).withValues(alpha: 0.14),
+                border: const Color(0xFFBFDBFE),
+                darkBorder: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                text: const Color(0xFF2563EB),
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
-                child: _StatCard(
-                    label: '待复习',
-                    value: '$due',
-                    bg: const Color(0xFFFFF7ED),
-                    darkBg: const Color(0xFFEA580C).withValues(alpha: 0.14),
-                    border: const Color(0xFFFED7AA),
-                    darkBorder: const Color(0xFFEA580C).withValues(alpha: 0.35),
-                    text: const Color(0xFFEA580C))),
+              child: _StatCard(
+                label: '今日新增',
+                value: '$todayNew',
+                bg: const Color(0xFFF9FAFB),
+                darkBg: colorScheme.onSurfaceVariant.withValues(alpha: 0.12),
+                border: const Color(0xFFE5E7EB),
+                darkBorder:
+                    colorScheme.onSurfaceVariant.withValues(alpha: 0.28),
+                text: isDark
+                    ? colorScheme.onSurfaceVariant
+                    : const Color(0xFF6B7280),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: <Widget>[
             Expanded(
-                child: _StatCard(
-                    label: '已掌握',
-                    value: '$mastered',
-                    bg: const Color(0xFFF0FDF4),
-                    darkBg: const Color(0xFF16A34A).withValues(alpha: 0.14),
-                    border: const Color(0xFFBBF7D0),
-                    darkBorder: const Color(0xFF16A34A).withValues(alpha: 0.35),
-                    text: const Color(0xFF16A34A))),
+              child: _StatCard(
+                label: '已掌握',
+                value: '$mastered',
+                bg: const Color(0xFFF0FDF4),
+                darkBg: const Color(0xFF16A34A).withValues(alpha: 0.14),
+                border: const Color(0xFFBBF7D0),
+                darkBorder: const Color(0xFF16A34A).withValues(alpha: 0.35),
+                text: const Color(0xFF16A34A),
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
-                child: _StatCard(
-                    label: '复习中',
-                    value: '$reviewing',
-                    bg: const Color(0xFFFEF3C7),
-                    darkBg: const Color(0xFFD97706).withValues(alpha: 0.14),
-                    border: const Color(0xFFFDE68A),
-                    darkBorder: const Color(0xFFD97706).withValues(alpha: 0.35),
-                    text: const Color(0xFFD97706))),
-            const SizedBox(width: 12),
-            Expanded(
-                child: _StatCard(
-                    label: '新增',
-                    value: '$newQ',
-                    bg: const Color(0xFFF9FAFB),
-                    darkBg:
-                        colorScheme.onSurfaceVariant.withValues(alpha: 0.12),
-                    border: const Color(0xFFE5E7EB),
-                    darkBorder:
-                        colorScheme.onSurfaceVariant.withValues(alpha: 0.28),
-                    text: isDark
-                        ? colorScheme.onSurfaceVariant
-                        : const Color(0xFF6B7280))),
+              child: _StatCard(
+                label: '待复习',
+                value: '$pending',
+                bg: const Color(0xFFFFF7ED),
+                darkBg: const Color(0xFFEA580C).withValues(alpha: 0.14),
+                border: const Color(0xFFFED7AA),
+                darkBorder: const Color(0xFFEA580C).withValues(alpha: 0.35),
+                text: const Color(0xFFEA580C),
+              ),
+            ),
           ],
         ),
       ],
@@ -299,9 +294,14 @@ class _StatCard extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
-          Text(value,
-              style: TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.bold, color: text)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: text,
+            ),
+          ),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(fontSize: 11, color: text)),
         ],

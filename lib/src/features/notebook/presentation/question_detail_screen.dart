@@ -466,22 +466,10 @@ class QuestionDetailScreen extends ConsumerWidget {
                   )),
             ],
             const SizedBox(height: 24),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _markResult(context, ref, current, false),
-                    child: const Text('仍需复习'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => _markResult(context, ref, current, true),
-                    child: const Text('已掌握'),
-                  ),
-                ),
-              ],
+            _MasteryActions(
+              current: current,
+              onMarkReviewing: () => _markResult(context, ref, current, false),
+              onMarkMastered: () => _markResult(context, ref, current, true),
             ),
           ],
         ],
@@ -492,9 +480,9 @@ class QuestionDetailScreen extends ConsumerWidget {
   String _masteryLabel(MasteryLevel level) {
     switch (level) {
       case MasteryLevel.newQuestion:
-        return '未复习';
+        return '待复习';
       case MasteryLevel.reviewing:
-        return '复习中';
+        return '待复习';
       case MasteryLevel.mastered:
         return '已掌握';
     }
@@ -693,7 +681,50 @@ class QuestionDetailScreen extends ConsumerWidget {
     ref.read(currentQuestionProvider.notifier).state = updated;
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mastered ? '已标记为已掌握' : '已标记为复习中')),
+      SnackBar(content: Text(mastered ? '已标记为已掌握' : '已标记为待复习')),
+    );
+  }
+}
+
+class _MasteryActions extends StatelessWidget {
+  const _MasteryActions({
+    required this.current,
+    required this.onMarkReviewing,
+    required this.onMarkMastered,
+  });
+
+  final QuestionRecord current;
+  final VoidCallback onMarkReviewing;
+  final VoidCallback onMarkMastered;
+
+  @override
+  Widget build(BuildContext context) {
+    if (current.masteryLevel == MasteryLevel.mastered) {
+      return SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: onMarkReviewing,
+          child: const Text('仍需复习'),
+        ),
+      );
+    }
+
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: OutlinedButton(
+            onPressed: onMarkReviewing,
+            child: const Text('仍需复习'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FilledButton(
+            onPressed: onMarkMastered,
+            child: const Text('已掌握'),
+          ),
+        ),
+      ],
     );
   }
 }

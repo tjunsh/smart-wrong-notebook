@@ -53,8 +53,7 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           RepaintBoundary(
             child: questionsAsync.when(
-              data: (questions) =>
-                  _buildStatsSection(context, questions, dueAsync),
+              data: (questions) => _buildStatsSection(context, questions),
               loading: () => const _StatsGridSkeleton(),
               error: (e, _) => Text('加载失败: $e'),
             ),
@@ -83,28 +82,30 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildStatsSection(
-      BuildContext context,
-      List<QuestionRecord> questions,
-      AsyncValue<List<QuestionRecord>> dueAsync) {
+      BuildContext context, List<QuestionRecord> questions) {
     final colorScheme = Theme.of(context).colorScheme;
     final total = questions.length;
     final mastered =
         questions.where((q) => q.masteryLevel == MasteryLevel.mastered).length;
-    final reviewing =
-        questions.where((q) => q.masteryLevel == MasteryLevel.reviewing).length;
-    final newQ = questions
-        .where((q) => q.masteryLevel == MasteryLevel.newQuestion)
-        .length;
-    final due = dueAsync.valueOrNull?.length ?? 0;
+    final pending = total - mastered;
+    final now = DateTime.now();
+    final todayNew = questions.where((q) {
+      final createdAt = q.createdAt;
+      return createdAt.year == now.year &&
+          createdAt.month == now.month &&
+          createdAt.day == now.day;
+    }).length;
+    final progress = total == 0 ? 0.0 : mastered / total;
+    final percent = (progress * 100).round();
 
     return Column(
       children: <Widget>[
         StatsGrid(
-            total: total,
-            mastered: mastered,
-            reviewing: reviewing,
-            newQ: newQ,
-            due: due),
+          total: total,
+          todayNew: todayNew,
+          pending: pending,
+          mastered: mastered,
+        ),
         if (total > 0) ...<Widget>[
           const SizedBox(height: 16),
           Container(
@@ -117,20 +118,57 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  '掌握进度',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                Row(
+                  children: <Widget>[
+                    Text(
+                      '掌握进度',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '$percent%',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                StatsBarChart(
-                    total: total,
-                    mastered: mastered,
-                    reviewing: reviewing,
-                    newQ: newQ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 10,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: <Widget>[
+                    Text(
+                      '$mastered / $total 已掌握',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '$pending 待复习',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -346,7 +384,7 @@ class _ReviewBanner extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: '今日待复习 $count 道错题，点击进入复习',
+      label: '待复习 $count 道错题，点击进入复习',
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -381,7 +419,7 @@ class _ReviewBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('今日待复习',
+                    Text('待复习',
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
