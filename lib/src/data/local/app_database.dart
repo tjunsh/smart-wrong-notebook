@@ -11,7 +11,8 @@ import 'package:smart_wrong_notebook/src/data/local/tables/settings_entries.dart
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [QuestionRecords, GeneratedExercises, ReviewLogs, SettingsEntries])
+@DriftDatabase(
+    tables: [QuestionRecords, GeneratedExercises, ReviewLogs, SettingsEntries])
 class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
@@ -25,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -35,9 +36,22 @@ class AppDatabase extends _$AppDatabase {
             await migrator.createTable(generatedExercises);
           }
           if (from < 3) {
-            await migrator.addColumn(questionRecords, questionRecords.parentQuestionId);
-            await migrator.addColumn(questionRecords, questionRecords.rootQuestionId);
-            await migrator.addColumn(questionRecords, questionRecords.splitOrder);
+            await migrator.addColumn(
+                questionRecords, questionRecords.parentQuestionId);
+            await migrator.addColumn(
+                questionRecords, questionRecords.rootQuestionId);
+            await migrator.addColumn(
+                questionRecords, questionRecords.splitOrder);
+          }
+          if (from < 4) {
+            await migrator.addColumn(
+                generatedExercises, generatedExercises.roundIndex);
+            await migrator.addColumn(
+                generatedExercises, generatedExercises.roundTotal);
+            await migrator.addColumn(
+                generatedExercises, generatedExercises.roundGroupId);
+            await migrator.addColumn(
+                generatedExercises, generatedExercises.sourceExerciseId);
           }
         },
       );

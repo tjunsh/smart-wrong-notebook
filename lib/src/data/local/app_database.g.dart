@@ -1002,6 +1002,30 @@ class $GeneratedExercisesTable extends GeneratedExercises
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_correct" IN (0, 1))'));
+  static const VerificationMeta _roundIndexMeta =
+      const VerificationMeta('roundIndex');
+  @override
+  late final GeneratedColumn<int> roundIndex = GeneratedColumn<int>(
+      'round_index', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _roundTotalMeta =
+      const VerificationMeta('roundTotal');
+  @override
+  late final GeneratedColumn<int> roundTotal = GeneratedColumn<int>(
+      'round_total', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _roundGroupIdMeta =
+      const VerificationMeta('roundGroupId');
+  @override
+  late final GeneratedColumn<String> roundGroupId = GeneratedColumn<String>(
+      'round_group_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sourceExerciseIdMeta =
+      const VerificationMeta('sourceExerciseId');
+  @override
+  late final GeneratedColumn<String> sourceExerciseId = GeneratedColumn<String>(
+      'source_exercise_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -1021,6 +1045,10 @@ class $GeneratedExercisesTable extends GeneratedExercises
         optionsJson,
         userAnswer,
         isCorrect,
+        roundIndex,
+        roundTotal,
+        roundGroupId,
+        sourceExerciseId,
         createdAt
       ];
   @override
@@ -1100,6 +1128,30 @@ class $GeneratedExercisesTable extends GeneratedExercises
       context.handle(_isCorrectMeta,
           isCorrect.isAcceptableOrUnknown(data['is_correct']!, _isCorrectMeta));
     }
+    if (data.containsKey('round_index')) {
+      context.handle(
+          _roundIndexMeta,
+          roundIndex.isAcceptableOrUnknown(
+              data['round_index']!, _roundIndexMeta));
+    }
+    if (data.containsKey('round_total')) {
+      context.handle(
+          _roundTotalMeta,
+          roundTotal.isAcceptableOrUnknown(
+              data['round_total']!, _roundTotalMeta));
+    }
+    if (data.containsKey('round_group_id')) {
+      context.handle(
+          _roundGroupIdMeta,
+          roundGroupId.isAcceptableOrUnknown(
+              data['round_group_id']!, _roundGroupIdMeta));
+    }
+    if (data.containsKey('source_exercise_id')) {
+      context.handle(
+          _sourceExerciseIdMeta,
+          sourceExerciseId.isAcceptableOrUnknown(
+              data['source_exercise_id']!, _sourceExerciseIdMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -1137,6 +1189,14 @@ class $GeneratedExercisesTable extends GeneratedExercises
           .read(DriftSqlType.string, data['${effectivePrefix}user_answer']),
       isCorrect: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_correct']),
+      roundIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}round_index']),
+      roundTotal: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}round_total']),
+      roundGroupId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}round_group_id']),
+      sourceExerciseId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}source_exercise_id']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -1161,6 +1221,10 @@ class GeneratedExercise extends DataClass
   final String? optionsJson;
   final String? userAnswer;
   final bool? isCorrect;
+  final int? roundIndex;
+  final int? roundTotal;
+  final String? roundGroupId;
+  final String? sourceExerciseId;
   final DateTime createdAt;
   const GeneratedExercise(
       {required this.id,
@@ -1174,6 +1238,10 @@ class GeneratedExercise extends DataClass
       this.optionsJson,
       this.userAnswer,
       this.isCorrect,
+      this.roundIndex,
+      this.roundTotal,
+      this.roundGroupId,
+      this.sourceExerciseId,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1198,6 +1266,18 @@ class GeneratedExercise extends DataClass
     }
     if (!nullToAbsent || isCorrect != null) {
       map['is_correct'] = Variable<bool>(isCorrect);
+    }
+    if (!nullToAbsent || roundIndex != null) {
+      map['round_index'] = Variable<int>(roundIndex);
+    }
+    if (!nullToAbsent || roundTotal != null) {
+      map['round_total'] = Variable<int>(roundTotal);
+    }
+    if (!nullToAbsent || roundGroupId != null) {
+      map['round_group_id'] = Variable<String>(roundGroupId);
+    }
+    if (!nullToAbsent || sourceExerciseId != null) {
+      map['source_exercise_id'] = Variable<String>(sourceExerciseId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -1226,6 +1306,18 @@ class GeneratedExercise extends DataClass
       isCorrect: isCorrect == null && nullToAbsent
           ? const Value.absent()
           : Value(isCorrect),
+      roundIndex: roundIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(roundIndex),
+      roundTotal: roundTotal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(roundTotal),
+      roundGroupId: roundGroupId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(roundGroupId),
+      sourceExerciseId: sourceExerciseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceExerciseId),
       createdAt: Value(createdAt),
     );
   }
@@ -1245,6 +1337,10 @@ class GeneratedExercise extends DataClass
       optionsJson: serializer.fromJson<String?>(json['optionsJson']),
       userAnswer: serializer.fromJson<String?>(json['userAnswer']),
       isCorrect: serializer.fromJson<bool?>(json['isCorrect']),
+      roundIndex: serializer.fromJson<int?>(json['roundIndex']),
+      roundTotal: serializer.fromJson<int?>(json['roundTotal']),
+      roundGroupId: serializer.fromJson<String?>(json['roundGroupId']),
+      sourceExerciseId: serializer.fromJson<String?>(json['sourceExerciseId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1263,6 +1359,10 @@ class GeneratedExercise extends DataClass
       'optionsJson': serializer.toJson<String?>(optionsJson),
       'userAnswer': serializer.toJson<String?>(userAnswer),
       'isCorrect': serializer.toJson<bool?>(isCorrect),
+      'roundIndex': serializer.toJson<int?>(roundIndex),
+      'roundTotal': serializer.toJson<int?>(roundTotal),
+      'roundGroupId': serializer.toJson<String?>(roundGroupId),
+      'sourceExerciseId': serializer.toJson<String?>(sourceExerciseId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1279,6 +1379,10 @@ class GeneratedExercise extends DataClass
           Value<String?> optionsJson = const Value.absent(),
           Value<String?> userAnswer = const Value.absent(),
           Value<bool?> isCorrect = const Value.absent(),
+          Value<int?> roundIndex = const Value.absent(),
+          Value<int?> roundTotal = const Value.absent(),
+          Value<String?> roundGroupId = const Value.absent(),
+          Value<String?> sourceExerciseId = const Value.absent(),
           DateTime? createdAt}) =>
       GeneratedExercise(
         id: id ?? this.id,
@@ -1292,6 +1396,13 @@ class GeneratedExercise extends DataClass
         optionsJson: optionsJson.present ? optionsJson.value : this.optionsJson,
         userAnswer: userAnswer.present ? userAnswer.value : this.userAnswer,
         isCorrect: isCorrect.present ? isCorrect.value : this.isCorrect,
+        roundIndex: roundIndex.present ? roundIndex.value : this.roundIndex,
+        roundTotal: roundTotal.present ? roundTotal.value : this.roundTotal,
+        roundGroupId:
+            roundGroupId.present ? roundGroupId.value : this.roundGroupId,
+        sourceExerciseId: sourceExerciseId.present
+            ? sourceExerciseId.value
+            : this.sourceExerciseId,
         createdAt: createdAt ?? this.createdAt,
       );
   GeneratedExercise copyWithCompanion(GeneratedExercisesCompanion data) {
@@ -1315,6 +1426,16 @@ class GeneratedExercise extends DataClass
       userAnswer:
           data.userAnswer.present ? data.userAnswer.value : this.userAnswer,
       isCorrect: data.isCorrect.present ? data.isCorrect.value : this.isCorrect,
+      roundIndex:
+          data.roundIndex.present ? data.roundIndex.value : this.roundIndex,
+      roundTotal:
+          data.roundTotal.present ? data.roundTotal.value : this.roundTotal,
+      roundGroupId: data.roundGroupId.present
+          ? data.roundGroupId.value
+          : this.roundGroupId,
+      sourceExerciseId: data.sourceExerciseId.present
+          ? data.sourceExerciseId.value
+          : this.sourceExerciseId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1333,6 +1454,10 @@ class GeneratedExercise extends DataClass
           ..write('optionsJson: $optionsJson, ')
           ..write('userAnswer: $userAnswer, ')
           ..write('isCorrect: $isCorrect, ')
+          ..write('roundIndex: $roundIndex, ')
+          ..write('roundTotal: $roundTotal, ')
+          ..write('roundGroupId: $roundGroupId, ')
+          ..write('sourceExerciseId: $sourceExerciseId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1351,6 +1476,10 @@ class GeneratedExercise extends DataClass
       optionsJson,
       userAnswer,
       isCorrect,
+      roundIndex,
+      roundTotal,
+      roundGroupId,
+      sourceExerciseId,
       createdAt);
   @override
   bool operator ==(Object other) =>
@@ -1367,6 +1496,10 @@ class GeneratedExercise extends DataClass
           other.optionsJson == this.optionsJson &&
           other.userAnswer == this.userAnswer &&
           other.isCorrect == this.isCorrect &&
+          other.roundIndex == this.roundIndex &&
+          other.roundTotal == this.roundTotal &&
+          other.roundGroupId == this.roundGroupId &&
+          other.sourceExerciseId == this.sourceExerciseId &&
           other.createdAt == this.createdAt);
 }
 
@@ -1382,6 +1515,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
   final Value<String?> optionsJson;
   final Value<String?> userAnswer;
   final Value<bool?> isCorrect;
+  final Value<int?> roundIndex;
+  final Value<int?> roundTotal;
+  final Value<String?> roundGroupId;
+  final Value<String?> sourceExerciseId;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const GeneratedExercisesCompanion({
@@ -1396,6 +1533,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
     this.optionsJson = const Value.absent(),
     this.userAnswer = const Value.absent(),
     this.isCorrect = const Value.absent(),
+    this.roundIndex = const Value.absent(),
+    this.roundTotal = const Value.absent(),
+    this.roundGroupId = const Value.absent(),
+    this.sourceExerciseId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1411,6 +1552,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
     this.optionsJson = const Value.absent(),
     this.userAnswer = const Value.absent(),
     this.isCorrect = const Value.absent(),
+    this.roundIndex = const Value.absent(),
+    this.roundTotal = const Value.absent(),
+    this.roundGroupId = const Value.absent(),
+    this.sourceExerciseId = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -1431,6 +1576,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
     Expression<String>? optionsJson,
     Expression<String>? userAnswer,
     Expression<bool>? isCorrect,
+    Expression<int>? roundIndex,
+    Expression<int>? roundTotal,
+    Expression<String>? roundGroupId,
+    Expression<String>? sourceExerciseId,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -1446,6 +1595,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
       if (optionsJson != null) 'options_json': optionsJson,
       if (userAnswer != null) 'user_answer': userAnswer,
       if (isCorrect != null) 'is_correct': isCorrect,
+      if (roundIndex != null) 'round_index': roundIndex,
+      if (roundTotal != null) 'round_total': roundTotal,
+      if (roundGroupId != null) 'round_group_id': roundGroupId,
+      if (sourceExerciseId != null) 'source_exercise_id': sourceExerciseId,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1463,6 +1616,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
       Value<String?>? optionsJson,
       Value<String?>? userAnswer,
       Value<bool?>? isCorrect,
+      Value<int?>? roundIndex,
+      Value<int?>? roundTotal,
+      Value<String?>? roundGroupId,
+      Value<String?>? sourceExerciseId,
       Value<DateTime>? createdAt,
       Value<int>? rowid}) {
     return GeneratedExercisesCompanion(
@@ -1477,6 +1634,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
       optionsJson: optionsJson ?? this.optionsJson,
       userAnswer: userAnswer ?? this.userAnswer,
       isCorrect: isCorrect ?? this.isCorrect,
+      roundIndex: roundIndex ?? this.roundIndex,
+      roundTotal: roundTotal ?? this.roundTotal,
+      roundGroupId: roundGroupId ?? this.roundGroupId,
+      sourceExerciseId: sourceExerciseId ?? this.sourceExerciseId,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1518,6 +1679,18 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
     if (isCorrect.present) {
       map['is_correct'] = Variable<bool>(isCorrect.value);
     }
+    if (roundIndex.present) {
+      map['round_index'] = Variable<int>(roundIndex.value);
+    }
+    if (roundTotal.present) {
+      map['round_total'] = Variable<int>(roundTotal.value);
+    }
+    if (roundGroupId.present) {
+      map['round_group_id'] = Variable<String>(roundGroupId.value);
+    }
+    if (sourceExerciseId.present) {
+      map['source_exercise_id'] = Variable<String>(sourceExerciseId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1541,6 +1714,10 @@ class GeneratedExercisesCompanion extends UpdateCompanion<GeneratedExercise> {
           ..write('optionsJson: $optionsJson, ')
           ..write('userAnswer: $userAnswer, ')
           ..write('isCorrect: $isCorrect, ')
+          ..write('roundIndex: $roundIndex, ')
+          ..write('roundTotal: $roundTotal, ')
+          ..write('roundGroupId: $roundGroupId, ')
+          ..write('sourceExerciseId: $sourceExerciseId, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2725,6 +2902,10 @@ typedef $$GeneratedExercisesTableCreateCompanionBuilder
   Value<String?> optionsJson,
   Value<String?> userAnswer,
   Value<bool?> isCorrect,
+  Value<int?> roundIndex,
+  Value<int?> roundTotal,
+  Value<String?> roundGroupId,
+  Value<String?> sourceExerciseId,
   required DateTime createdAt,
   Value<int> rowid,
 });
@@ -2741,6 +2922,10 @@ typedef $$GeneratedExercisesTableUpdateCompanionBuilder
   Value<String?> optionsJson,
   Value<String?> userAnswer,
   Value<bool?> isCorrect,
+  Value<int?> roundIndex,
+  Value<int?> roundTotal,
+  Value<String?> roundGroupId,
+  Value<String?> sourceExerciseId,
   Value<DateTime> createdAt,
   Value<int> rowid,
 });
@@ -2807,6 +2992,19 @@ class $$GeneratedExercisesTableFilterComposer
   ColumnFilters<bool> get isCorrect => $composableBuilder(
       column: $table.isCorrect, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<int> get roundIndex => $composableBuilder(
+      column: $table.roundIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get roundTotal => $composableBuilder(
+      column: $table.roundTotal, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get roundGroupId => $composableBuilder(
+      column: $table.roundGroupId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sourceExerciseId => $composableBuilder(
+      column: $table.sourceExerciseId,
+      builder: (column) => ColumnFilters(column));
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
@@ -2871,6 +3069,20 @@ class $$GeneratedExercisesTableOrderingComposer
   ColumnOrderings<bool> get isCorrect => $composableBuilder(
       column: $table.isCorrect, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get roundIndex => $composableBuilder(
+      column: $table.roundIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get roundTotal => $composableBuilder(
+      column: $table.roundTotal, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get roundGroupId => $composableBuilder(
+      column: $table.roundGroupId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sourceExerciseId => $composableBuilder(
+      column: $table.sourceExerciseId,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -2934,6 +3146,18 @@ class $$GeneratedExercisesTableAnnotationComposer
   GeneratedColumn<bool> get isCorrect =>
       $composableBuilder(column: $table.isCorrect, builder: (column) => column);
 
+  GeneratedColumn<int> get roundIndex => $composableBuilder(
+      column: $table.roundIndex, builder: (column) => column);
+
+  GeneratedColumn<int> get roundTotal => $composableBuilder(
+      column: $table.roundTotal, builder: (column) => column);
+
+  GeneratedColumn<String> get roundGroupId => $composableBuilder(
+      column: $table.roundGroupId, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceExerciseId => $composableBuilder(
+      column: $table.sourceExerciseId, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -2994,6 +3218,10 @@ class $$GeneratedExercisesTableTableManager extends RootTableManager<
             Value<String?> optionsJson = const Value.absent(),
             Value<String?> userAnswer = const Value.absent(),
             Value<bool?> isCorrect = const Value.absent(),
+            Value<int?> roundIndex = const Value.absent(),
+            Value<int?> roundTotal = const Value.absent(),
+            Value<String?> roundGroupId = const Value.absent(),
+            Value<String?> sourceExerciseId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -3009,6 +3237,10 @@ class $$GeneratedExercisesTableTableManager extends RootTableManager<
             optionsJson: optionsJson,
             userAnswer: userAnswer,
             isCorrect: isCorrect,
+            roundIndex: roundIndex,
+            roundTotal: roundTotal,
+            roundGroupId: roundGroupId,
+            sourceExerciseId: sourceExerciseId,
             createdAt: createdAt,
             rowid: rowid,
           ),
@@ -3024,6 +3256,10 @@ class $$GeneratedExercisesTableTableManager extends RootTableManager<
             Value<String?> optionsJson = const Value.absent(),
             Value<String?> userAnswer = const Value.absent(),
             Value<bool?> isCorrect = const Value.absent(),
+            Value<int?> roundIndex = const Value.absent(),
+            Value<int?> roundTotal = const Value.absent(),
+            Value<String?> roundGroupId = const Value.absent(),
+            Value<String?> sourceExerciseId = const Value.absent(),
             required DateTime createdAt,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -3039,6 +3275,10 @@ class $$GeneratedExercisesTableTableManager extends RootTableManager<
             optionsJson: optionsJson,
             userAnswer: userAnswer,
             isCorrect: isCorrect,
+            roundIndex: roundIndex,
+            roundTotal: roundTotal,
+            roundGroupId: roundGroupId,
+            sourceExerciseId: sourceExerciseId,
             createdAt: createdAt,
             rowid: rowid,
           ),

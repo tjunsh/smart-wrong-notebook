@@ -7,16 +7,14 @@ final _reEnglishPassage = RegExp(
     r'\b(the|that|which|while|however|because|people|money|family|should|china|saving|some|they|was|for|with|and|of|to)\b',
     caseSensitive: false);
 final _reChineseMarker = RegExp(r'文常积累|字词释义|翻译卷|课文|文言文|释义');
-final _reClassicalChinese =
-    RegExp(r'问所从来|落英|缤纷|阡陌|桃花源记|岳阳楼记|醉翁亭记|出师表|陋室铭');
-final _reNumberedBlanks = RegExp(
-    r'(^|[^\d])(?:[1-9]|10)\s*[\.、．)]?\s*[A-C][\.、．)]',
-    multiLine: true);
+final _reClassicalChinese = RegExp(r'问所从来|落英|缤纷|阡陌|桃花源记|岳阳楼记|醉翁亭记|出师表|陋室铭');
+final _reHumanitiesMarker =
+    RegExp(r'材料|阅读|填空|文综|历史|地理|政治|朝代|制度|事件|背景|原因|意义|影响|疆域|气候|地形|人口|公民|法治');
+final _reNumberedBlanks =
+    RegExp(r'(^|[^\d])(?:[1-9]|10)\s*[\.、．)]?\s*[A-C][\.、．)]', multiLine: true);
 
 bool isCompositeLanguageWorksheet(String text, {Subject? subject}) {
-  if (subject != null &&
-      subject != Subject.chinese &&
-      subject != Subject.english) {
+  if (subject != null && !_supportsCompositeWorksheetDetection(subject)) {
     return false;
   }
 
@@ -32,5 +30,19 @@ bool isCompositeLanguageWorksheet(String text, {Subject? subject}) {
   if (_reClassicalChinese.allMatches(text).length >= 2) return true;
 
   final blankCount = _reBlank.allMatches(text).length;
-  return blankCount >= 8 && _reChineseMarker.hasMatch(text);
+  return _isHumanitiesSubject(subject) &&
+      blankCount >= 6 &&
+      _reHumanitiesMarker.hasMatch(text);
+}
+
+bool _supportsCompositeWorksheetDetection(Subject subject) {
+  return subject == Subject.chinese ||
+      subject == Subject.english ||
+      _isHumanitiesSubject(subject);
+}
+
+bool _isHumanitiesSubject(Subject? subject) {
+  return subject == Subject.history ||
+      subject == Subject.geography ||
+      subject == Subject.politics;
 }

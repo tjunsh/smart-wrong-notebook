@@ -46,6 +46,8 @@ class _QuestionSplitConfirmationScreenState
     final safeIndex =
         drafts.isEmpty ? 0 : _activeIndex.clamp(0, drafts.length - 1);
     final activeDraft = drafts.isEmpty ? null : drafts[safeIndex];
+    final selectedCount =
+        drafts.where((draft) => draft.canSave && draft.selected).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -119,8 +121,7 @@ class _QuestionSplitConfirmationScreenState
                         textColor: const Color(0xFF4F46E5),
                       ),
                       _SummaryChip(
-                        label:
-                            '已选 ${drafts.where((draft) => draft.selected).length} 题',
+                        label: '已选 $selectedCount 题',
                         bgColor: isDark
                             ? const Color(0xFF16A34A).withValues(alpha: 0.16)
                             : const Color(0xFFF0FDF4),
@@ -177,12 +178,31 @@ class _QuestionSplitConfirmationScreenState
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
-                  Text('可取消不需要保存的题目，点击卡片切换当前编辑项。',
+                  Text('取消不需要保存的题目，点击卡片切换当前编辑项，底部会保存所有已勾选题目。',
                       style: TextStyle(
                           fontSize: 12,
                           color:
                               Theme.of(context).colorScheme.onSurfaceVariant)),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: <Widget>[
+                      TextButton.icon(
+                        onPressed:
+                            _isSaving ? null : () => _setAllSelected(true),
+                        icon: const Icon(CupertinoIcons.checkmark_circle,
+                            size: 16),
+                        label: const Text('全选'),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed:
+                            _isSaving ? null : () => _setAllSelected(false),
+                        icon: const Icon(CupertinoIcons.circle, size: 16),
+                        label: const Text('清空'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   ...drafts.asMap().entries.map((entry) {
                     final index = entry.key;
                     final draft = entry.value;
@@ -217,9 +237,14 @@ class _QuestionSplitConfirmationScreenState
                               Transform.scale(
                                 scale: 1.05,
                                 child: Checkbox(
-                                  value: draft.selected,
-                                  onChanged: (value) => _updateDraft(index,
-                                      draft.copyWith(selected: value ?? false)),
+                                  value: draft.canSave && draft.selected,
+                                  onChanged: draft.canSave
+                                      ? (value) => _updateDraft(
+                                            index,
+                                            draft.copyWith(
+                                                selected: value ?? false),
+                                          )
+                                      : null,
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(4)),
                                 ),
@@ -268,7 +293,8 @@ class _QuestionSplitConfirmationScreenState
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
-                                              color: draft.selected
+                                              color: draft.canSave &&
+                                                      draft.selected
                                                   ? Theme.of(context)
                                                       .colorScheme
                                                       .onSurface
@@ -401,25 +427,36 @@ class _QuestionSplitConfirmationScreenState
               ),
             ],
             const SizedBox(height: 24),
-            OutlinedButton.icon(
-              onPressed: () => context.go('/analysis/result'),
-              icon: const Icon(CupertinoIcons.chevron_left, size: 18),
-              label: const Text('返回结果页'),
-              style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48)),
-            ),
-            const SizedBox(height: 12),
             FilledButton.icon(
-              onPressed: _isSaving ? null : _saveSelectedQuestions,
+              onPressed: _isSaving || selectedCount == 0
+                  ? null
+                  : () => _saveQuestions(_draftsForSelected(session)),
               icon: _isSaving
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(CupertinoIcons.checkmark_alt, size: 18),
-              label: Text(_isSaving ? '正在保存...' : '确认并保存到错题本'),
+                  : const Icon(CupertinoIcons.tray_arrow_down, size: 18),
+              label: Text(_isSaving ? '正在保存...' : '保存已勾选题目 ($selectedCount)'),
               style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              selectedCount == 0
+                  ? '请至少勾选一道题后再保存。'
+                  : '将保存已勾选的 $selectedCount 道题；未勾选题目不会写入错题本。',
+              textAlign: TextAlign.center,
+              style:
+                  TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.go('/analysis/result'),
+              icon: const Icon(CupertinoIcons.chevron_left, size: 18),
+              label: const Text('返回结果页'),
+              style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48)),
             ),
           ],
@@ -443,6 +480,22 @@ class _QuestionSplitConfirmationScreenState
     }
   }
 
+  void _setAllSelected(bool selected) {
+    final session = ref.read(currentQuestionSplitSessionProvider);
+    if (session == null) return;
+    ref.read(currentQuestionSplitSessionProvider.notifier).state =
+        session.copyWith(
+      drafts: session.drafts
+          .map((draft) => draft.copyWith(
+                selected: draft.canSave ? selected : false,
+              ))
+          .toList(),
+    );
+    if (_errorMessage != null) {
+      setState(() => _errorMessage = null);
+    }
+  }
+
   String _displayEditableText(String text) => text
       .replaceAll(r'\\(', r'\(')
       .replaceAll(r'\\)', r'\)')
@@ -455,22 +508,27 @@ class _QuestionSplitConfirmationScreenState
       .replaceAll(r'\\[', r'\[')
       .replaceAll(r'\\]', r'\]');
 
-  Future<void> _saveSelectedQuestions() async {
+  List<QuestionSplitDraft> _draftsForSelected(QuestionSplitSession session) {
+    return session.drafts
+        .where((draft) => draft.canSave && draft.selected)
+        .toList();
+  }
+
+  Future<void> _saveQuestions(List<QuestionSplitDraft> draftsToSave) async {
     final session = ref.read(currentQuestionSplitSessionProvider);
     if (session == null || _isSaving) return;
 
-    final selectedDrafts = session.drafts
-        .where((draft) => draft.selected)
+    final normalizedDrafts = draftsToSave
         .map(
             (draft) => draft.copyWith(text: _normalizeEditableText(draft.text)))
         .toList();
-    if (selectedDrafts.isEmpty) {
-      setState(() => _errorMessage = '请至少选择一道题后再保存');
+    if (normalizedDrafts.isEmpty) {
+      setState(() => _errorMessage = '请至少选择一道解析成功的题目后再保存');
       return;
     }
 
-    if (selectedDrafts.any((draft) => draft.text.trim().isEmpty)) {
-      setState(() => _errorMessage = '已选题目里有空内容，请补充后再保存');
+    if (normalizedDrafts.any((draft) => draft.text.trim().isEmpty)) {
+      setState(() => _errorMessage = '保存范围内有空内容，请补充后再保存');
       return;
     }
 
@@ -480,7 +538,7 @@ class _QuestionSplitConfirmationScreenState
     });
 
     try {
-      final records = selectedDrafts.asMap().entries.map((entry) {
+      final records = normalizedDrafts.asMap().entries.map((entry) {
         return buildSplitQuestionRecord(
           source: session.source,
           draft: entry.value,
@@ -492,7 +550,7 @@ class _QuestionSplitConfirmationScreenState
       final router = GoRouter.of(context);
       await ref.read(questionRepositoryProvider).saveDrafts(records);
       invalidateQuestionList(ref);
-      ref.read(currentQuestionProvider.notifier).state = null;
+      ref.read(currentQuestionProvider.notifier).state = records.first;
       ref.read(currentQuestionSplitSessionProvider.notifier).state = null;
       if (!mounted) return;
       messenger.showSnackBar(
@@ -501,7 +559,7 @@ class _QuestionSplitConfirmationScreenState
           duration: const Duration(seconds: 2),
         ),
       );
-      router.go('/notebook');
+      router.go('/notebook/question/${records.first.id}');
     } catch (e) {
       if (!mounted) return;
       setState(() {

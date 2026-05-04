@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:smart_wrong_notebook/src/data/local/app_database.dart' as db;
-import 'package:smart_wrong_notebook/src/domain/models/question_record.dart' as domain;
+import 'package:smart_wrong_notebook/src/domain/models/question_record.dart'
+    as domain;
 import 'package:smart_wrong_notebook/src/domain/models/mastery_level.dart';
 import 'package:smart_wrong_notebook/src/domain/models/content_status.dart';
 import 'package:smart_wrong_notebook/src/domain/models/subject.dart';
@@ -46,7 +47,9 @@ class DriftQuestionRepository implements QuestionRepository {
             nextReviewAt: Value(record.lastReviewedAt),
             createdAt: Value(record.createdAt),
             updatedAt: Value(record.updatedAt),
-            aiAnalysisJson: Value(record.analysisResult != null ? jsonEncode(record.analysisResult!.toJson()) : null),
+            aiAnalysisJson: Value(record.analysisResult != null
+                ? jsonEncode(record.analysisResult!.toJson())
+                : null),
             tags: Value(record.tags.join(',')),
             aiTags: Value(record.aiTags.join(',')),
             aiKnowledgePoints: Value(record.aiKnowledgePoints.join(',')),
@@ -57,14 +60,17 @@ class DriftQuestionRepository implements QuestionRepository {
           ),
         );
 
-    await (_db.delete(_db.generatedExercises)..where((t) => t.questionId.equals(record.id))).go();
+    await (_db.delete(_db.generatedExercises)
+          ..where((t) => t.questionId.equals(record.id)))
+        .go();
     if (record.savedExercises.isNotEmpty) {
       await _db.batch((batch) {
         batch.insertAll(
           _db.generatedExercises,
           record.savedExercises.map((exercise) {
+            final roundIndex = exercise.roundIndex ?? 1;
             final normalized = exercise.copyWith(
-              id: '${record.id}-exercise-${(exercise.order ?? 0) + 1}',
+              id: '${record.id}-round-$roundIndex-exercise-${(exercise.order ?? 0) + 1}',
               questionId: record.id,
             );
             return db.GeneratedExercisesCompanion.insert(
@@ -76,9 +82,15 @@ class DriftQuestionRepository implements QuestionRepository {
               question: normalized.question,
               answer: normalized.answer,
               explanation: Value(normalized.explanation),
-              optionsJson: Value(normalized.options == null ? null : jsonEncode(normalized.options)),
+              optionsJson: Value(normalized.options == null
+                  ? null
+                  : jsonEncode(normalized.options)),
               userAnswer: Value(normalized.userAnswer),
               isCorrect: Value(normalized.isCorrect),
+              roundIndex: Value(normalized.roundIndex),
+              roundTotal: Value(normalized.roundTotal),
+              roundGroupId: Value(normalized.roundGroupId),
+              sourceExerciseId: Value(normalized.sourceExerciseId),
               createdAt: normalized.createdAt,
             );
           }).toList(),
@@ -96,7 +108,9 @@ class DriftQuestionRepository implements QuestionRepository {
 
   @override
   Future<void> delete(String id) async {
-    await (_db.delete(_db.generatedExercises)..where((t) => t.questionId.equals(id))).go();
+    await (_db.delete(_db.generatedExercises)
+          ..where((t) => t.questionId.equals(id)))
+        .go();
     await (_db.delete(_db.questionRecords)..where((t) => t.id.equals(id))).go();
   }
 
@@ -122,6 +136,7 @@ class DriftQuestionRepository implements QuestionRepository {
     final exerciseRows = await (_db.select(_db.generatedExercises)
           ..where((t) => t.questionId.equals(row.id))
           ..orderBy([
+            (t) => OrderingTerm.asc(t.roundIndex),
             (t) => OrderingTerm.asc(t.orderIndex),
             (t) => OrderingTerm.asc(t.createdAt),
           ]))
@@ -141,7 +156,8 @@ class DriftQuestionRepository implements QuestionRepository {
     return domain.QuestionRecord(
       id: row.id,
       imagePath: row.originalImagePath ?? '',
-      subject: Subject.values.firstWhere((s) => s.name == row.subject, orElse: () => Subject.math),
+      subject: Subject.values
+          .firstWhere((s) => s.name == row.subject, orElse: () => Subject.math),
       extractedQuestionText: row.originalText,
       normalizedQuestionText: row.correctedText,
       contentFormat: domain.QuestionContentFormat.plain,
@@ -151,13 +167,20 @@ class DriftQuestionRepository implements QuestionRepository {
       lastReviewedAt: row.nextReviewAt,
       reviewCount: row.reviewCount,
       isFavorite: false,
-      contentStatus: ContentStatus.values.firstWhere((c) => c.name == row.contentStatus, orElse: () => ContentStatus.processing),
-      masteryLevel: MasteryLevel.values.firstWhere((m) => m.name == row.masteryLevel, orElse: () => MasteryLevel.newQuestion),
+      contentStatus: ContentStatus.values.firstWhere(
+          (c) => c.name == row.contentStatus,
+          orElse: () => ContentStatus.processing),
+      masteryLevel: MasteryLevel.values.firstWhere(
+          (m) => m.name == row.masteryLevel,
+          orElse: () => MasteryLevel.newQuestion),
       analysisResult: analysisResult,
       savedExercises: savedExercises,
       aiTags: row.aiTags.isNotEmpty ? row.aiTags.split(',') : <String>[],
-      aiKnowledgePoints: row.aiKnowledgePoints.isNotEmpty ? row.aiKnowledgePoints.split(',') : <String>[],
-      customTags: row.customTags.isNotEmpty ? row.customTags.split(',') : <String>[],
+      aiKnowledgePoints: row.aiKnowledgePoints.isNotEmpty
+          ? row.aiKnowledgePoints.split(',')
+          : <String>[],
+      customTags:
+          row.customTags.isNotEmpty ? row.customTags.split(',') : <String>[],
       parentQuestionId: row.parentQuestionId,
       rootQuestionId: row.rootQuestionId,
       splitOrder: row.splitOrder,
@@ -185,6 +208,10 @@ class DriftQuestionRepository implements QuestionRepository {
       isCorrect: row.isCorrect,
       options: options,
       userAnswer: row.userAnswer,
+      roundIndex: row.roundIndex,
+      roundTotal: row.roundTotal,
+      roundGroupId: row.roundGroupId,
+      sourceExerciseId: row.sourceExerciseId,
     );
   }
 }

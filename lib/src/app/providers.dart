@@ -107,16 +107,26 @@ Future<QuestionSplitSession> buildQuestionSplitSession(
   final result = source.splitResult ??
       await _resolveSplitResult(source, splitter: splitter);
 
+  final hasMultipleCandidates = result.hasMultipleCandidates;
+
   return QuestionSplitSession(
     source: source,
     strategy: result.strategy,
     drafts: result.candidates.map((candidate) {
+      final snapshot = source.candidateAnalyses
+          .where((analysis) => analysis.order == candidate.order)
+          .cast<CandidateAnalysisSnapshot?>()
+          .firstWhere((analysis) => analysis != null, orElse: () => null);
+      final canSave =
+          !hasMultipleCandidates || (snapshot?.isSuccessful ?? false);
       return QuestionSplitDraft(
         id: '${source.id}-${candidate.order - 1}',
         text: candidate.text,
-        selected: true,
+        selected: canSave,
         originalOrder: candidate.order,
         contentFormat: source.contentFormat,
+        canSave: canSave,
+        disabledReason: canSave ? null : '解析失败，暂不可保存',
       );
     }).toList(),
   );
@@ -148,23 +158,27 @@ QuestionRecord buildSplitQuestionRecord({
         (candidate) => candidate != null,
         orElse: () => null,
       );
-  final analysisResult =
-      candidateSnapshot?.analysisResult ?? source.analysisResult;
+  final hasMultipleCandidates =
+      source.splitResult?.hasMultipleCandidates ?? false;
+  final analysisResult = candidateSnapshot?.analysisResult ??
+      (hasMultipleCandidates ? null : source.analysisResult);
   final savedExercises =
       (candidateSnapshot?.savedExercises ?? const <GeneratedExercise>[])
           .asMap()
           .entries
           .map((entry) {
     final order = entry.value.order ?? entry.key;
+    final roundIndex = entry.value.roundIndex ?? 1;
     return entry.value.copyWith(
-      id: '${source.id}-$sortOrder-exercise-${order + 1}',
+      id: '${source.id}-$sortOrder-round-$roundIndex-exercise-${order + 1}',
       questionId: '${source.id}-$sortOrder',
       order: order,
     );
   }).toList();
-  final aiTags = candidateSnapshot?.aiTags ?? source.aiTags;
-  final aiKnowledgePoints =
-      candidateSnapshot?.aiKnowledgePoints ?? source.aiKnowledgePoints;
+  final aiTags = candidateSnapshot?.aiTags ??
+      (hasMultipleCandidates ? const <String>[] : source.aiTags);
+  final aiKnowledgePoints = candidateSnapshot?.aiKnowledgePoints ??
+      (hasMultipleCandidates ? const <String>[] : source.aiKnowledgePoints);
   final subject =
       candidateSnapshot?.subject ?? analysisResult?.subject ?? source.subject;
 

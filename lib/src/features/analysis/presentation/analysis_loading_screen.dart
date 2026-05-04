@@ -105,6 +105,7 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
       }
 
       var candidateSnapshots = <CandidateAnalysisPayload>[];
+      CandidateAnalysisPayload? firstSuccessfulCandidate;
       if (working.splitResult?.hasMultipleCandidates ?? false) {
         final totalCandidates = working.splitResult!.candidates.length;
         if (mounted) {
@@ -120,35 +121,42 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
           onProgress: (completed, total, {int failed = 0}) {
             if (mounted) {
               setState(() {
-                final suffix = failed > 0 ? '（$failed 题失败）' : '';
-                _progressText = '已完成 $completed/$total 题分析$suffix';
+                final suffix = failed > 0 ? '（$failed题失败）' : '';
+                _progressText = '已完成 $completed/$total题分析$suffix';
               });
             }
           },
         );
+        firstSuccessfulCandidate = candidateSnapshots
+            .where((payload) => payload.isSuccessful)
+            .cast<CandidateAnalysisPayload?>()
+            .firstWhere((payload) => payload != null, orElse: () => null);
+        if (firstSuccessfulCandidate == null) {
+          throw AiAnalysisException('多题解析全部失败，请重试；系统不会保存缺少解析的子题。');
+        }
       }
       final shouldUseImageForAnalysis =
           shouldAnalyzeImageDirectly || _shouldUseImageForAnalysis(working);
 
-      final analysis = candidateSnapshots.isNotEmpty
-          ? candidateSnapshots.first.analysisResult
-          : await service.analyzeExtractedQuestion(
-              correctedText: working.correctedText,
-              subjectName: working.subject.name,
-              imagePath: shouldUseImageForAnalysis ? working.imagePath : null,
-            );
+      final analysis = firstSuccessfulCandidate?.analysisResult ??
+          await service.analyzeExtractedQuestion(
+            correctedText: working.correctedText,
+            subjectName: working.subject.name,
+            imagePath: shouldUseImageForAnalysis ? working.imagePath : null,
+          );
 
-      final generatedExercises = candidateSnapshots.isNotEmpty
-          ? candidateSnapshots.first.savedExercises
-          : analysis is ParsedAnalysisResult
+      final generatedExercises = firstSuccessfulCandidate?.savedExercises ??
+          (analysis is ParsedAnalysisResult
               ? service.extractGeneratedExercisesFromContent(
                   analysis.rawContent,
                   questionId: working.id,
+                  sourceQuestionText: working.correctedText,
                 )
               : service.extractGeneratedExercises(
                   analysis,
                   questionId: working.id,
-                );
+                  sourceQuestionText: working.correctedText,
+                ));
 
       final updated = working.copyWith(
         contentStatus: ContentStatus.ready,
@@ -167,6 +175,8 @@ class _AnalysisLoadingScreenState extends ConsumerState<AnalysisLoadingScreen> {
             subject: payload.subject,
             aiTags: payload.aiTags,
             aiKnowledgePoints: payload.aiKnowledgePoints,
+            status: payload.status,
+            errorMessage: payload.errorMessage,
           );
         }).toList(),
       );

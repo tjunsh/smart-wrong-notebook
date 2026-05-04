@@ -14,6 +14,10 @@ class GeneratedExercise {
     this.isCorrect,
     this.options,
     this.userAnswer,
+    this.roundIndex,
+    this.roundTotal,
+    this.roundGroupId,
+    this.sourceExerciseId,
   });
 
   factory GeneratedExercise.fromJson(Map<String, dynamic> json) {
@@ -36,11 +40,16 @@ class GeneratedExercise {
       question: json['question'] as String? ?? '',
       answer: json['answer'] as String? ?? '',
       explanation: json['explanation'] as String? ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
       order: json['order'] as int?,
       isCorrect: json['isCorrect'] as bool?,
       options: options,
       userAnswer: json['userAnswer'] as String?,
+      roundIndex: json['roundIndex'] as int?,
+      roundTotal: json['roundTotal'] as int?,
+      roundGroupId: json['roundGroupId'] as String?,
+      sourceExerciseId: json['sourceExerciseId'] as String?,
     );
   }
 
@@ -58,6 +67,10 @@ class GeneratedExercise {
       'isCorrect': isCorrect,
       'options': options,
       'userAnswer': userAnswer,
+      'roundIndex': roundIndex,
+      'roundTotal': roundTotal,
+      'roundGroupId': roundGroupId,
+      'sourceExerciseId': sourceExerciseId,
     };
   }
 
@@ -73,15 +86,23 @@ class GeneratedExercise {
   final bool? isCorrect;
   final List<String>? options;
   final String? userAnswer;
+  final int? roundIndex;
+  final int? roundTotal;
+  final String? roundGroupId;
+  final String? sourceExerciseId;
 
   GeneratedExercise copyWith({
     String? id,
     String? questionId,
     ExerciseGenerationMode? generationMode,
     int? order,
-    bool? isCorrect,
+    Object? isCorrect = _sentinel,
     List<String>? options,
-    String? userAnswer,
+    Object? userAnswer = _sentinel,
+    int? roundIndex,
+    int? roundTotal,
+    String? roundGroupId,
+    String? sourceExerciseId,
   }) {
     return GeneratedExercise(
       id: id ?? this.id,
@@ -93,9 +114,18 @@ class GeneratedExercise {
       explanation: explanation,
       createdAt: createdAt,
       order: order ?? this.order,
-      isCorrect: isCorrect ?? this.isCorrect,
+      isCorrect:
+          identical(isCorrect, _sentinel) ? this.isCorrect : isCorrect as bool?,
       options: options ?? this.options,
-      userAnswer: userAnswer ?? this.userAnswer,
+      userAnswer: identical(userAnswer, _sentinel)
+          ? this.userAnswer
+          : userAnswer as String?,
+      roundIndex: roundIndex ?? this.roundIndex,
+      roundTotal: roundTotal ?? this.roundTotal,
+      roundGroupId: roundGroupId ?? this.roundGroupId,
+      sourceExerciseId: sourceExerciseId ?? this.sourceExerciseId,
     );
   }
 }
+
+const Object _sentinel = Object();

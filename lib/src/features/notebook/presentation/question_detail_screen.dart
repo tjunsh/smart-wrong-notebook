@@ -391,11 +391,11 @@ class QuestionDetailScreen extends ConsumerWidget {
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: result.knowledgePoints
                     .map((p) => Container(
+                          margin: const EdgeInsets.only(bottom: 6),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
@@ -431,8 +431,20 @@ class QuestionDetailScreen extends ConsumerWidget {
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
-              ...result.steps.asMap().entries.map((e) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+              ...result.steps.asMap().entries.map((e) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? colorScheme.surface
+                          : const Color(0xFFFAFAFF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? colorScheme.outlineVariant
+                            : const Color(0xFFE0E7FF),
+                      ),
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[

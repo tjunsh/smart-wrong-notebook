@@ -20,6 +20,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
   List<GeneratedExercise>? _exercises;
   String? _questionId;
   bool _isJudging = false;
+  bool _showCompletion = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +42,18 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
     if (current.id != _questionId || _exercises == null) {
       _index = 0;
       _questionId = current.id;
-      _exercises = List.from(_practiceExercises(current, practiceContext));
+      _exercises = List.from(_nextPracticeRound(
+        _practiceExercises(current, practiceContext),
+        questionId: current.id,
+      ));
+      _showCompletion = false;
     }
 
     final exercises = _exercises!;
+    if (_showCompletion) {
+      return _buildCompletionScreen(current, exercises, fallbackRoute);
+    }
+
     if (exercises.isEmpty) {
       return Scaffold(
         appBar: AppBar(
@@ -348,7 +357,7 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
                   ? FilledButton.icon(
                       onPressed: () {
                         if (isLast) {
-                          _finish(current, exercises);
+                          _finishRound(current, exercises);
                         } else {
                           setState(() => _index++);
                         }
@@ -378,6 +387,112 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
     );
   }
 
+  Widget _buildCompletionScreen(
+    QuestionRecord current,
+    List<GeneratedExercise> exercises,
+    String fallbackRoute,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final correctCount = exercises.where((e) => e.isCorrect == true).length;
+    final roundIndex = _currentRoundIndex(exercises);
+    final practiceContext = ref.read(currentPracticeContextProvider);
+    final isAnalysisSource =
+        practiceContext?.source == PracticeContextSource.analysis;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('第 $roundIndex轮完成'),
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.xmark),
+          onPressed: () => context.go(fallbackRoute),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                child: Center(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: colorScheme.outlineVariant),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF16A34A).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(34),
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.checkmark_circle_fill,
+                            size: 38,
+                            color: Color(0xFF16A34A),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          '举一反三完成',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '第 $roundIndex轮 ${exercises.length}题，答对 $correctCount题',
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        ),
+                        if (!isAnalysisSource) ...<Widget>[
+                          const SizedBox(height: 8),
+                          Text(
+                            '本轮练习结果已保存到错题本',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              FilledButton.icon(
+                onPressed: () => _continuePractice(current),
+                icon: const Icon(CupertinoIcons.arrow_clockwise),
+                label: const Text('继续练习'),
+                style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50)),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => isAnalysisSource
+                    ? _saveCurrentQuestion(current)
+                    : _returnToQuestionDetail(current, fallbackRoute),
+                icon: Icon(isAnalysisSource
+                    ? CupertinoIcons.tray_arrow_down
+                    : CupertinoIcons.doc_text),
+                label: Text(isAnalysisSource ? '保存这道题' : '返回错题详情'),
+                style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<GeneratedExercise> _practiceExercises(
     QuestionRecord current,
     PracticeContext? practiceContext,
@@ -391,6 +506,88 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
       }
     }
     return current.savedExercises;
+  }
+
+  int _currentRoundIndex(List<GeneratedExercise> exercises) {
+    final explicitRounds = exercises
+        .map((exercise) => exercise.roundIndex)
+        .whereType<int>()
+        .where((round) => round > 0);
+    if (explicitRounds.isNotEmpty) {
+      return explicitRounds.reduce((a, b) => a > b ? a : b);
+    }
+    return 1;
+  }
+
+  List<GeneratedExercise> _nextPracticeRound(
+    List<GeneratedExercise> sourceExercises, {
+    required String questionId,
+  }) {
+    if (sourceExercises.isEmpty) return sourceExercises;
+
+    final latestRound = _currentRoundIndex(sourceExercises);
+    final roundExercises = sourceExercises
+        .where((exercise) => (exercise.roundIndex ?? 1) == latestRound)
+        .toList();
+    final base = roundExercises.isNotEmpty ? roundExercises : sourceExercises;
+    return base.asMap().entries.map((entry) {
+      final source = entry.value;
+      return source.copyWith(
+        id: '$questionId-round-$latestRound-exercise-${entry.key + 1}',
+        questionId: questionId,
+        order: entry.key,
+        isCorrect: null,
+        userAnswer: null,
+        roundIndex: latestRound,
+        roundTotal: base.length,
+        roundGroupId: '$questionId-round-$latestRound',
+        sourceExerciseId: source.sourceExerciseId ?? source.id,
+      );
+    }).toList();
+  }
+
+  List<GeneratedExercise> _appendCompletedRound(
+    List<GeneratedExercise> existing,
+    List<GeneratedExercise> completed,
+  ) {
+    final completedIds = completed.map((exercise) => exercise.id).toSet();
+    final completedSourceIds = completed
+        .map((exercise) => exercise.sourceExerciseId)
+        .whereType<String>()
+        .toSet();
+    final completedRound = _currentRoundIndex(completed);
+    return <GeneratedExercise>[
+      ...existing.where((exercise) {
+        final sameId = completedIds.contains(exercise.id);
+        final sameSeed = completedRound == 1 &&
+            completedSourceIds.isNotEmpty &&
+            completedSourceIds.contains(exercise.id) &&
+            exercise.roundIndex == null;
+        return !sameId && !sameSeed;
+      }),
+      ...completed,
+    ];
+  }
+
+  List<GeneratedExercise> _buildContinuedRound(
+    QuestionRecord question,
+    List<GeneratedExercise> completed,
+  ) {
+    final nextRound = _currentRoundIndex(completed) + 1;
+    return completed.asMap().entries.map((entry) {
+      final source = entry.value;
+      return source.copyWith(
+        id: '${question.id}-round-$nextRound-exercise-${entry.key + 1}',
+        questionId: question.id,
+        order: entry.key,
+        isCorrect: null,
+        userAnswer: null,
+        roundIndex: nextRound,
+        roundTotal: completed.length,
+        roundGroupId: '${question.id}-round-$nextRound',
+        sourceExerciseId: source.sourceExerciseId ?? source.id,
+      );
+    }).toList();
   }
 
   Color _difficultyColor(BuildContext context, String difficulty) {
@@ -480,12 +677,15 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
     }
   }
 
-  Future<void> _finish(
+  Future<void> _finishRound(
       QuestionRecord question, List<GeneratedExercise> exercises) async {
     final practiceContext = ref.read(currentPracticeContextProvider);
+    final existing = _practiceExercises(question, practiceContext);
+    final updatedExercises = _appendCompletedRound(existing, exercises);
     final updated = practiceContext?.source == PracticeContextSource.analysis
-        ? _updateAnalysisPracticeState(question, exercises, practiceContext)
-        : question.copyWith(savedExercises: exercises);
+        ? _updateAnalysisPracticeState(
+            question, updatedExercises, practiceContext)
+        : question.copyWith(savedExercises: updatedExercises);
 
     if (practiceContext?.source == PracticeContextSource.analysis) {
       ref.read(currentQuestionProvider.notifier).state = updated;
@@ -493,15 +693,70 @@ class _ExercisePracticeState extends ConsumerState<ExercisePracticeScreen> {
       await ref.read(questionRepositoryProvider).update(updated);
       invalidateQuestionList(ref);
       ref.read(currentQuestionProvider.notifier).state = updated;
-      ref.read(currentPracticeContextProvider.notifier).state = null;
     }
 
     if (!mounted) return;
-    final correctCount = exercises.where((e) => e.isCorrect == true).length;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('练习完成：${exercises.length} 题中答对 $correctCount 题')),
-    );
-    context.go(practiceContext?.returnRoute ?? '/notebook');
+    setState(() => _showCompletion = true);
+  }
+
+  Future<void> _continuePractice(QuestionRecord question) async {
+    final practiceContext = ref.read(currentPracticeContextProvider);
+    final nextRound = _buildContinuedRound(question, _exercises ?? const []);
+    final existing = _practiceExercises(question, practiceContext);
+    final updatedExercises = <GeneratedExercise>[...existing, ...nextRound];
+    final updated = practiceContext?.source == PracticeContextSource.analysis
+        ? _updateAnalysisPracticeState(
+            question, updatedExercises, practiceContext)
+        : question.copyWith(savedExercises: updatedExercises);
+
+    if (practiceContext?.source == PracticeContextSource.analysis) {
+      ref.read(currentQuestionProvider.notifier).state = updated;
+    } else {
+      await ref.read(questionRepositoryProvider).update(updated);
+      invalidateQuestionList(ref);
+      ref.read(currentQuestionProvider.notifier).state = updated;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _exercises = nextRound;
+      _index = 0;
+      _showCompletion = false;
+    });
+  }
+
+  void _returnToQuestionDetail(QuestionRecord question, String fallbackRoute) {
+    ref.read(currentPracticeContextProvider.notifier).state = null;
+    context.go(fallbackRoute == '/notebook'
+        ? '/notebook/question/${question.id}'
+        : fallbackRoute);
+  }
+
+  Future<void> _saveCurrentQuestion(QuestionRecord question) async {
+    final practiceContext = ref.read(currentPracticeContextProvider);
+    if (practiceContext?.source != PracticeContextSource.analysis) {
+      ref.read(currentPracticeContextProvider.notifier).state = null;
+      if (!mounted) return;
+      context.go('/notebook/question/${question.id}');
+      return;
+    }
+
+    final splitter = ref.read(questionSplitServiceProvider);
+    final session =
+        await buildQuestionSplitSession(question, splitter: splitter);
+    final selectedOrder = practiceContext?.candidateOrder;
+    ref.read(currentQuestionSplitSessionProvider.notifier).state =
+        selectedOrder == null
+            ? session
+            : session.copyWith(
+                drafts: session.drafts.map((draft) {
+                  return draft.copyWith(
+                      selected: draft.originalOrder == selectedOrder);
+                }).toList(),
+              );
+
+    if (!mounted) return;
+    context.go('/capture/split-confirmation');
   }
 
   QuestionRecord _updateAnalysisPracticeState(

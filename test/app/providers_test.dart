@@ -16,20 +16,25 @@ void main() {
       final result = await splitter.split('1. 已知 x+1=3，求 x\n2. 已知 y-2=0，求 y');
 
       expect(result.strategy, QuestionSplitStrategy.numbered);
-      expect(result.candidates.map((candidate) => candidate.text).toList(), <String>[
-        '1. 已知 x+1=3，求 x',
-        '2. 已知 y-2=0，求 y',
-      ]);
+      expect(
+          result.candidates.map((candidate) => candidate.text).toList(),
+          <String>[
+            '1. 已知 x+1=3，求 x',
+            '2. 已知 y-2=0，求 y',
+          ]);
     });
 
-    test('splits blank-line separated questions into multiple candidates', () async {
+    test('splits blank-line separated questions into multiple candidates',
+        () async {
       final result = await splitter.split('已知 x+1=3，求 x\n\n已知 y-2=0，求 y');
 
       expect(result.strategy, QuestionSplitStrategy.paragraph);
-      expect(result.candidates.map((candidate) => candidate.text).toList(), <String>[
-        '已知 x+1=3，求 x',
-        '已知 y-2=0，求 y',
-      ]);
+      expect(
+          result.candidates.map((candidate) => candidate.text).toList(),
+          <String>[
+            '已知 x+1=3，求 x',
+            '已知 y-2=0，求 y',
+          ]);
     });
 
     test('keeps English cloze passage as one composite question', () async {
@@ -49,7 +54,8 @@ Some young people save income, _____ 4 _____ spend most of it on travel.
       expect(result.candidates.single.text, text);
     });
 
-    test('keeps Chinese classical worksheet as one composite question', () async {
+    test('keeps Chinese classical worksheet as one composite question',
+        () async {
       const text = '''《桃花源记》翻译卷
 一、文常积累
 本文作者______，名______，字______。
@@ -63,11 +69,65 @@ Some young people save income, _____ 4 _____ spend most of it on travel.
       expect(result.candidates.single.text, text);
     });
 
-    test('keeps single question as one candidate when no split markers', () async {
+    test('keeps history long fill-in worksheet as one composite question',
+        () async {
+      const text = '''中国古代史阶段复习填空
+一、先秦时期
+1. 西周实行______制，形成天子、诸侯、卿大夫、士的等级秩序。
+2. 春秋战国时期，______变法推动秦国国力增强，为统一奠定基础。
+二、秦汉时期
+3. 秦始皇统一后建立______制度，地方推行______制。
+4. 汉武帝接受董仲舒建议，实行“______”，加强思想控制。
+三、隋唐至明清
+5. 隋唐时期完善______制，扩大官吏选拔范围。
+6. 明清时期君主专制强化，军机处设立于______时期。
+请结合材料，概括这些制度变化对统一多民族国家发展的影响。''';
+
+      final result = await splitter.split(text, subject: Subject.history);
+
+      expect(result.strategy, QuestionSplitStrategy.fallback);
+      expect(result.candidates, hasLength(1));
+      expect(result.candidates.single.text, text);
+    });
+
+    test('keeps politics long fill-in worksheet as one composite question',
+        () async {
+      const text = '''道德与法治综合填空题
+一、公民权利
+1. 公民最基本、最重要的权利是______。
+2. 依法行使权利时，不得损害国家的、社会的、集体的利益和其他公民的______。
+二、国家制度
+3. 我国的根本政治制度是______。
+4. 全国人民代表大会是最高______机关。
+三、法治建设
+5. 全面依法治国的总目标是建设中国特色社会主义______体系。
+6. 厉行法治要求推进科学立法、严格执法、公正司法、______守法。
+请根据材料说明公民参与法治建设的意义。''';
+
+      final result = await splitter.split(text, subject: Subject.politics);
+
+      expect(result.strategy, QuestionSplitStrategy.fallback);
+      expect(result.candidates, hasLength(1));
+      expect(result.candidates.single.text, text);
+    });
+
+    test('still splits numbered math questions with blanks', () async {
+      const text = '''1. 已知 x+______=3，求 x。
+2. 已知 y-______=0，求 y。''';
+
+      final result = await splitter.split(text, subject: Subject.math);
+
+      expect(result.strategy, QuestionSplitStrategy.numbered);
+      expect(result.candidates, hasLength(2));
+    });
+
+    test('keeps single question as one candidate when no split markers',
+        () async {
       final result = await splitter.split('已知 x^2+1=5，求 x 的值');
 
       expect(result.strategy, QuestionSplitStrategy.fallback);
-      expect(result.candidates.map((candidate) => candidate.text).toList(), <String>['已知 x^2+1=5，求 x 的值']);
+      expect(result.candidates.map((candidate) => candidate.text).toList(),
+          <String>['已知 x^2+1=5，求 x 的值']);
     });
   });
 
@@ -101,10 +161,13 @@ Some young people save income, _____ 4 _____ spend most of it on travel.
     final session = await buildQuestionSplitSession(source);
 
     expect(session.strategy, QuestionSplitStrategy.numbered);
-    expect(session.drafts.map((draft) => draft.text).toList(), <String>['第一题', '第二题']);
+    expect(session.drafts.map((draft) => draft.text).toList(),
+        <String>['第一题', '第二题']);
   });
 
-  test('buildSplitQuestionRecord stamps lineage metadata and candidate analysis', () {
+  test(
+      'buildSplitQuestionRecord stamps lineage metadata and candidate analysis',
+      () {
     final now = DateTime(2026);
     final source = QuestionRecord.draft(
       id: 'root-1',
@@ -173,6 +236,78 @@ Some young people save income, _____ 4 _____ spend most of it on travel.
     expect(child.aiKnowledgePoints, <String>['kp']);
   });
 
+  test(
+      'buildSplitQuestionRecord does not copy parent analysis to unanalyzed siblings',
+      () {
+    final source = QuestionRecord.draft(
+      id: 'root-2',
+      imagePath: '/tmp/root.jpg',
+      subject: Subject.math,
+      recognizedText: '整题文本',
+    ).copyWith(
+      aiTags: const <String>['一元二次'],
+      aiKnowledgePoints: const <String>['平方根'],
+      analysisResult: const AnalysisResult(
+        finalAnswer: '第一题答案',
+        steps: <String>['第一题步骤'],
+        aiTags: <String>['一元二次'],
+        knowledgePoints: <String>['平方根'],
+        mistakeReason: '第一题错因',
+        studyAdvice: '第一题建议',
+      ),
+      splitResult: const QuestionSplitResult(
+        sourceText: '1. 第一题\n2. 第二题',
+        strategy: QuestionSplitStrategy.numbered,
+        candidates: <QuestionSplitCandidate>[
+          QuestionSplitCandidate(
+            id: 'candidate-0',
+            order: 1,
+            text: '1. 第一题',
+            strategy: QuestionSplitStrategy.numbered,
+          ),
+          QuestionSplitCandidate(
+            id: 'candidate-1',
+            order: 2,
+            text: '2. 若 \\(\\frac{a}{b}=2\\) 且 \\(a+b=9\\)，求 \\(a,b\\)。',
+            strategy: QuestionSplitStrategy.numbered,
+          ),
+        ],
+      ),
+      candidateAnalyses: const <CandidateAnalysisSnapshot>[
+        CandidateAnalysisSnapshot(
+          candidateId: 'candidate-0',
+          order: 1,
+          questionText: '1. 第一题',
+          analysisResult: AnalysisResult(
+            finalAnswer: '第一题答案',
+            steps: <String>['第一题步骤'],
+            aiTags: <String>['一元二次'],
+            knowledgePoints: <String>['平方根'],
+            mistakeReason: '第一题错因',
+            studyAdvice: '第一题建议',
+          ),
+        ),
+      ],
+    );
+
+    final child = buildSplitQuestionRecord(
+      source: source,
+      draft: const QuestionSplitDraft(
+        id: 'candidate-1',
+        text: '2. 若 \\(\\frac{a}{b}=2\\) 且 \\(a+b=9\\)，求 \\(a,b\\)。',
+        selected: true,
+        originalOrder: 2,
+      ),
+      sortOrder: 2,
+    );
+
+    expect(child.analysisResult, isNull);
+    expect(child.aiTags, isEmpty);
+    expect(child.aiKnowledgePoints, isEmpty);
+    expect(child.savedExercises, isEmpty);
+    expect(child.normalizedQuestionText, contains(r'\frac{a}{b}'));
+  });
+
   test('buildQuestionBatchGroups groups siblings and sorts by split order', () {
     QuestionRecord record(String id, {String? rootId, int? splitOrder}) {
       return QuestionRecord.draft(
@@ -194,6 +329,7 @@ Some young people save income, _____ 4 _____ spend most of it on travel.
     ]);
 
     expect(groups.keys, <String>['root-1']);
-    expect(groups['root-1']!.questions.map((question) => question.id).toList(), <String>['child-1', 'child-2']);
+    expect(groups['root-1']!.questions.map((question) => question.id).toList(),
+        <String>['child-1', 'child-2']);
   });
 }

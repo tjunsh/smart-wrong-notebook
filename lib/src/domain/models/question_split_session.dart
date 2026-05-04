@@ -8,6 +8,8 @@ class QuestionSplitDraft {
     required this.selected,
     required this.originalOrder,
     this.contentFormat,
+    this.canSave = true,
+    this.disabledReason,
   });
 
   final String id;
@@ -15,11 +17,15 @@ class QuestionSplitDraft {
   final bool selected;
   final int originalOrder;
   final QuestionContentFormat? contentFormat;
+  final bool canSave;
+  final String? disabledReason;
 
   QuestionSplitDraft copyWith({
     String? text,
     bool? selected,
     QuestionContentFormat? contentFormat,
+    bool? canSave,
+    String? disabledReason,
   }) {
     return QuestionSplitDraft(
       id: id,
@@ -27,6 +33,8 @@ class QuestionSplitDraft {
       selected: selected ?? this.selected,
       originalOrder: originalOrder,
       contentFormat: contentFormat ?? this.contentFormat,
+      canSave: canSave ?? this.canSave,
+      disabledReason: disabledReason ?? this.disabledReason,
     );
   }
 }
@@ -42,7 +50,10 @@ class QuestionSplitSession {
   final List<QuestionSplitDraft> drafts;
   final QuestionSplitStrategy strategy;
 
-  bool get hasSelectedDrafts => drafts.any((draft) => draft.selected && draft.text.trim().isNotEmpty);
+  bool get hasSelectedDrafts => drafts.any(
+        (draft) =>
+            draft.canSave && draft.selected && draft.text.trim().isNotEmpty,
+      );
 
   QuestionSplitSession copyWith({
     QuestionRecord? source,

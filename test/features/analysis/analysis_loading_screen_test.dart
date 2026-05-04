@@ -34,6 +34,35 @@ class _TestSettingsRepository implements SettingsRepository {
   Future<void> setString(String key, String value) async {}
 }
 
+class _FailingCandidateAiAnalysisService extends TestAiAnalysisService {
+  _FailingCandidateAiAnalysisService({
+    required super.settingsRepository,
+    required super.extractionResult,
+    required super.analysisResultValue,
+    required this.failedText,
+  });
+
+  final String failedText;
+  final Map<String, int> attempts = <String, int>{};
+
+  @override
+  Future<AnalysisResult> analyzeExtractedQuestion({
+    required String correctedText,
+    required String subjectName,
+    String? imagePath,
+  }) async {
+    attempts[correctedText] = (attempts[correctedText] ?? 0) + 1;
+    if (correctedText.contains(failedText)) {
+      throw AiAnalysisException('模拟子题解析失败');
+    }
+    return super.analyzeExtractedQuestion(
+      correctedText: correctedText,
+      subjectName: subjectName,
+      imagePath: imagePath,
+    );
+  }
+}
+
 void main() {
   testWidgets('loading screen extracts before analysis when text is empty',
       (tester) async {
@@ -302,6 +331,98 @@ void main() {
     expect(updated.candidateAnalyses.last.analysisResult!.finalAnswer, '第二题答案');
     expect(updated.savedExercises, isNotEmpty);
     expect(updated.analysisResult?.finalAnswer, '第一题答案');
+  });
+
+  testWidgets('loading screen stops when any split candidate analysis fails',
+      (tester) async {
+    final settingsRepo = _TestSettingsRepository();
+    final service = _FailingCandidateAiAnalysisService(
+      settingsRepository: settingsRepo,
+      extractionResult: const AiQuestionExtractionResult(
+        extractedQuestionText: '1. 第一题\n2. 第二题',
+        normalizedQuestionText: '1. 第一题\n2. 第二题',
+        subject: Subject.math,
+        splitResult: QuestionSplitResult(
+          sourceText: '1. 第一题\n2. 第二题',
+          strategy: QuestionSplitStrategy.numbered,
+          candidates: <QuestionSplitCandidate>[
+            QuestionSplitCandidate(
+              id: 'candidate-0',
+              order: 1,
+              text: '1. 第一题',
+              strategy: QuestionSplitStrategy.numbered,
+            ),
+            QuestionSplitCandidate(
+              id: 'candidate-1',
+              order: 2,
+              text: '2. 第二题',
+              strategy: QuestionSplitStrategy.numbered,
+            ),
+          ],
+        ),
+      ),
+      analysisResultValue: const AnalysisResult(
+        subject: Subject.math,
+        finalAnswer: '第一题答案',
+        steps: <String>['第一题步骤'],
+        aiTags: <String>['第一题标签'],
+        knowledgePoints: <String>['第一题知识点'],
+        mistakeReason: '第一题错因',
+        studyAdvice: '第一题建议',
+      ),
+      failedText: '第二题',
+    );
+
+    final container = ProviderContainer(
+      overrides: [
+        settingsRepositoryProvider.overrideWithValue(settingsRepo),
+        aiAnalysisServiceProvider.overrideWithValue(service),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(currentQuestionProvider.notifier).state =
+        QuestionRecord.draft(
+      id: 'q-partial-failure',
+      imagePath: '/tmp/fake.jpg',
+      subject: Subject.math,
+      recognizedText: '',
+    );
+
+    final router = GoRouter(
+      initialLocation: '/analysis/loading',
+      routes: <GoRoute>[
+        GoRoute(
+          path: '/analysis/loading',
+          builder: (_, __) => const AnalysisLoadingScreen(),
+        ),
+        GoRoute(
+          path: '/analysis/result',
+          builder: (_, __) => const Scaffold(body: Text('RESULT_SCREEN')),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    await tester.pump();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('RESULT_SCREEN'), findsOneWidget);
+    expect(find.textContaining('多题解析未全部完成'), findsNothing);
+    expect(service.attempts['2. 第二题'], 2);
+    final updated = container.read(currentQuestionProvider);
+    expect(updated?.contentStatus, ContentStatus.ready);
+    expect(updated?.candidateAnalyses, hasLength(2));
+    expect(updated?.candidateAnalyses.first.isSuccessful, isTrue);
+    expect(
+        updated?.candidateAnalyses.last.status, CandidateAnalysisStatus.failed);
+    expect(updated?.candidateAnalyses.last.analysisResult, isNull);
+    expect(updated?.candidateAnalyses.last.errorMessage, isNotEmpty);
+    expect(updated?.analysisResult?.finalAnswer, '第一题答案');
   });
 
   testWidgets('loading screen analyzes extracted text without resending image',

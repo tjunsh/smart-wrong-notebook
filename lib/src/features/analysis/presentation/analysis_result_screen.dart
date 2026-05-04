@@ -50,16 +50,21 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
         ? null
         : record.candidateAnalyses.firstWhereOrNull(
             (candidate) => candidate.candidateId == activeCandidate.id);
-    final displayResult = activeCandidateAnalysis?.analysisResult ?? result;
-    final displayAiTags = activeCandidateAnalysis?.aiTags ?? record.aiTags;
-    final displayKnowledgePoints = activeCandidateAnalysis?.aiKnowledgePoints ??
-        result?.knowledgePoints ??
-        const <String>[];
+    final displayResult = hasMultipleCandidates
+        ? activeCandidateAnalysis?.analysisResult
+        : result;
+    final displayAiTags = hasMultipleCandidates
+        ? activeCandidateAnalysis?.aiTags ?? const <String>[]
+        : record.aiTags;
+    final displayKnowledgePoints = hasMultipleCandidates
+        ? activeCandidateAnalysis?.aiKnowledgePoints ?? const <String>[]
+        : result?.knowledgePoints ?? const <String>[];
     final displayQuestionText = activeCandidateAnalysis?.questionText ??
         activeCandidate?.text ??
         record.correctedText;
-    final displayExercises =
-        activeCandidateAnalysis?.savedExercises ?? record.savedExercises;
+    final displayExercises = hasMultipleCandidates
+        ? activeCandidateAnalysis?.savedExercises ?? const []
+        : record.savedExercises;
     final candidateInsight = hasMultipleCandidates
         ? _candidateInsight(
             candidateOrder: activeCandidate?.order ?? 1,
@@ -208,12 +213,26 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
             ),
           ],
           if (displayResult == null) ...<Widget>[
-            const SizedBox(height: 40),
-            Center(
-                child: Text('暂无解析结果',
-                    style: TextStyle(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant))),
+            const SizedBox(height: 20),
+            _SectionCard(
+              icon: CupertinoIcons.exclamationmark_triangle,
+              iconColor: const Color(0xFFDC2626),
+              bg: const Color(0xFFFEF2F2),
+              border: const Color(0xFFFECACA),
+              title: '第 ${activeCandidate?.order ?? 1}题解析失败',
+              titleColor: const Color(0xFFB91C1C),
+              contentWidget: MathContentView(
+                activeCandidateAnalysis?.errorMessage?.isNotEmpty == true
+                    ? '已自动重试，仍未成功。该题暂不可保存，可返回重新解析。\n${activeCandidateAnalysis!.errorMessage}'
+                    : '已自动重试，仍未成功。该题暂不可保存，可返回重新解析。',
+                style: TextStyle(
+                  fontSize: 14,
+                  color:
+                      isDark ? colorScheme.onSurface : const Color(0xFFB91C1C),
+                  height: 1.5,
+                ),
+              ),
+            ),
           ],
           if (displayResult != null) ...<Widget>[
             const SizedBox(height: 20),
@@ -374,7 +393,7 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                     Text(
                       activeCandidateAnalysis != null
                           ? '当前已切换到第 ${activeCandidate?.order ?? 1} 题独立解析。'
-                          : '当前仍复用整题解析；后续接入逐题分析后，这里会展示第 ${activeCandidate?.order ?? 1} 题独立解析。',
+                          : '第 ${activeCandidate?.order ?? 1} 题暂无独立解析。',
                       style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -393,11 +412,11 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: displayKnowledgePoints
                     .map((p) => Container(
+                          margin: const EdgeInsets.only(bottom: 6),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
@@ -433,8 +452,20 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
-              ...displayResult.steps.asMap().entries.map((e) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+              ...displayResult.steps.asMap().entries.map((e) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? colorScheme.surface
+                          : const Color(0xFFFAFAFF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? colorScheme.outlineVariant
+                            : const Color(0xFFE0E7FF),
+                      ),
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -490,7 +521,7 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                 Text(
                   activeCandidateAnalysis != null
                       ? '当前展示第 ${activeCandidate.order} 题独立生成的练习。'
-                      : '当前展示第 ${activeCandidate.order} 题关联的练习占位。',
+                      : '第 ${activeCandidate.order} 题暂无独立练习。',
                   style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurfaceVariant),

@@ -81,7 +81,8 @@ void main() {
     expect(find.byType(AnalysisResultScreen), findsOneWidget);
   });
 
-  testWidgets('analysis result screen switches active split candidate',
+  testWidgets(
+      'analysis result screen does not reuse parent analysis for missing candidate snapshot',
       (tester) async {
     final container = ProviderContainer(
       overrides: <Override>[
@@ -99,12 +100,12 @@ void main() {
       recognizedText: '整题文本',
     ).copyWith(
       analysisResult: const AnalysisResult(
-        finalAnswer: '答案',
-        steps: <String>['步骤1'],
-        aiTags: <String>['方程'],
-        knowledgePoints: <String>['代数'],
-        mistakeReason: '审题不清',
-        studyAdvice: '多练习',
+        finalAnswer: '第一题答案',
+        steps: <String>['第一题步骤'],
+        aiTags: <String>['一元二次'],
+        knowledgePoints: <String>['平方根'],
+        mistakeReason: '第一题错因',
+        studyAdvice: '第一题建议',
       ),
       savedExercises: <GeneratedExercise>[
         GeneratedExercise(
@@ -112,24 +113,15 @@ void main() {
           questionId: 'q-switch',
           generationMode: ExerciseGenerationMode.practice,
           difficulty: '同级',
-          question: '练习一',
+          question: '第一题练习',
           answer: 'A',
-          explanation: '解释一',
-          createdAt: DateTime(2026),
-        ),
-        GeneratedExercise(
-          id: 'e-2',
-          questionId: 'q-switch',
-          generationMode: ExerciseGenerationMode.practice,
-          difficulty: '提高',
-          question: '练习二',
-          answer: 'B',
-          explanation: '解释二',
+          explanation: '第一题解释',
           createdAt: DateTime(2026),
         ),
       ],
       splitResult: const QuestionSplitResult(
-        sourceText: '1. 第一题\n2. 第二题',
+        sourceText:
+            '1. 第一题\n2. 若 \\(\\frac{a}{b}=2\\) 且 \\(a+b=9\\)，求 \\(a,b\\)。',
         strategy: QuestionSplitStrategy.numbered,
         candidates: <QuestionSplitCandidate>[
           QuestionSplitCandidate(
@@ -141,11 +133,28 @@ void main() {
           QuestionSplitCandidate(
             id: 'candidate-1',
             order: 2,
-            text: '2. 第二题',
+            text: '2. 若 \\(\\frac{a}{b}=2\\) 且 \\(a+b=9\\)，求 \\(a,b\\)。',
             strategy: QuestionSplitStrategy.numbered,
           ),
         ],
       ),
+      candidateAnalyses: const <CandidateAnalysisSnapshot>[
+        CandidateAnalysisSnapshot(
+          candidateId: 'candidate-0',
+          order: 1,
+          questionText: '1. 第一题',
+          analysisResult: AnalysisResult(
+            finalAnswer: '第一题答案',
+            steps: <String>['第一题步骤'],
+            aiTags: <String>['一元二次'],
+            knowledgePoints: <String>['平方根'],
+            mistakeReason: '第一题错因',
+            studyAdvice: '第一题建议',
+          ),
+          aiTags: <String>['一元二次'],
+          aiKnowledgePoints: <String>['平方根'],
+        ),
+      ],
     );
 
     await tester.pumpWidget(UncontrolledProviderScope(
@@ -155,19 +164,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('当前第 1 题'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -900));
-    await tester.pumpAndSettle();
-    expect(find.text('练习一'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, 900));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('第 2 题'));
     await tester.pumpAndSettle();
 
     expect(find.text('题号切换'), findsOneWidget);
-    expect(find.text('2. 第二题'), findsWidgets);
-    await tester.drag(find.byType(ListView), const Offset(0, -900));
-    await tester.pumpAndSettle();
-    expect(find.text('练习二'), findsOneWidget);
+    expect(find.text('当前第 2 题'), findsOneWidget);
+    expect(find.textContaining('解析失败'), findsOneWidget);
+    expect(find.textContaining('第一题答案'), findsNothing);
+    expect(find.textContaining('第一题步骤'), findsNothing);
+    expect(find.text('第一题练习'), findsNothing);
   });
 
   testWidgets(

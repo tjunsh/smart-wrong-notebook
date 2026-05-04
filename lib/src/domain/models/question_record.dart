@@ -7,6 +7,8 @@ import 'subject.dart';
 
 enum QuestionContentFormat { plain, latexMixed }
 
+enum CandidateAnalysisStatus { success, failed }
+
 class CandidateAnalysisSnapshot {
   const CandidateAnalysisSnapshot({
     required this.candidateId,
@@ -17,17 +19,20 @@ class CandidateAnalysisSnapshot {
     this.subject,
     this.aiTags = const [],
     this.aiKnowledgePoints = const [],
+    this.status = CandidateAnalysisStatus.success,
+    this.errorMessage,
   });
 
   factory CandidateAnalysisSnapshot.fromJson(Map<String, dynamic> json) {
     final analysisJson = json['analysisResult'] as Map<String, dynamic>?;
     final exercisesJson = json['savedExercises'] as List? ?? const <Object>[];
+    final analysisResult =
+        analysisJson != null ? AnalysisResult.fromJson(analysisJson) : null;
     return CandidateAnalysisSnapshot(
       candidateId: json['candidateId'] as String? ?? '',
       order: json['order'] as int? ?? 0,
       questionText: json['questionText'] as String? ?? '',
-      analysisResult:
-          analysisJson != null ? AnalysisResult.fromJson(analysisJson) : null,
+      analysisResult: analysisResult,
       savedExercises: exercisesJson
           .map((item) =>
               GeneratedExercise.fromJson(item as Map<String, dynamic>))
@@ -36,6 +41,11 @@ class CandidateAnalysisSnapshot {
       aiTags: List<String>.from(json['aiTags'] as List? ?? const <String>[]),
       aiKnowledgePoints: List<String>.from(
           json['aiKnowledgePoints'] as List? ?? const <String>[]),
+      status: _parseCandidateAnalysisStatus(
+        json['status'] as String?,
+        analysisResult: analysisResult,
+      ),
+      errorMessage: _nullableString(json['errorMessage']),
     );
   }
 
@@ -47,6 +57,11 @@ class CandidateAnalysisSnapshot {
   final Subject? subject;
   final List<String> aiTags;
   final List<String> aiKnowledgePoints;
+  final CandidateAnalysisStatus status;
+  final String? errorMessage;
+
+  bool get isSuccessful =>
+      status == CandidateAnalysisStatus.success && analysisResult != null;
 
   CandidateAnalysisSnapshot copyWith({
     String? candidateId,
@@ -57,6 +72,8 @@ class CandidateAnalysisSnapshot {
     Subject? subject,
     List<String>? aiTags,
     List<String>? aiKnowledgePoints,
+    CandidateAnalysisStatus? status,
+    String? errorMessage,
   }) {
     return CandidateAnalysisSnapshot(
       candidateId: candidateId ?? this.candidateId,
@@ -67,6 +84,8 @@ class CandidateAnalysisSnapshot {
       subject: subject ?? this.subject,
       aiTags: aiTags ?? this.aiTags,
       aiKnowledgePoints: aiKnowledgePoints ?? this.aiKnowledgePoints,
+      status: status ?? this.status,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 
@@ -81,8 +100,22 @@ class CandidateAnalysisSnapshot {
       'subject': subject?.name,
       'aiTags': aiTags,
       'aiKnowledgePoints': aiKnowledgePoints,
+      'status': status.name,
+      'errorMessage': errorMessage,
     };
   }
+}
+
+CandidateAnalysisStatus _parseCandidateAnalysisStatus(
+  String? value, {
+  required AnalysisResult? analysisResult,
+}) {
+  for (final status in CandidateAnalysisStatus.values) {
+    if (status.name == value) return status;
+  }
+  return analysisResult != null
+      ? CandidateAnalysisStatus.success
+      : CandidateAnalysisStatus.failed;
 }
 
 Subject? _parseSubjectFromJson(String? value) {
