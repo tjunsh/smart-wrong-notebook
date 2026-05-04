@@ -39,7 +39,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ github.ref_name }}" \
-            build/app/outputs/flutter-apk/app-release.apk#ai-wrong-notebook-v42-${{ github.ref_name }}.apk \
+            build/app/outputs/flutter-apk/app-release.apk#ai-wrong-notebook-${{ github.ref_name }}.apk \
             --clobber
 
       - name: Upload AAB
@@ -47,5 +47,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ github.ref_name }}" \
-            build/app/outputs/bundle/release/app-release.aab#ai-wrong-notebook-v42-${{ github.ref_name }}.aab \
+            build/app/outputs/bundle/release/app-release.aab#ai-wrong-notebook-${{ github.ref_name }}.aab \
             --clobber
